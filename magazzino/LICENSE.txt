@@ -1,0 +1,32 @@
+Magazzino Componenti – Software di gestione magazzino di componenti elettronici
+Copyright (C) 2025 Gabriele Riva (RG4Tech Youtube Channel)
+
+Questo programma è software libero: puoi redistribuirlo e/o modificarlo
+secondo i termini della GNU General Public License come pubblicata
+dalla Free Software Foundation, sia la versione 3 della Licenza, sia
+(a tua scelta) qualsiasi versione successiva.
+
+Questo programma è distribuito nella speranza che sia utile,
+ma SENZA ALCUNA GARANZIA; senza neppure la garanzia implicita
+di COMMERCIABILITÀ o di IDONEITÀ PER UNO SCOPO PARTICOLARE.
+Vedi la GNU General Public License per ulteriori dettagli.
+
+Vedi https://www.gnu.org/licenses/
+
+Estratto della GNU GENERAL PUBLIC LICENSE versione 3 (Giugno 2007)
+
+La GNU GPL è una licenza di software libero che garantisce agli utenti
+le seguenti libertà:
+
+1. Libertà di eseguire il programma, per qualsiasi scopo.
+2. Libertà di studiare come funziona il programma e adattarlo alle proprie esigenze.
+3. Libertà di ridistribuire copie del programma.
+4. Libertà di migliorare il programma e distribuire pubblicamente i miglioramenti,
+in modo che tutta la comunità ne tragga beneficio.
+
+Chi ridistribuisce o modifica questo programma deve mantenere la stessa licenza
+(GPLv3 o successiva), fornire il codice sorgente o un modo per ottenerlo,
+e mantenere l’attribuzione all’autore originale.
+
+Per la versione completa della licenza GNU GPL v3:
+https://www.gnu.org/licenses/gpl-3.0.html

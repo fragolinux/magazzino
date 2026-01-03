@@ -1,0 +1,6 @@
+Per effettuare l'aggiornamento alla versione 1.1
+
+copiare in:
+c:\xampp\htdocs\magazzino\
+tutto quello che trovi in questo file .zip (6 files)
+(ad eccezzione di questo file LEGGIMI.txt)

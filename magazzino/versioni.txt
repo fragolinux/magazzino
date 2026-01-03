@@ -1,0 +1,9 @@
+1.0 20/10/2025  rilascio iniziale
+1.1 03/01/2026  Aggiunta funzionalità carico/scarico quantità componente e file info con le versioni
+                file modificati/aggiunti: 
+                  \magazzino\warehouse\components.php
+                  \magazzino\warehouse\get_components.php
+                  \magazzino\warehouse\update_component_quantity.php
+                  \magazzino\includes\header.php
+                  \magazzino\info.php
+                  \magazzino\versioni.txt
