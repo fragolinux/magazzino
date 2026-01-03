@@ -1,0 +1,9 @@
+.env
+backup/*
+!backup/.gitkeep
+data/*
+!data/.gitkeep
+
+# Local overrides
+.DS_Store
+Thumbs.db
