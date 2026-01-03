@@ -54,11 +54,23 @@ jobs:
       - name: Leggi changelog
         id: changelog
         run: |
-          {
-            echo "body<<EOF"
-            cat magazzino/versioni.txt
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+          python3 - <<'PY'
+          import os
+          import uuid
+
+          output_path = os.environ["GITHUB_OUTPUT"]
+          delimiter = f"CHANGELOG_{uuid.uuid4().hex}"
+
+          with open("magazzino/versioni.txt", "r", encoding="utf-8") as source:
+              body = source.read()
+
+          with open(output_path, "a", encoding="utf-8") as out:
+              out.write(f"body<<{delimiter}\n")
+              out.write(body)
+              if not body.endswith("\n"):
+                  out.write("\n")
+              out.write(f"{delimiter}\n")
+          PY
 
       - name: Crea release GitHub
         uses: softprops/action-gh-release@v2
