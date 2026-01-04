@@ -3,3 +3,10 @@ FROM php:8.0-fpm
 RUN docker-php-ext-install pdo_mysql
 
 WORKDIR /var/www/html
+
+COPY db_migrate.php /usr/local/bin/db_migrate.php
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["php-fpm"]

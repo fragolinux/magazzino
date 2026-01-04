@@ -3,8 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:48:46 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-03 10:11:26
+ * @Last Modified time: 2026-01-04 13:24:02
 */
+// 2026-01-03: Aggiunto link Info nel menu di navigazione
+// 2026-01-04: Aggiunto link per installazione degli aggiornamenti
 
 ?>
 <!doctype html>
@@ -86,6 +88,13 @@
               <i class="fa-solid fa-circle-info me-1"></i>Info
             </a>
           </li>
+          <?php if (!empty($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+          <li class="nav-item">
+            <a class="nav-link" href="/magazzino/update/index.php">
+              <i class="fa-solid fa-download me-1"></i>Aggiornamento
+            </a>
+          </li>
+          <?php endif; ?>
           <li class="nav-item">
             <a class="nav-link" href="/magazzino/logout.php">
               <i class="fa-solid fa-right-from-bracket me-1"></i>Logout (<?= htmlspecialchars($_SESSION['username']) ?>)

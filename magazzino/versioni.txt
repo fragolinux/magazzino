@@ -7,3 +7,11 @@
                   \magazzino\includes\header.php
                   \magazzino\info.php
                   \magazzino\versioni.txt
+1.2 04/01/2026  Aggiunto sistema di aggiornamento automatico
+                file modificati/aggiunti: 
+                  \magazzino\update
+                  \magazzino\update\index.php
+                  \magazzino\includes\header.php
+                  \magazzino\LICENSE.txt
+                  \magazzino\versioni.txt
+                aggiunta la tabella setting nel DB  

@@ -1,5 +1,5 @@
 Magazzino Componenti – Software di gestione magazzino di componenti elettronici
-Copyright (C) 2025 Gabriele Riva (RG4Tech Youtube Channel)
+Copyright (C) 2026 Gabriele Riva (RG4Tech Youtube Channel)
 
 Questo programma è software libero: puoi redistribuirlo e/o modificarlo
 secondo i termini della GNU General Public License come pubblicata
