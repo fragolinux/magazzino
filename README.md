@@ -111,7 +111,7 @@ MAGAZZINO_TAG=v1.1 docker compose up -d
 
 - Per prestazioni migliori, tieni il repo dentro il filesystem WSL e lancia `docker compose` da WSL.
 - Assicurati che Docker Desktop abbia l'integrazione WSL attiva.
-- Se usi WSL su Windows e vuoi accedere dall'esterno (LAN), serve esporre la porta 80 con un portproxy di Windows.
+- Se usi WSL su Windows e vuoi accedere dall'esterno (LAN), serve esporre la porta 80 con un portproxy di Windows (punta all'IP WSL, che può cambiare dopo reboot).
   Apri PowerShell come amministratore (tasto destro sul menu Start → Terminale (Amministratore)) e lancia:
 ```powershell
 Set-Location "\\wsl.localhost\<Distro>\home\<utente>\magazzino"
