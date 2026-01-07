@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-21 08:47:13 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2025-10-21 15:30:25
+ * @Last Modified time: 2026-01-07 15:25:32
 */
 
 require_once '../includes/db_connect.php';
@@ -64,10 +64,20 @@ $is_pdf = $datasheet_url && preg_match('/\.pdf(\?|$)/i', $datasheet_url);
         <?= field('Note', $notes) ?>
         <?php if ($datasheet_url): ?>
             <tr>
-                <th>Datasheet</th>
+                <th>Datasheet URL</th>
                 <td>
                     <a href="<?= htmlspecialchars($datasheet_url) ?>" target="_blank" class="btn btn-sm btn-outline-primary mb-2">
                         <i class="fa-solid fa-file-pdf me-1"></i> Visualizza datasheet
+                    </a>
+                </td>
+            </tr>
+        <?php endif; ?>
+        <?php if (!empty($component['datasheet_file'])): ?>
+            <tr>
+                <th>Datasheet</th>
+                <td>
+                    <a href="/magazzino/datasheet/<?= htmlspecialchars($component['datasheet_file']) ?>" target="_blank" class="btn btn-sm btn-outline-success mb-2">
+                        <i class="fa-solid fa-file-pdf me-1"></i> Visualizza PDF
                     </a>
                 </td>
             </tr>

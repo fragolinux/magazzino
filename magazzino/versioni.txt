@@ -1,6 +1,5 @@
 1.0 20/10/2025  rilascio iniziale
 1.1 03/01/2026  Aggiunta funzionalità carico/scarico quantità componente e file info con le versioni
-                file modificati/aggiunti: 
                   \magazzino\warehouse\components.php
                   \magazzino\warehouse\get_components.php
                   \magazzino\warehouse\update_component_quantity.php
@@ -8,10 +7,32 @@
                   \magazzino\info.php
                   \magazzino\versioni.txt
 1.2 04/01/2026  Aggiunto sistema di aggiornamento automatico
-                file modificati/aggiunti: 
                   \magazzino\update
                   \magazzino\update\index.php
                   \magazzino\includes\header.php
                   \magazzino\LICENSE.txt
                   \magazzino\versioni.txt
-                aggiunta la tabella setting nel DB  
+                aggiunta la tabella setting nel DB
+1.3 07/01/2026  Aggiunta ricerca tramite equivalente del codice prodotto
+                Aggiunta pagina setting
+                Aggiunta gestione QR Code
+                Aggiunto flag "Ricordami" in login
+                Corretto bug eliminazione Posizione
+                Aggiunto caricamento files pdf associalo al componente
+                  \magazzino\warehouse\components.php
+                  \magazzino\warehouse\add_component.php
+                  \magazzino\warehouse\edit_component.php
+                  \magazzino\warehouse\get_compartments.php
+                  \magazzino\warehouse\view_component.php
+                  \magazzino\warehouse\mobile_component.php
+                  \magazzino\warehouse\qrcodes.php
+                  \magazzino\warehouse\generate_qrcodes.php
+                  \magazzino\warehouse\delete_location.php
+                  \magazzino\includes\auth_check.php
+                  \magazzino\includes\header.php
+                  \magazzino\info.php
+                  \magazzino\settings.php
+                  \magazzino\.htaccess
+                  \magazzino\logout.php
+                  \magazzino\login.php
+                  \datasheet\

@@ -86,7 +86,7 @@ $versioni = file_get_contents('versioni.txt');
                         <h5 class="border-bottom pb-2 mb-3">
                             <i class="fa-solid fa-history me-2 text-primary"></i>Cronologia Versioni
                         </h5>
-                        <div class="bg-light p-4 rounded border" style="max-height: 300px; overflow-y: auto;">
+                        <div class="bg-light p-4 rounded border" style="max-height: 520px; overflow-y: auto;">
                             <pre style="white-space: pre-wrap; word-wrap: break-word; font-size: 0.9rem;"><?= htmlspecialchars($versioni) ?></pre>
                         </div>
                     </div>

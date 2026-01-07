@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:52:20 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2025-10-23 16:20:59
+ * @Last Modified time: 2026-01-07 15:12:31
 */
 
 require_once '../includes/db_connect.php';
@@ -51,14 +51,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['codice_prodotto']) &&
     $equivalents     = isset($_POST['equivalents']) && trim($_POST['equivalents']) !== '' ? json_encode(array_filter(array_map('trim', explode(',', $_POST['equivalents'])))) : null;
     $notes           = trim($_POST['notes'] ?? '');
 
+    $datasheet_file = null;
+    // Gestione upload file datasheet
+    if (isset($_FILES['datasheet_file']) && $_FILES['datasheet_file']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['datasheet_file'];
+        $maxSize = 10 * 1024 * 1024; // 10MB max
+        $allowedTypes = ['application/pdf'];
+        
+        if ($file['size'] > $maxSize) {
+            $error = "File datasheet troppo grande (max 10MB).";
+        } elseif (!in_array($file['type'], $allowedTypes)) {
+            $error = "Solo file PDF sono consentiti per il datasheet.";
+        }
+        // Se validazione OK, memorizziamo il file temporaneamente per elaborarlo dopo l'INSERT
+    }
+
     if ($codice_prodotto === '') {
         $error = "Il campo codice prodotto è obbligatorio.";
-    } else {
+    } else if (empty($error)) {
         $stmt = $pdo->prepare("INSERT INTO components 
-            (codice_prodotto, category_id, costruttore, fornitore, codice_fornitore, quantity, location_id, compartment_id, datasheet_url, equivalents, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$codice_prodotto, $category_id, $costruttore, $fornitore, $codice_fornitore, $quantity, $location_id, $compartment_id, $datasheet_url, $equivalents, $notes]);
-        $success = "Componente aggiunto con successo.";
+            (codice_prodotto, category_id, costruttore, fornitore, codice_fornitore, quantity, location_id, compartment_id, datasheet_url, datasheet_file, equivalents, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$codice_prodotto, $category_id, $costruttore, $fornitore, $codice_fornitore, $quantity, $location_id, $compartment_id, $datasheet_url, null, $equivalents, $notes]);
+        
+        // Recupera l'ID del componente appena inserito
+        $component_id = $pdo->lastInsertId();
+        
+        // Ora elabora il file datasheet se presente e non ci sono errori
+        if (isset($_FILES['datasheet_file']) && $_FILES['datasheet_file']['error'] === UPLOAD_ERR_OK && empty($error)) {
+            $file = $_FILES['datasheet_file'];
+            $datasheet_dir = realpath(__DIR__ . '/..') . '/datasheet';
+            if (!is_dir($datasheet_dir)) {
+                @mkdir($datasheet_dir, 0755, true);
+            }
+            
+            // Nome file: id.pdf
+            $datasheet_file = $component_id . '.pdf';
+            $file_path = $datasheet_dir . DIRECTORY_SEPARATOR . $datasheet_file;
+            
+            if (@move_uploaded_file($file['tmp_name'], $file_path)) {
+                // Aggiorna il record con il nome del file
+                $upd = $pdo->prepare("UPDATE components SET datasheet_file = ? WHERE id = ?");
+                $upd->execute([$datasheet_file, $component_id]);
+            } else {
+                $error = "Impossibile salvare il file datasheet.";
+            }
+        }
+        
+        if (empty($error)) {
+            $success = "Componente aggiunto con successo.";
+        }
 
         $lastComponents = $pdo->query("
             SELECT c.id, c.codice_prodotto, c.quantity, cat.name AS category_name, l.name AS location_name, cmp.code AS compartment_code
@@ -94,7 +136,7 @@ include '../includes/header.php';
     </script>
   <?php endif; ?>
 
-  <form method="post" class="card shadow-sm p-3">
+  <form method="post" class="card shadow-sm p-3" enctype="multipart/form-data">
     <div class="row g-2 align-items-end">
       <div class="col-md-4">
         <label class="form-label mb-1">Posizione</label>
@@ -163,8 +205,14 @@ include '../includes/header.php';
       </div>
 
       <div class="col-md-8">
-        <label class="form-label mb-1">Link datasheet</label>
+        <label class="form-label mb-1">Link datasheet Web</label>
         <input type="url" name="datasheet_url" class="form-control form-control-sm" value="<?= htmlspecialchars($_POST['datasheet_url'] ?? '') ?>">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label mb-1">Datasheet PDF</label>
+        <input type="file" name="datasheet_file" class="form-control form-control-sm" accept=".pdf">
+        <small class="text-muted">Max 10MB</small>
       </div>
 
       <div class="col-12">

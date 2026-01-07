@@ -28,12 +28,13 @@ cd magazzino
 ./scripts/start.sh
 ```
 
-Apri `http://localhost:8080` e accedi con `RG4Tech / 12345678`.
+Apri `http://localhost` e accedi con `RG4Tech / 12345678`.
 Per cambiare password o altre impostazioni avanzate, leggi il resto del README.
 
 ## Prerequisiti
 
 - Docker + Docker Compose (Windows, Linux o WSL)
+- Porta 80 libera sul host (usata da Nginx; necessaria per i QR code senza porta)
 
 ## Struttura
 
@@ -63,7 +64,7 @@ Linux/WSL (bash):
 ./scripts/start.sh
 ```
 
-App disponibile su `http://localhost:8080`.
+App disponibile su `http://localhost`.
 
 Login di default:
 - Username: `RG4Tech`
@@ -110,6 +111,17 @@ MAGAZZINO_TAG=v1.1 docker compose up -d
 
 - Per prestazioni migliori, tieni il repo dentro il filesystem WSL e lancia `docker compose` da WSL.
 - Assicurati che Docker Desktop abbia l'integrazione WSL attiva.
+- Se usi WSL su Windows e vuoi accedere dall'esterno (LAN), serve esporre la porta 80 con un portproxy di Windows.
+  Apri PowerShell come amministratore (tasto destro sul menu Start → Terminale (Amministratore)) e lancia:
+```powershell
+Set-Location "\\wsl.localhost\<Distro>\home\<utente>\magazzino"
+powershell -ExecutionPolicy Bypass -File .\scripts\win-expose-80.ps1
+```
+  Sostituisci `<Distro>` con il nome della tua distribuzione WSL (es. `Ubuntu-24.04`) e `<utente>` con il tuo username in WSL.
+  Se non sai il nome della distribuzione, puoi scoprirlo da PowerShell con `wsl -l -v`.
+  Questa procedura vale per WSL su Windows.
+  Se usi una distro Linux non-WSL, apri la porta 80 nel firewall del sistema (es. `ufw`, `firewalld`) se necessario.
+  Se usi Docker Desktop su Windows, la porta 80 viene pubblicata direttamente sull'host, ma potresti comunque dover aprire il firewall di Windows per l'accesso dalla LAN.
 
 ## Inizializzazione database
 

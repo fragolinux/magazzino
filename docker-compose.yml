@@ -2,7 +2,7 @@ services:
   nginx:
     image: ghcr.io/fragolinux/magazzino-nginx:${MAGAZZINO_TAG:-latest}
     ports:
-      - "8080:80"
+      - "80:80"
     depends_on:
       - php
 

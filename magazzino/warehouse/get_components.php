@@ -39,8 +39,9 @@ if ($category_id) {
     $params[] = $category_id;
 }
 if ($search_code !== '') {
-    $query .= " AND c.codice_prodotto LIKE ?";
+    $query .= " AND (LOWER(c.codice_prodotto) LIKE ? OR JSON_CONTAINS(LOWER(c.equivalents), JSON_QUOTE(?)))";
     $params[] = "%$search_code%";
+    $params[] = strtolower($search_code);
 }
 
 $query .= " ORDER BY c.id ASC LIMIT 500";

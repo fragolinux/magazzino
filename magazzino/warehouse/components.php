@@ -3,9 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:50:58 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-03 09:59:11
+ * @Last Modified time: 2026-01-07 15:23:22
 */
 // 2026-01-03: Aggiunta funzionalità carico/scarico quantità componente
+// 2026-01-05: Aggiunta ricerca tramite equivalente del codice prodotto
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';

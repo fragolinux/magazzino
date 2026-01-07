@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:48:46 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-04 13:24:02
+ * @Last Modified time: 2026-01-07 12:53:07
 */
 // 2026-01-03: Aggiunto link Info nel menu di navigazione
 // 2026-01-04: Aggiunto link per installazione degli aggiornamenti
@@ -75,6 +75,12 @@
                   <i class="fa-solid fa-retweet me-2 text-secondary"></i>Scambia componenti
                 </a>
               </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item" href="/magazzino/warehouse/qrcodes.php">
+                  <i class="fa-solid fa-qrcode me-2 text-secondary"></i>QR Code
+                </a>
+              </li>
             </ul>
           </li>
           <?php endif; ?>
@@ -89,6 +95,11 @@
             </a>
           </li>
           <?php if (!empty($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+          <li class="nav-item">
+            <a class="nav-link" href="/magazzino/settings.php">
+              <i class="fa-solid fa-gears me-1"></i>Settaggi
+            </a>
+          </li>
           <li class="nav-item">
             <a class="nav-link" href="/magazzino/update/index.php">
               <i class="fa-solid fa-download me-1"></i>Aggiornamento

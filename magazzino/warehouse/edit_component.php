@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:53:16 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2025-10-23 15:12:40
+ * @Last Modified time: 2026-01-07 15:16:19
 */
 
 
@@ -54,14 +54,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $datasheet_url = trim($_POST['datasheet_url']);
   $equivalents = isset($_POST['equivalents']) ? json_encode(array_filter(array_map('trim', explode(',', $_POST['equivalents'])))) : null;
   $notes = trim($_POST['notes']);
+  
+  $datasheet_file = $component['datasheet_file'];
+  
+  // Gestione upload nuovo file datasheet
+  if (isset($_FILES['datasheet_file']) && $_FILES['datasheet_file']['error'] === UPLOAD_ERR_OK) {
+    $file = $_FILES['datasheet_file'];
+    $maxSize = 10 * 1024 * 1024; // 10MB max
+    $allowedTypes = ['application/pdf'];
+    
+    if ($file['size'] > $maxSize) {
+      $error = "File datasheet troppo grande (max 10MB).";
+    } elseif (!in_array($file['type'], $allowedTypes)) {
+      $error = "Solo file PDF sono consentiti per il datasheet.";
+    } else {
+      $datasheet_dir = realpath(__DIR__ . '/..') . '/datasheet';
+      if (!is_dir($datasheet_dir)) {
+        @mkdir($datasheet_dir, 0755, true);
+      }
+      
+      // Elimina il vecchio file se esiste
+      if ($datasheet_file) {
+        $old_file_path = $datasheet_dir . DIRECTORY_SEPARATOR . $datasheet_file;
+        if (file_exists($old_file_path)) {
+          @unlink($old_file_path);
+        }
+      }
+      
+      // Nome file: id.pdf
+      $datasheet_file = $id . '.pdf';
+      $file_path = $datasheet_dir . DIRECTORY_SEPARATOR . $datasheet_file;
+      
+      if (!@move_uploaded_file($file['tmp_name'], $file_path)) {
+        $error = "Impossibile salvare il file datasheet.";
+        $datasheet_file = $component['datasheet_file'];
+      }
+    }
+  }
 
   if ($codice_prodotto === '') {
     $error = "Il campo codice prodotto è obbligatorio.";
-  } else {
+  } else if (empty($error)) {
     $stmt = $pdo->prepare("UPDATE components SET 
-            codice_prodotto=?, category_id=?, costruttore=?, fornitore=?, codice_fornitore=?, quantity=?, location_id=?, compartment_id=?, datasheet_url=?, equivalents=?, notes=?
+            codice_prodotto=?, category_id=?, costruttore=?, fornitore=?, codice_fornitore=?, quantity=?, location_id=?, compartment_id=?, datasheet_url=?, datasheet_file=?, equivalents=?, notes=?
             WHERE id=?");
-    $stmt->execute([$codice_prodotto, $category_id, $costruttore, $fornitore, $codice_fornitore, $quantity, $location_id, $compartment_id, $datasheet_url, $equivalents, $notes, $id]);
+    $stmt->execute([$codice_prodotto, $category_id, $costruttore, $fornitore, $codice_fornitore, $quantity, $location_id, $compartment_id, $datasheet_url, $datasheet_file, $equivalents, $notes, $id]);
     // Messaggio di conferma e redirect per evitare reinvio del form
     $_SESSION['success'] = "Componente aggiornato con successo.";
     header("Location: " . $_SERVER['REQUEST_URI']); // Ricarica la stessa pagina
@@ -86,7 +123,7 @@ if (isset($_SESSION['success'])) {
     <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
   <?php endif; ?>
 
-  <form method="post" class="card shadow-sm p-4">
+  <form method="post" class="card shadow-sm p-4" enctype="multipart/form-data">
     <div class="row">
       <div class="col-md-6 mb-3">
         <label class="form-label">Codice prodotto *</label>
@@ -152,6 +189,19 @@ if (isset($_SESSION['success'])) {
     <div class="mb-3">
       <label class="form-label">Link datasheet</label>
       <input type="url" name="datasheet_url" class="form-control" value="<?= htmlspecialchars($component['datasheet_url']) ?>">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Datasheet PDF</label>
+      <?php if ($component['datasheet_file']): ?>
+        <div class="mb-2">
+          <a href="/magazzino/datasheet/<?= htmlspecialchars($component['datasheet_file']) ?>" target="_blank" class="btn btn-sm btn-info">
+            <i class="fa-solid fa-file-pdf me-1"></i>Visualizza PDF attuale
+          </a>
+        </div>
+      <?php endif; ?>
+      <input type="file" name="datasheet_file" class="form-control" accept=".pdf">
+      <small class="text-muted">Carica un nuovo PDF per sostituire quello attuale (Max 10MB)</small>
     </div>
 
     <div class="mb-3">
