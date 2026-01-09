@@ -3,6 +3,11 @@ backup/*
 !backup/.gitkeep
 data/*
 !data/.gitkeep
+!data/uploads/.gitkeep
+!data/uploads/datasheet/.gitkeep
+!data/uploads/images/.gitkeep
+!data/uploads/images/components/.gitkeep
+!data/uploads/images/components/thumbs/.gitkeep
 
 # Local overrides
 .DS_Store

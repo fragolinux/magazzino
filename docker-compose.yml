@@ -3,6 +3,9 @@ services:
     image: ghcr.io/fragolinux/magazzino-nginx:${MAGAZZINO_TAG:-latest}
     ports:
       - "80:80"
+    volumes:
+      - ./data/uploads/datasheet:/var/www/html/datasheet
+      - ./data/uploads/images:/var/www/html/images
     depends_on:
       - php
 
@@ -15,6 +18,8 @@ services:
       DB_PASS: ${DB_PASS}
     volumes:
       - ./overrides/db_connect.php:/var/www/html/includes/db_connect.php:ro
+      - ./data/uploads/datasheet:/var/www/html/datasheet
+      - ./data/uploads/images:/var/www/html/images
     depends_on:
       - db
 

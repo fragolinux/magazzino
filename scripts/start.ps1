@@ -8,4 +8,5 @@ if (-not (Test-Path $envFile)) {
     Copy-Item $envExample $envFile
 }
 
+docker compose --project-directory $root pull
 docker compose --project-directory $root up -d

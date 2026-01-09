@@ -63,6 +63,8 @@ Linux/WSL (bash):
 ```bash
 ./scripts/start.sh
 ```
+Nota: `start.sh` esegue un `docker compose pull` prima dell'avvio per aggiornare le immagini.
+Su Windows, `start.ps1` fa lo stesso.
 
 App disponibile su `http://localhost`.
 
@@ -181,6 +183,7 @@ Tutti i dati persistenti stanno in `data/`:
 - `data/db/` file MariaDB
 - `data/nginx-logs/` log Nginx
 - `data/php-logs/` log PHP-FPM
+- `data/uploads/` datasheet PDF e immagini componenti (persistenti e condivisi tra Nginx/PHP)
 
 Backup = copia `data/` + `.env` + `magazzino_db.sql` oppure usa gli script sotto.
 

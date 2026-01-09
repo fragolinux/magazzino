@@ -7,4 +7,5 @@ if [[ ! -f "$root/.env" ]]; then
   cp "$root/.env.example" "$root/.env"
 fi
 
+docker compose --project-directory "$root" pull
 docker compose --project-directory "$root" up -d
