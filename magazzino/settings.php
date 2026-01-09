@@ -3,8 +3,9 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-05 09:20:18 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-05 09:25:50
+ * @Last Modified time: 2026-01-08 09:25:50
 */
+// 2026-01-08: Aggiunto supporto tema dark/light
 
 /**
  * Pagina impostazioni generali (solo admin)
@@ -68,11 +69,18 @@ $detectedIp = detectLocalIP();
 
 // Leggi valore corrente dal DB
 $currentIp = '';
+$currentTheme = 'light';
 try {
     $stmt = $pdo->prepare("SELECT setting_value FROM setting WHERE setting_name = ? LIMIT 1");
     $stmt->execute(['IP_Computer']);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($row) $currentIp = $row['setting_value'];
+    
+    // Leggi anche il tema
+    $stmt2 = $pdo->prepare("SELECT setting_value FROM setting WHERE setting_name = ? LIMIT 1");
+    $stmt2->execute(['app_theme']);
+    $row2 = $stmt2->fetch(PDO::FETCH_ASSOC);
+    if ($row2) $currentTheme = $row2['setting_value'];
 } catch (Exception $e) {
     // se la tabella non esiste o errore, lasciamo vuoto
     $currentIp = '';
@@ -80,13 +88,18 @@ try {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $ip = isset($_POST['ip_address']) ? trim($_POST['ip_address']) : '';
+    $theme = isset($_POST['app_theme']) ? trim($_POST['app_theme']) : 'light';
+    
     if ($ip === '') {
         $error = 'Indirizzo IP non può essere vuoto.';
     } elseif (!filter_var($ip, FILTER_VALIDATE_IP)) {
         $error = 'Indirizzo IP non valido.';
+    } elseif (!in_array($theme, ['light', 'dark'])) {
+        $error = 'Tema non valido.';
     } else {
         // inserisci o aggiorna
         try {
+            // Salva IP
             $stmt = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
             $stmt->execute(['IP_Computer']);
             $exists = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -97,8 +110,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $ins = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
                 $ins->execute(['IP_Computer', $ip]);
             }
-            $message = 'Impostazione salvata.';
+            
+            // Salva Tema
+            $stmtT = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
+            $stmtT->execute(['app_theme']);
+            $existsT = $stmtT->fetch(PDO::FETCH_ASSOC);
+            if ($existsT) {
+                $updT = $pdo->prepare("UPDATE setting SET setting_value = ? WHERE setting_name = ?");
+                $updT->execute([$theme, 'app_theme']);
+            } else {
+                $insT = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
+                $insT->execute(['app_theme', $theme]);
+            }
+            
+            $message = 'Impostazioni salvate.';
             $currentIp = $ip;
+            $currentTheme = $theme;
         } catch (Exception $e) {
             $error = 'Errore salvataggio: ' . $e->getMessage();
         }
@@ -118,10 +145,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <form method="post" class="mt-3" style="max-width:600px;">
         <div class="mb-3">
-            <label for="ip_address" class="form-label">IP del computer dove gira Xampp</label>
+            <label for="ip_address" class="form-label">IP del computer dove gira l'applicativo</label>
             <input type="text" id="ip_address" name="ip_address" class="form-control" value="<?= htmlspecialchars($currentIp ?: $detectedIp) ?>">
             <div class="form-text">Valore suggerito: <?= htmlspecialchars($detectedIp) ?></div>
         </div>
+        
+        <hr class="my-4">
+        
+        <div class="mb-3">
+            <label for="app_theme" class="form-label">Tema dell'applicazione</label>
+            <select id="app_theme" name="app_theme" class="form-select">
+                <option value="light" <?= $currentTheme === 'light' ? 'selected' : '' ?>>Chiaro</option>
+                <option value="dark" <?= $currentTheme === 'dark' ? 'selected' : '' ?>>Scuro</option>
+            </select>
+            <div class="form-text">Scegli il tema preferito per l'interfaccia</div>
+        </div>
+        
         <button class="btn btn-primary">Salva</button>
         <a href="/magazzino/index.php" class="btn btn-secondary ms-2">Annulla</a>
     </form>

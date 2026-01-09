@@ -3,9 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:53:16 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-07 15:16:19
+ * @Last Modified time: 2026-01-09 15:16:19
 */
-
+// 2026-01-08: Aggiunta quantità minima
+// 2026-01-09: Aggiunta gestione immagine componente
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -49,6 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $fornitore = trim($_POST['fornitore']);
   $codice_fornitore = trim($_POST['codice_fornitore']);
   $quantity = intval($_POST['quantity']);
+  $quantity_min = intval($_POST['quantity_min']);
+  $quantity_min = intval($_POST['quantity_min']) > 0 ? intval($_POST['quantity_min']) : null;
   $location_id = $_POST['location_id'] ?: null;
   $compartment_id = $_POST['compartment_id'] ?: null;
   $datasheet_url = trim($_POST['datasheet_url']);
@@ -96,9 +99,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $error = "Il campo codice prodotto è obbligatorio.";
   } else if (empty($error)) {
     $stmt = $pdo->prepare("UPDATE components SET 
-            codice_prodotto=?, category_id=?, costruttore=?, fornitore=?, codice_fornitore=?, quantity=?, location_id=?, compartment_id=?, datasheet_url=?, datasheet_file=?, equivalents=?, notes=?
+            codice_prodotto=?, category_id=?, costruttore=?, fornitore=?, codice_fornitore=?, quantity=?, quantity_min=?, location_id=?, compartment_id=?, datasheet_url=?, datasheet_file=?, equivalents=?, notes=?
             WHERE id=?");
-    $stmt->execute([$codice_prodotto, $category_id, $costruttore, $fornitore, $codice_fornitore, $quantity, $location_id, $compartment_id, $datasheet_url, $datasheet_file, $equivalents, $notes, $id]);
+    $stmt->execute([$codice_prodotto, $category_id, $costruttore, $fornitore, $codice_fornitore, $quantity, $quantity_min, $location_id, $compartment_id, $datasheet_url, $datasheet_file, $equivalents, $notes, $id]);
     // Messaggio di conferma e redirect per evitare reinvio del form
     $_SESSION['success'] = "Componente aggiornato con successo.";
     header("Location: " . $_SERVER['REQUEST_URI']); // Ricarica la stessa pagina
@@ -159,9 +162,13 @@ if (isset($_SESSION['success'])) {
         <label class="form-label">Codice fornitore</label>
         <input type="text" name="codice_fornitore" class="form-control" value="<?= htmlspecialchars($component['codice_fornitore']) ?>">
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-3 mb-3">
         <label class="form-label">Quantità</label>
         <input type="number" name="quantity" class="form-control" value="<?= $component['quantity'] ?>">
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Q.tà minima</label>
+        <input type="number" name="quantity_min" class="form-control" value="<?= $component['quantity_min'] ?>">
       </div>
     </div>
 
@@ -205,6 +212,31 @@ if (isset($_SESSION['success'])) {
     </div>
 
     <div class="mb-3">
+      <label class="form-label">Immagine componente</label>
+      <?php 
+      $imagePath = '../images/components/' . $id . '.jpg';
+      $thumbPath = '../images/components/thumbs/' . $id . '.jpg';
+      $hasImage = file_exists($imagePath);
+      ?>
+      <?php if ($hasImage): ?>
+        <div class="mb-2" id="current-image-container">
+          <img src="<?= '/magazzino/images/components/thumbs/' . $id . '.jpg?' . time() ?>" alt="Immagine componente" style="max-width: 100px; border: 1px solid #ddd; border-radius: 4px;">
+          <button type="button" id="delete-current-image" class="btn btn-sm btn-outline-danger ms-2" title="Elimina immagine">
+            <i class="fa-solid fa-trash"></i> Elimina
+          </button>
+        </div>
+      <?php endif; ?>
+      <input type="file" id="component_image" class="form-control" accept="image/jpeg,image/jpg,image/gif,image/bmp,image/webp">
+      <small class="text-muted">JPG, GIF, BMP, WebP - verrà ridimensionata a 500x500px</small>
+      <div id="image-preview-container" style="display:none; margin-top: 10px;">
+        <img id="image-preview" src="" alt="Preview" style="max-width: 100px; border: 1px solid #ddd; border-radius: 4px;">
+        <button type="button" id="remove-image" class="btn btn-sm btn-outline-danger ms-2" title="Rimuovi">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="mb-3">
       <label class="form-label">Componenti equivalenti (separati da virgola)</label>
       <input type="text" name="equivalents" id="equivalents" class="form-control" placeholder="Es: UA78M05, LM340T5" value="<?= $component['equivalents'] ? implode(', ', json_decode($component['equivalents'], true)) : '' ?>">
       <small class="text-muted">Separare i componenti equivalenti con una virgola.</small>
@@ -226,6 +258,131 @@ if (isset($_SESSION['success'])) {
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
   $(document).ready(function() {
+    // Variabili per memorizzare le immagini ridimensionate
+    let resizedImageData = null;
+    let resizedThumbData = null;
+    let deleteCurrentImage = false;
+
+    // Gestione eliminazione immagine esistente
+    $('#delete-current-image').on('click', function() {
+      if (!confirm('Sei sicuro di voler eliminare l\'immagine?')) return;
+      
+      $.ajax({
+        url: 'delete_component_image.php',
+        method: 'POST',
+        data: { component_id: <?= $id ?> },
+        success: function() {
+          $('#current-image-container').fadeOut();
+          alert('Immagine eliminata con successo.');
+        },
+        error: function() {
+          alert('Errore durante l\'eliminazione dell\'immagine.');
+        }
+      });
+    });
+
+    // Gestione upload e ridimensionamento nuova immagine
+    $('#component_image').on('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/gif', 'image/bmp', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        alert('Formato non valido. Usa JPG, GIF, BMP o WebP.');
+        $(this).val('');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          // Ridimensiona a 500x500
+          const canvas500 = document.createElement('canvas');
+          canvas500.width = 500;
+          canvas500.height = 500;
+          const ctx500 = canvas500.getContext('2d');
+          
+          let sourceX = 0, sourceY = 0, sourceSize = Math.min(img.width, img.height);
+          if (img.width > img.height) {
+            sourceX = (img.width - img.height) / 2;
+          } else {
+            sourceY = (img.height - img.width) / 2;
+          }
+          
+          ctx500.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 500, 500);
+          resizedImageData = canvas500.toDataURL('image/jpeg', 0.9);
+          
+          // Ridimensiona a 80x80 per thumbnail
+          const canvas80 = document.createElement('canvas');
+          canvas80.width = 80;
+          canvas80.height = 80;
+          const ctx80 = canvas80.getContext('2d');
+          ctx80.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 80, 80);
+          resizedThumbData = canvas80.toDataURL('image/jpeg', 0.85);
+          
+          // Mostra anteprima
+          $('#image-preview').attr('src', resizedThumbData);
+          $('#image-preview-container').show();
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Rimuovi nuova immagine
+    $('#remove-image').on('click', function() {
+      $('#component_image').val('');
+      $('#image-preview-container').hide();
+      resizedImageData = null;
+      resizedThumbData = null;
+    });
+
+    // Intercetta submit per caricare immagine se presente
+    $('form').on('submit', function(e) {
+      if (!resizedImageData || !resizedThumbData) {
+        return true; // Procedi normalmente
+      }
+      
+      e.preventDefault();
+      const $submitBtn = $(this).find('button[type="submit"]');
+      $submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Salvataggio...');
+      
+      // Prima salva il form
+      const formData = new FormData(this);
+      
+      $.ajax({
+        url: '',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function() {
+          // Poi carica l'immagine
+          $.ajax({
+            url: 'upload_component_image.php',
+            method: 'POST',
+            data: {
+              component_id: <?= $id ?>,
+              image_data: resizedImageData,
+              thumb_data: resizedThumbData
+            },
+            success: function() {
+              window.location.reload();
+            },
+            error: function() {
+              alert('Componente aggiornato ma errore nel caricamento immagine.');
+              window.location.reload();
+            }
+          });
+        },
+        error: function() {
+          $submitBtn.prop('disabled', false).html('<i class="fa-solid fa-save"></i> Salva modifiche');
+          alert('Errore durante il salvataggio.');
+        }
+      });
+    });
+
     let currentCompartment = <?= $component['compartment_id'] ?: 'null' ?>;
     let compartmentSelect = $('select[name="compartment_id"]');
 

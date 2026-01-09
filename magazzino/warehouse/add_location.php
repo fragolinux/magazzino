@@ -3,11 +3,15 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-21 09:15:47 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2025-10-23 14:06:39
+ * @Last Modified time: 2026-01-08 14:06:39
 */
+// 2026-01-08: Aggiunto assegnazione di una posizione a un locale
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
+
+// Recupero locali per il select
+$locali = $pdo->query("SELECT id, name FROM locali ORDER BY name ASC")->fetchAll();
 
 $error = '';
 $success = '';
@@ -16,9 +20,12 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $description = trim($_POST['description'] ?? '');
+    $locale_id = isset($_POST['locale_id']) && is_numeric($_POST['locale_id']) && $_POST['locale_id'] !== '' ? intval($_POST['locale_id']) : null;
 
     if ($name === '') {
         $error = "Il nome della posizione è obbligatorio.";
+    } elseif ($locale_id === null) {
+        $error = "Il locale è obbligatorio.";
     } else {
         // Controllo duplicati (nome unico)
         $stmt = $pdo->prepare("SELECT id FROM locations WHERE name = ?");
@@ -26,8 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->fetch()) {
             $error = "Esiste già una posizione con questo nome.";
         } else {
-            $stmt = $pdo->prepare("INSERT INTO locations (name, description) VALUES (?, ?)");
-            $stmt->execute([$name, $description]);
+            $stmt = $pdo->prepare("INSERT INTO locations (name, description, locale_id) VALUES (?, ?, ?)");
+            $stmt->execute([$name, $description, $locale_id]);
 
             $_SESSION['success'] = "Posizione \"" . htmlspecialchars($name) . "\" aggiunta con successo.";
             header("Location: locations.php");
@@ -50,6 +57,18 @@ include '../includes/header.php';
     <?php endif; ?>
 
     <form method="post" class="card shadow-sm p-4">
+        <div class="mb-3">
+            <label class="form-label">Locale *</label>
+            <select name="locale_id" class="form-select" required>
+                <option value="">-- Seleziona locale --</option>
+                <?php foreach ($locali as $loc): ?>
+                    <option value="<?= $loc['id'] ?>" <?= (isset($_POST['locale_id']) && $_POST['locale_id'] == $loc['id']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($loc['name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
         <div class="mb-3">
             <label class="form-label">Nome posizione *</label>
             <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($_POST['name'] ?? '') ?>" required autofocus>

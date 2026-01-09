@@ -36,3 +36,48 @@
                   \magazzino\logout.php
                   \magazzino\login.php
                   \datasheet\
+1.4pre 09/01/2026 Aggiornato file per aggiornamenti automatici
+                  \magazzino\update\index.php
+1.4 09/01/2026  Corretto testo nella pagina setting
+                Aggiunta gestione della quantità minima
+                Aggiunto settaggio tema chiaro/scuro
+                Aggiunti quick add per posizioni e categorie (in inserimento componente)
+                Aggiunta possibilità di cancellazione del record nella tabella degli ultimi 
+                  componenti inseriti
+                Aggiunta gestione locali
+                Aggiunto bottone "Elimina filtri" nella pag. ricerca componente
+                Sistemata Dashboard con link sulle Card
+                Aggiunta pagina gerachia magazzino
+                Aggiunte immagini associate al componente
+                Aggiunta pagina per la pulizia dei files orfani
+                  \magazzino\settings.php
+                  \magazzino\warehouse\add_component.php
+                  \magazzino\warehouse\view_component.php
+                  \magazzino\warehouse\edit_component.php
+                  \magazzino\warehouse\get_components.php
+                  \magazzino\warehouse\components.php
+                  \magazzino\warehouse\get_low_stock.php
+                  \magazzino\warehouse\low_stock.php
+                  \magazzino\index.php
+                  \magazzino\settings.php
+                  \magazzino\includes\header.php
+                  \magazzino\warehouse\quick_add_location.php
+                  \magazzino\warehouse\quick_add_category.php
+                  \magazzino\warehouse\get_locations.php
+                  \magazzino\warehouse\get_categories.php
+                  \magazzino\warehouse\locali.php
+                  \magazzino\warehouse\add_locale.php
+                  \magazzino\warehouse\edit_locale.php
+                  \magazzino\warehouse\delete_locale.php
+                  \magazzino\warehouse\locations.php
+                  \magazzino\warehouse\edit_location.php
+                  \magazzino\warehouse\add_location.php
+                  \magazzino\warehouse\hierarchy.php
+                  \magazzino\warehouse\get_compartment_details.php
+                  \magazzino\warehouse\get_location_details.php
+                  \magazzino\warehouse\get_compartments.php
+                  \magazzino\warehouse\delete_component_image.php
+                  \magazzino\warehouse\delete_component.php
+                  \magazzino\warehouse\upload_component_image.php
+                  \magazzino\warehouse\orphan_files.php
+                  \magazzino\images\components\thumbs

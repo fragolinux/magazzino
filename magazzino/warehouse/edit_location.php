@@ -3,8 +3,9 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:27:12 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2025-10-23 13:56:21
+ * @Last Modified time: 2026-01-08 13:56:21
 */
+// 2026-01-08: Aggiunto assegnazione di una posizione a un locale
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php'; // Verifica login
@@ -27,17 +28,25 @@ if (!$location) {
     exit;
 }
 
+// Recupero locali per il select
+$locali = $pdo->query("SELECT id, name FROM locali ORDER BY name ASC")->fetchAll();
+
 // Aggiornamento dati
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_location'])) {
     $name = trim($_POST['name']);
     $type = $_POST['type'];
     $description = trim($_POST['description']);
+    $locale_id = isset($_POST['locale_id']) && is_numeric($_POST['locale_id']) && $_POST['locale_id'] !== '' ? intval($_POST['locale_id']) : null;
 
     if ($name !== '') {
-        $stmt = $pdo->prepare("UPDATE locations SET name = ?, type = ?, description = ? WHERE id = ?");
-        $stmt->execute([$name, $type, $description, $id]);
-        header("Location: locations.php?updated=1");
-        exit;
+        if ($locale_id === null) {
+            $error = "Il locale è obbligatorio.";
+        } else {
+            $stmt = $pdo->prepare("UPDATE locations SET name = ?, type = ?, description = ?, locale_id = ? WHERE id = ?");
+            $stmt->execute([$name, $type, $description, $locale_id, $id]);
+            header("Location: locations.php?updated=1");
+            exit;
+        }
     } else {
         $error = "Il nome della posizione è obbligatorio.";
     }
@@ -62,6 +71,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_location'])) {
     <?php endif; ?>
 
     <form method="post" class="card shadow-sm p-4">
+        <div class="mb-3">
+            <label class="form-label">Locale *</label>
+            <select name="locale_id" class="form-select" required>
+                <option value="">-- Seleziona locale --</option>
+                <?php foreach ($locali as $loc): ?>
+                    <option value="<?= $loc['id'] ?>" <?= ($location['locale_id'] == $loc['id']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($loc['name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        </div>
+
         <div class="mb-3">
             <label class="form-label">Nome posizione *</label>
             <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($location['name']) ?>" required>

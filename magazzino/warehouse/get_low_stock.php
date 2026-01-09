@@ -1,41 +1,32 @@
 <?php
 /*
  * @Author: gabriele.riva 
- * @Date: 2025-10-20 18:00:51 
+ * @Date: 2026-01-08 18:49:46 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-09 09:59:28
+ * @Last Modified time: 2026-01-08 18:56:34
 */
-// 2026-01-03: Aggiunta funzionalità carico/scarico quantità componente
-// 2026-01-08: Aggiunta quantità minima
-// 2026-01-08: Aggiunto filtro per locale
-// 2026-01-09: Aggiunta gestione immagine componente
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
 
-$locale_id     = isset($_GET['locale_id']) && is_numeric($_GET['locale_id']) ? intval($_GET['locale_id']) : null;
 $location_id   = isset($_GET['location_id']) && is_numeric($_GET['location_id']) ? intval($_GET['location_id']) : null;
 $compartment_id = isset($_GET['compartment_id']) && is_numeric($_GET['compartment_id']) ? intval($_GET['compartment_id']) : null;
 $category_id   = isset($_GET['category_id']) && is_numeric($_GET['category_id']) ? intval($_GET['category_id']) : null;
 $search_code   = isset($_GET['search_code']) ? trim($_GET['search_code']) : '';
 
 $query = "SELECT c.*, 
-                 l.name AS location_name,
-                 loc.name AS locale_name,
+                 l.name AS location_name, 
                  cmp.code AS compartment_code,
                  cat.name AS category_name
           FROM components c
           LEFT JOIN locations l ON c.location_id = l.id
-          LEFT JOIN locali loc ON l.locale_id = loc.id
           LEFT JOIN compartments cmp ON c.compartment_id = cmp.id
           LEFT JOIN categories cat ON c.category_id = cat.id
-          WHERE 1=1";
+          WHERE c.quantity_min IS NOT NULL 
+          AND c.quantity_min != 0 
+          AND c.quantity < c.quantity_min";
 $params = [];
 
-if ($locale_id) {
-    $query .= " AND l.locale_id = ?";
-    $params[] = $locale_id;
-}
 if ($location_id) {
     $query .= " AND c.location_id = ?";
     $params[] = $location_id;
@@ -61,43 +52,24 @@ $components = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $html = '';
 if (!$components) {
-    $html .= '<tr><td colspan="7" class="text-center text-muted">Nessun componente trovato.</td></tr>';
+    $html .= '<tr><td colspan="7" class="text-center text-muted">Nessun componente sotto scorta.</td></tr>';
 } else {
     foreach ($components as $c) {
-        $qty = intval($c['quantity']);
-        $qty_min = $c['quantity_min'];
-        $qty_cell = $qty;
-        
-        // Aggiungi icona rossa se quantità sotto scorta
-        if ($qty_min !== null && $qty_min != 0 && $qty < $qty_min) {
-            $qty_cell .= ' <button class="btn btn-sm btn-danger btn-view" data-id="'.$c['id'].'" title="Sotto scorta - Clicca per dettagli" style="padding: 0.125rem 0.375rem;"><i class="fa-solid fa-exclamation"></i></button>';
-        }
-        
-        // Controlla se esiste l'immagine
-        $thumbPath = realpath(__DIR__ . '/../images/components/thumbs/' . $c['id'] . '.jpg');
-        $hasImage = $thumbPath && file_exists($thumbPath);
-        $imageCell = '';
-        if ($hasImage) {
-            $imageCell = '<img src="/magazzino/images/components/thumbs/'.$c['id'].'.jpg?'.time().'" alt="Thumb" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">';
-        } else {
-            $imageCell = '<span class="text-muted" style="font-size: 0.75rem;">—</span>';
-        }
-        
         $html .= '<tr>
-                    <td class="text-center">'.$imageCell.'</td>
                     <td>'.htmlspecialchars($c['codice_prodotto']).'</td>
                     <td>'.htmlspecialchars($c['category_name'] ?? '-').'</td>
-                    <td>'.$qty_cell.'</td>
+                    <td>'.intval($c['quantity']).'</td>
+                    <td>'.intval($c['quantity_min']).'</td>
                     <td>'.htmlspecialchars($c['location_name'] ?? '-').'</td>
                     <td>'.htmlspecialchars($c['compartment_code'] ?? '-').'</td>
-                    <td class="text-end">
+                    <td class="text-end print-hide">
                         <button class="btn btn-sm btn-outline-info btn-view me-1" data-id="'.$c['id'].'" title="Visualizza dettagli">
                             <i class="fa-solid fa-eye"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-success btn-unload me-1" data-id="'.$c['id'].'" data-product="'.htmlspecialchars($c['codice_prodotto']).'" data-quantity="'.$c['quantity'].'" title="Carico/Scarico">
                             <i class="fa-solid fa-arrows-up-down"></i>
                         </button>
-                        <a href="edit_component.php?id='.$c['id'].'" class="btn btn-sm btn-outline-secondary me-1" title="Modifica" target="_blank">
+                        <a href="edit_component.php?id='.$c['id'].'" class="btn btn-sm btn-outline-secondary me-1" title="Modifica">
                             <i class="fa-solid fa-pen"></i>
                         </a>
                         <button class="btn btn-sm btn-outline-danger" title="Elimina"
