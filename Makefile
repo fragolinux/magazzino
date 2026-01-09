@@ -52,7 +52,7 @@ restore: check-linux
 > ./scripts/restore.sh "$(BACKUP)"
 
 release: check-linux
-> if [ -z "$(TAG)" ]; then \
+> @if [ -z "$(TAG)" ]; then \
 >     echo "Missing TAG. Example: make release TAG=v1.4"; \
 >     exit 1; \
 >   fi

@@ -156,6 +156,19 @@ if (tableExists($pdo, $name, 'locali')) {
     }
 }
 
+if (tableExists($pdo, $name, 'locali') && columnExists($pdo, $name, 'locations', 'locale_id')) {
+    $hasLocaleOne = (int)$pdo->query("SELECT COUNT(*) FROM `locali` WHERE `id` = 1")->fetchColumn() > 0;
+    if ($hasLocaleOne) {
+        $updated = $pdo->exec("UPDATE `locations` SET `locale_id` = 1 WHERE `locale_id` IS NULL");
+        if ($updated > 0) {
+            echo "DB migrated: locations.locale_id set to 1 for NULL rows.\n";
+            $didWork = true;
+        }
+    } else {
+        echo "DB ok: locali id=1 missing; skip locations.locale_id backfill.\n";
+    }
+}
+
 if (!$didWork) {
     echo "DB ok: no migrations needed.\n";
 }
