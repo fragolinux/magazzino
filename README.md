@@ -126,6 +126,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\win-expose-80.ps1
 ## Inizializzazione database
 
 - Al primo avvio (cartella `data/db` vuota), MariaDB importa `magazzino_db.sql`.
+- Ad ogni avvio, il container PHP esegue migrazioni idempotenti per allineare lo schema alle ultime versioni.
 - Nome/utente/password DB vengono creati da `.env`.
 
 Per reimportare da zero (DISTRUGGE i dati):
