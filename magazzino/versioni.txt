@@ -81,4 +81,4 @@
                   \magazzino\warehouse\upload_component_image.php
                   \magazzino\warehouse\orphan_files.php
                   \magazzino\images\components\thumbs
-1v5 09/01/2026  Aggiornamento DB per associare tutte le posizioni al locale di default
+1.5 09/01/2026  Aggiornamento DB per associare tutte le posizioni al locale di default
