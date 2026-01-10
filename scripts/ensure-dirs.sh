@@ -14,7 +14,7 @@ dirs=(
 for dir in "${dirs[@]}"; do
   mkdir -p "$dir"
   gitkeep="$dir/.gitkeep"
-  if [[ ! -f "$gitkeep" ]]; then
+  if [[ ! -f "$gitkeep" && -w "$dir" ]]; then
     : > "$gitkeep"
   fi
 done

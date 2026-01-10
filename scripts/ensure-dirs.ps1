@@ -17,6 +17,10 @@ foreach ($dir in $dirs) {
 
     $gitkeep = Join-Path $dir ".gitkeep"
     if (-not (Test-Path $gitkeep)) {
-        New-Item -ItemType File -Path $gitkeep | Out-Null
+        try {
+            New-Item -ItemType File -Path $gitkeep -ErrorAction Stop | Out-Null
+        } catch {
+            # Directory might be owned by a container (e.g. DB volume); skip silently.
+        }
     }
 }
