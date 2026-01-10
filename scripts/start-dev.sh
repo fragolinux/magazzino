@@ -3,6 +3,8 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+"$root/scripts/ensure-dirs.sh"
+
 if [[ ! -f "$root/.env" ]]; then
   cp "$root/.env.example" "$root/.env"
 fi

@@ -187,6 +187,16 @@ Tutti i dati persistenti stanno in `data/`:
 
 Backup = copia `data/` + `.env` + `magazzino_db.sql` oppure usa gli script sotto.
 
+### Verifica automatica cartelle (volumi)
+
+Gli script di avvio (`scripts/start.*` e `scripts/start-dev.*`) eseguono una verifica preliminare:
+creano le cartelle dei volumi se mancanti e aggiungono un `.gitkeep` per mantenerle tracciate
+anche su installazioni precedenti al commit che le ha introdotte.
+
+Script dedicati (eseguibili anche manualmente):
+- `scripts/ensure-dirs.sh`
+- `scripts/ensure-dirs.ps1`
+
 ## Backup (export DB)
 
 I backup finiscono in `backup/<timestamp>/` e contengono:
