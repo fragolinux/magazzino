@@ -17,6 +17,7 @@ services:
     volumes:
       - ./magazzino:/var/www/html
       - ./overrides/db_connect.php:/var/www/html/includes/db_connect.php:ro
+      - ./overrides/update_index.php:/var/www/html/update/index.php:ro
       - ./data/uploads/datasheet:/var/www/html/datasheet
       - ./data/uploads/images:/var/www/html/images
       - ./data/php-logs:/var/log/php
