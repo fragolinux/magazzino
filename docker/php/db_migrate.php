@@ -20,6 +20,38 @@ try {
     exit(1);
 }
 
+$migrationManagerPath = '/var/www/html/update/migration_manager.php';
+$migrationsDir = '/var/www/html/update/migrations';
+
+if (file_exists($migrationManagerPath) && is_dir($migrationsDir)) {
+    require_once $migrationManagerPath;
+
+    if (class_exists('MigrationManager')) {
+        $manager = new MigrationManager($pdo, $migrationsDir);
+        $result = $manager->runPendingMigrations();
+        $applied = $result['applied'] ?? [];
+        $hasErrors = false;
+
+        foreach ($applied as $migration) {
+            $stats = $migration['stats'] ?? [];
+            if (!empty($stats['errors'])) {
+                $hasErrors = true;
+            }
+        }
+
+        if (!empty($result['message'])) {
+            echo "DB migrations: " . $result['message'] . "\n";
+        }
+
+        if ($hasErrors) {
+            fwrite(STDERR, "DB migration errors detected.\n");
+            exit(1);
+        }
+
+        exit(0);
+    }
+}
+
 $didWork = false;
 
 function tableExists(PDO $pdo, string $dbName, string $table): bool
