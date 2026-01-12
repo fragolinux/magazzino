@@ -3,9 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-05 09:20:18 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-08 09:25:50
+ * @Last Modified time: 2026-01-11 09:25:50
 */
 // 2026-01-08: Aggiunto supporto tema dark/light
+// 2026-01-11: Aggiunto URL in alternativa all'IP del PC
 
 /**
  * Pagina impostazioni generali (solo admin)
@@ -91,9 +92,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $theme = isset($_POST['app_theme']) ? trim($_POST['app_theme']) : 'light';
     
     if ($ip === '') {
-        $error = 'Indirizzo IP non può essere vuoto.';
-    } elseif (!filter_var($ip, FILTER_VALIDATE_IP)) {
-        $error = 'Indirizzo IP non valido.';
+        $error = 'Indirizzo IP/URL non può essere vuoto.';
+    } elseif (!filter_var($ip, FILTER_VALIDATE_IP) && !filter_var($ip, FILTER_VALIDATE_URL)) {
+        $error = 'Formato non valido. Inserire un IP valido oppure un URL completo.';
     } elseif (!in_array($theme, ['light', 'dark'])) {
         $error = 'Tema non valido.';
     } else {
@@ -143,11 +144,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
-    <form method="post" class="mt-3" style="max-width:600px;">
+    <form method="post" class="mt-3" style="max-width:750px;">
         <div class="mb-3">
-            <label for="ip_address" class="form-label">IP del computer dove gira l'applicativo</label>
+            <label for="ip_address" class="form-label">IP/URL dell'applicativo per QR Code</label>
             <input type="text" id="ip_address" name="ip_address" class="form-control" value="<?= htmlspecialchars($currentIp ?: $detectedIp) ?>">
-            <div class="form-text">Valore suggerito: <?= htmlspecialchars($detectedIp) ?></div>
+            <div class="form-text">
+                <small class="text-muted">IP rilevato automaticamente: <?= htmlspecialchars($detectedIp) ?></small><br><br>
+                <strong>Esempi validi:</strong><br>
+                • IP locale: <code>192.168.1.100</code> → genera http://192.168.1.100/magazzino/warehouse/mobile_component.php?id=X<br>
+                • URL completo: <code>https://magazzino.miodominio.it/magazzino/warehouse/mobile_component.php</code><br>
+                • URL alternativo: <code>https://magazzino.miodominio.it/warehouse/mobile_component.php</code><br>
+                • URL base: <code>https://magazzino.miodominio.it</code> → aggiunge automaticamente /warehouse/mobile_component.php<br>
+            </div>
         </div>
         
         <hr class="my-4">

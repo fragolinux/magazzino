@@ -3,12 +3,13 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:48:46 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-09 16:40:45
+ * @Last Modified time: 2026-01-12 16:40:45
 */
 // 2026-01-03: Aggiunto link Info nel menu di navigazione
 // 2026-01-04: Aggiunto link per installazione degli aggiornamenti
 // 2026-01-08: Aggiunto supporto tema dark/light e locali
 // 2026-01-09: Aggiunta pagina file orfani
+// 2026-01-12: Aggiunta pagina profilo utente
 
 // Leggi il tema dal DB
 $appTheme = 'light'; // default
@@ -140,17 +141,22 @@ try {
             </a>
           </li>
           <?php if (!empty($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-          <li class="nav-item">
-            <a class="nav-link" href="/magazzino/settings.php">
-              <i class="fa-solid fa-gears me-1"></i>Settaggi
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/magazzino/update/index.php">
-              <i class="fa-solid fa-download me-1"></i>Aggiornamento
-            </a>
-          </li>
-          <?php endif; ?>
+            <li class="nav-item">
+              <a class="nav-link" href="/magazzino/settings.php">
+                <i class="fa-solid fa-gears me-1"></i>Settaggi
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/magazzino/update/index.php">
+                <i class="fa-solid fa-download me-1"></i>Aggiornamento
+              </a>
+            </li>
+            <?php endif; ?>
+            <li class="nav-item">
+              <a class="nav-link" href="/magazzino/profile.php" title="Profilo">
+                <i class="fa-solid fa-user"></i>
+              </a>
+            </li>
           <li class="nav-item">
             <a class="nav-link" href="/magazzino/logout.php">
               <i class="fa-solid fa-right-from-bracket me-1"></i>Logout (<?= htmlspecialchars($_SESSION['username']) ?>)

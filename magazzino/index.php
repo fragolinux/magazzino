@@ -3,13 +3,14 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:03:48 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-08 16:41:01
+ * @Last Modified time: 2026-01-11 16:41:01
 */
 // 2026-01-08: Aggiunta card sotto scorta
+// 2026-01-11: Aggiunto link su card Tipi di componenti
 
 /*
  * Magazzino Componenti – Software di gestione magazzino di componenti elettronici
- * Copyright (C) 2025  Gabriele Riva (RG4Tech Youtube Channel)
+ * Copyright (C) 2026  Gabriele Riva (RG4Tech Youtube Channel)
  *
  * Questo programma è software libero: puoi redistribuirlo e/o modificarlo
  * secondo i termini della GNU General Public License come pubblicata
@@ -77,12 +78,14 @@ include 'includes/header.php';
     </div>
 
     <div class="col-md-3">
+      <a href="warehouse/components.php" class="text-decoration-none">
         <div class="card text-white bg-warning shadow-sm">
           <div class="card-body">
             <h5 class="card-title"><i class="fa-solid fa-microchip me-2"></i>Tipi di componenti</h5>
             <p class="card-text fs-3"><?= $total_components ?></p>
           </div>
         </div>
+      </a>
     </div>
 
     <div class="col-md-3">

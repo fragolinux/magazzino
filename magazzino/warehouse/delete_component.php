@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:55:25 
  * @Last Modified by:   gabriele.riva
- * @Last Modified time: 2026-01-09 16:10:157
+ * @Last Modified time: 2026-01-12 16:10:157
 */
 // 2026-01-09: Aggiunta cancellazione immagine componente
 
@@ -16,6 +16,11 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 }
 
 $id = intval($_GET['id']);
+
+// Recupera il nome del file datasheet prima di eliminare il record
+$stmt_info = $pdo->prepare("SELECT datasheet_file FROM components WHERE id = ?");
+$stmt_info->execute([$id]);
+$component = $stmt_info->fetch(PDO::FETCH_ASSOC);
 
 // Elimina le immagini se esistono
 $base_dir = realpath(__DIR__ . '/../images/components');
@@ -33,10 +38,28 @@ if (file_exists($thumb_path)) {
     @unlink($thumb_path);
 }
 
+// Elimina il file datasheet PDF se esiste
+if ($component && !empty($component['datasheet_file'])) {
+    $datasheet_dir = realpath(__DIR__ . '/../datasheet');
+    if ($datasheet_dir) {
+        $datasheet_path = $datasheet_dir . DIRECTORY_SEPARATOR . $component['datasheet_file'];
+        if (file_exists($datasheet_path)) {
+            @unlink($datasheet_path);
+        }
+    }
+}
+
 // Eliminazione componente
 $stmt = $pdo->prepare("DELETE FROM components WHERE id = ?");
 $stmt->execute([$id]);
 
-// Reindirizzo con messaggio
+// Se è una richiesta AJAX, ritorna JSON
+if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+    header('Content-Type: application/json');
+    echo json_encode(['success' => true, 'message' => 'Componente eliminato con successo']);
+    exit;
+}
+
+// Altrimenti reindirizzo con messaggio
 header("Location: components.php?deleted=1");
 exit;

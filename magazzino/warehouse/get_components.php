@@ -3,12 +3,13 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 18:00:51 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-09 09:59:28
+ * @Last Modified time: 2026-01-12 09:59:28
 */
 // 2026-01-03: Aggiunta funzionalità carico/scarico quantità componente
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-08: Aggiunto filtro per locale
 // 2026-01-09: Aggiunta gestione immagine componente
+// 2026-01-12: Aggiunti ricerca anche per tags
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -18,6 +19,13 @@ $location_id   = isset($_GET['location_id']) && is_numeric($_GET['location_id'])
 $compartment_id = isset($_GET['compartment_id']) && is_numeric($_GET['compartment_id']) ? intval($_GET['compartment_id']) : null;
 $category_id   = isset($_GET['category_id']) && is_numeric($_GET['category_id']) ? intval($_GET['category_id']) : null;
 $search_code   = isset($_GET['search_code']) ? trim($_GET['search_code']) : '';
+$package       = isset($_GET['package']) ? trim($_GET['package']) : '';
+$tensione      = isset($_GET['tensione']) ? trim($_GET['tensione']) : '';
+$corrente      = isset($_GET['corrente']) ? trim($_GET['corrente']) : '';
+$potenza       = isset($_GET['potenza']) ? trim($_GET['potenza']) : '';
+$hfe           = isset($_GET['hfe']) ? trim($_GET['hfe']) : '';
+$tags          = isset($_GET['tags']) ? trim($_GET['tags']) : '';
+$notes         = isset($_GET['notes']) ? trim($_GET['notes']) : '';
 
 $query = "SELECT c.*, 
                  l.name AS location_name,
@@ -49,9 +57,39 @@ if ($category_id) {
     $params[] = $category_id;
 }
 if ($search_code !== '') {
-    $query .= " AND (LOWER(c.codice_prodotto) LIKE ? OR JSON_CONTAINS(LOWER(c.equivalents), JSON_QUOTE(?)))";
-    $params[] = "%$search_code%";
-    $params[] = strtolower($search_code);
+    $query .= " AND (LOWER(c.codice_prodotto) LIKE ? OR JSON_SEARCH(LOWER(c.equivalents), 'one', ?, NULL, '$[*]') IS NOT NULL OR JSON_SEARCH(LOWER(c.tags), 'one', ?, NULL, '$[*]') IS NOT NULL)";
+    $searchLower = strtolower($search_code);
+    $params[] = "%" . $searchLower . "%";
+    $params[] = $searchLower;
+    $params[] = $searchLower;
+}
+if ($package !== '') {
+    $query .= " AND LOWER(c.package) LIKE ?";
+    $params[] = "%" . strtolower($package) . "%";
+}
+if ($tensione !== '') {
+    $query .= " AND LOWER(c.tensione) LIKE ?";
+    $params[] = "%" . strtolower($tensione) . "%";
+}
+if ($corrente !== '') {
+    $query .= " AND LOWER(c.corrente) LIKE ?";
+    $params[] = "%" . strtolower($corrente) . "%";
+}
+if ($potenza !== '') {
+    $query .= " AND LOWER(c.potenza) LIKE ?";
+    $params[] = "%" . strtolower($potenza) . "%";
+}
+if ($hfe !== '') {
+    $query .= " AND LOWER(c.hfe) LIKE ?";
+    $params[] = "%" . strtolower($hfe) . "%";
+}
+if ($tags !== '') {
+    $query .= " AND JSON_SEARCH(LOWER(c.tags), 'one', ?, NULL, '$[*]') IS NOT NULL";
+    $params[] = strtolower($tags);
+}
+if ($notes !== '') {
+    $query .= " AND LOWER(c.notes) LIKE ?";
+    $params[] = "%" . strtolower($notes) . "%";
 }
 
 $query .= " ORDER BY c.id ASC LIMIT 500";
@@ -100,8 +138,7 @@ if (!$components) {
                         <a href="edit_component.php?id='.$c['id'].'" class="btn btn-sm btn-outline-secondary me-1" title="Modifica" target="_blank">
                             <i class="fa-solid fa-pen"></i>
                         </a>
-                        <button class="btn btn-sm btn-outline-danger" title="Elimina"
-                            onclick="if(confirm(\'Sei sicuro di voler eliminare '.htmlspecialchars($c['codice_prodotto'], ENT_QUOTES).'?\')) window.location=\'delete_component.php?id='.$c['id'].'\';">
+                        <button class="btn btn-sm btn-outline-danger btn-delete" data-id="'.$c['id'].'" data-product="'.htmlspecialchars($c['codice_prodotto'], ENT_QUOTES).'" title="Elimina">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </td>

@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:50:58 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-09 15:23:22
+ * @Last Modified time: 2026-01-12 15:23:22
 */
 // 2026-01-03: Aggiunta funzionalità carico/scarico quantità componente
 // 2026-01-05: Aggiunta ricerca tramite equivalente del codice prodotto
@@ -12,6 +12,7 @@
 // 2026-01-09: Aggiunto bottone per eliminare tutti i filtri
 // 2026-01-09: Impostazione focus sul campo di ricerca all'apertura della pagina
 // 2026-01-09: Aggiunta gestione immagine componente
+// 2026-01-12: Aggiunti filtri per package, tensione, corrente, potenza, hfe e tags
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -28,7 +29,7 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
 
 <?php include '../includes/header.php'; ?>
 
-<div class="container py-4">
+<div class="container py-1">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2><i class="fa-solid fa-microchip me-2"></i>Componenti</h2>
         <a href="add_component.php" class="btn btn-primary">
@@ -73,6 +74,68 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
         </div>
         <div class="col-md-6 offset-md-3">
             <input type="text" id="search-code" class="form-control border border-primary border-3" placeholder="Cerca per codice prodotto...">
+        </div>
+    </div>
+
+    <!-- Ricerca avanzata (accordion) -->
+    <div class="accordion mb-3" id="advancedSearchAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingAdvanced">
+                <button class="accordion-button collapsed py-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdvanced" aria-expanded="false" aria-controls="collapseAdvanced">
+                    <i class="fa-solid fa-sliders me-2"></i>Ricerca avanzata
+                </button>
+            </h2>
+            <div id="collapseAdvanced" class="accordion-collapse collapse" aria-labelledby="headingAdvanced" data-bs-parent="#advancedSearchAccordion">
+                <div class="accordion-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Package</label>
+                            <input type="text" id="filter-package" class="form-control" placeholder="Es. TO-220, SO-8" list="packageList">
+                            <datalist id="packageList">
+                                <option value="TO-220">
+                                <option value="TO-92">
+                                <option value="TO-126">
+                                <option value="TO-247">
+                                <option value="SO-8">
+                                <option value="SO-16">
+                                <option value="DIP-8">
+                                <option value="DIP-14">
+                                <option value="DIP-16">
+                                <option value="SMD">
+                                <option value="0805">
+                                <option value="1206">
+                                <option value="SOT-23">
+                            </datalist>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Tensione (V)</label>
+                            <input type="text" id="filter-tensione" class="form-control" placeholder="Es. 5, 12">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Corrente (A)</label>
+                            <input type="text" id="filter-corrente" class="form-control" placeholder="Es. 1, 0.5">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Potenza (W)</label>
+                            <input type="text" id="filter-potenza" class="form-control" placeholder="Es. 1, 0.25">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">hFE</label>
+                            <input type="text" id="filter-hfe" class="form-control" placeholder="Es. 100">
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">Tags</label>
+                            <input type="text" id="filter-tags" class="form-control" placeholder="Cerca per tag...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Note</label>
+                            <input type="text" id="filter-notes" class="form-control" placeholder="Cerca nelle note...">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -196,14 +259,28 @@ $(function(){
         let cmp_id = $('#filter-compartment').val();
         let cat_id = $('#filter-category').val();
         let search = $('#search-code').val();
+        let package = $('#filter-package').val();
+        let tensione = $('#filter-tensione').val();
+        let corrente = $('#filter-corrente').val();
+        let potenza = $('#filter-potenza').val();
+        let hfe = $('#filter-hfe').val();
+        let tags = $('#filter-tags').val();
+        let notes = $('#filter-notes').val();
 
-        $('#components-body').html('<tr><td colspan="6" class="text-center text-muted">Caricamento...</td></tr>');
+        $('#components-body').html('<tr><td colspan="7" class="text-center text-muted">Caricamento...</td></tr>');
         $.get('get_components.php', {
             locale_id: locale_id,
             location_id: loc_id,
             compartment_id: cmp_id,
             category_id: cat_id,
-            search_code: search
+            search_code: search,
+            package: package,
+            tensione: tensione,
+            corrente: corrente,
+            potenza: potenza,
+            hfe: hfe,
+            tags: tags,
+            notes: notes
         }, function(data){
             $('#components-body').html(data);
         });
@@ -220,6 +297,9 @@ $(function(){
     });
     $('#filter-compartment, #filter-category').change(loadComponents);
     $('#search-code').on('keyup', loadComponents);
+    
+    // Eventi filtri ricerca avanzata
+    $('#filter-package, #filter-tensione, #filter-corrente, #filter-potenza, #filter-hfe, #filter-tags, #filter-notes').on('keyup', loadComponents);
 
     // Gestione parametri GET dall'URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -362,6 +442,13 @@ $(function(){
         $('#filter-location').html('<option value="">-- Filtra per posizione --</option>');
         $('#filter-compartment').html('<option value="">-- Filtra per comparto --</option>');
         $('#filter-category').val('');
+        $('#filter-package').val('');
+        $('#filter-tensione').val('');
+        $('#filter-corrente').val('');
+        $('#filter-potenza').val('');
+        $('#filter-hfe').val('');
+        $('#filter-tags').val('');
+        $('#filter-notes').val('');
         loadComponents(); // Ricarica la tabella con solo il filtro di ricerca se presente
     });
 
@@ -430,6 +517,33 @@ $(function(){
                 } catch(e) {
                     alert('Errore di comunicazione con il server');
                 }
+            }
+        });
+    });
+
+    // Eliminazione componente con AJAX
+    $(document).on('click', '.btn-delete', function(){
+        const id = $(this).data('id');
+        const productName = $(this).data('product');
+        
+        if(!confirm('Sei sicuro di voler eliminare ' + productName + '?')) {
+            return;
+        }
+        
+        $.ajax({
+            url: 'delete_component.php?id=' + id,
+            type: 'GET',
+            dataType: 'json',
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            success: function(data) {
+                if(data.success) {
+                    loadComponents(); // Ricarica solo la tabella mantenendo i filtri
+                } else {
+                    alert('Errore durante l\'eliminazione: ' + (data.message || 'Errore sconosciuto'));
+                }
+            },
+            error: function() {
+                alert('Errore di comunicazione con il server');
             }
         });
     });

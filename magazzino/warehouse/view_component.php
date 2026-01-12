@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-21 08:47:13 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-09 15:25:32
+ * @Last Modified time: 2026-01-12 15:25:32
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-08: Aggiunto locale
@@ -50,6 +50,14 @@ if (!empty($component['equivalents'])) {
     }
 }
 
+$tags = '';
+if (!empty($component['tags'])) {
+    $tg = json_decode($component['tags'], true);
+    if (is_array($tg)) {
+        $tags = htmlspecialchars(implode(', ', $tg));
+    }
+}
+
 $notes = !empty($component['notes']) ? nl2br(htmlspecialchars($component['notes'])) : '';
 $datasheet_url = trim($component['datasheet_url']);
 $is_pdf = $datasheet_url && preg_match('/\.pdf(\?|$)/i', $datasheet_url);
@@ -63,6 +71,7 @@ $hasImage = $imagePath && file_exists($imagePath);
     <table class="table table-bordered table-sm align-middle mb-0">
         <?= field('Codice prodotto', htmlspecialchars($component['codice_prodotto'])) ?>
         <?= field('Categoria', htmlspecialchars($component['category_name'] ?? '')) ?>
+        <?= field('Unità misura', htmlspecialchars($component['unita_misura'] ?? 'pz')) ?>
         <?= field('Quantità', intval($component['quantity'])) ?>
         <?php 
         $qty_min = $component['quantity_min'];
@@ -79,7 +88,26 @@ $hasImage = $imagePath && file_exists($imagePath);
         <?= field('Costruttore', htmlspecialchars($component['costruttore'] ?? '')) ?>
         <?= field('Fornitore', htmlspecialchars($component['fornitore'] ?? '')) ?>
         <?= field('Codice fornitore', htmlspecialchars($component['codice_fornitore'] ?? '')) ?>
+        <?php if (!empty($component['prezzo'])): ?>
+        <?= field('Prezzo', '€ ' . number_format($component['prezzo'], 2, ',', '.')) ?>
+        <?php endif; ?>
+        <?php if (!empty($component['link_fornitore'])): ?>
+            <tr>
+                <th>Link fornitore</th>
+                <td>
+                    <a href="<?= htmlspecialchars($component['link_fornitore']) ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-link me-1"></i> Vai al sito
+                    </a>
+                </td>
+            </tr>
+        <?php endif; ?>
+        <?= field('Package', htmlspecialchars($component['package'] ?? '')) ?>
+        <?= field('Tensione', !empty($component['tensione']) ? htmlspecialchars($component['tensione']) . ' V' : '') ?>
+        <?= field('Corrente', !empty($component['corrente']) ? htmlspecialchars($component['corrente']) . ' A' : '') ?>
+        <?= field('Potenza', !empty($component['potenza']) ? htmlspecialchars($component['potenza']) . ' W' : '') ?>
+        <?= field('hFE (Guadagno)', htmlspecialchars($component['hfe'] ?? '')) ?>
         <?= field('Equivalenti', $equivalents) ?>
+        <?= field('Tags', $tags) ?>
         <?= field('Note', $notes) ?>
         <?php if ($datasheet_url): ?>
             <tr>

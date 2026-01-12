@@ -3,8 +3,9 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-05 09:58:58 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-07 13:31:24
+ * @Last Modified time: 2026-01-11 13:31:24
 */
+// 2026-01-11: Aggiunto URL in alternativa all'IP del PC
 
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/db_connect.php';
@@ -78,7 +79,21 @@ foreach ($components as $c){
     }
     $code = htmlspecialchars($trunc, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     // payload URL - punta a mobile_component.php per carico/scarico da smartphone
-    $payload = 'http://' . $ip . '/magazzino/warehouse/mobile_component.php?id=' . $comp_id;
+    // Supporta sia IP locali che URL esterni completi (http:// o https://)
+    if (preg_match('#^https?://#i', $ip)) {
+        // URL completo fornito (es: https://magazzino.miodominio.it/warehouse/mobile_component.php)
+        $base_url = rtrim($ip, '/');
+        // Se termina già con .php, aggiungi solo il parametro query
+        if (preg_match('#\.php$#i', $base_url)) {
+            $payload = $base_url . '?id=' . $comp_id;
+        } else {
+            // Altrimenti aggiungi il path del file
+            $payload = $base_url . '/warehouse/mobile_component.php?id=' . $comp_id;
+        }
+    } else {
+        // IP/hostname semplice - comportamento originale
+        $payload = 'http://' . $ip . '/magazzino/warehouse/mobile_component.php?id=' . $comp_id;
+    }
     $qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . rawurlencode($payload);
 
     $html .= '<div class="label">';

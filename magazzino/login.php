@@ -3,9 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:44:57 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-07 14:32:06
+ * @Last Modified time: 2026-01-12 14:32:06
 */
 // 2026-01-04: Aggiunta opzione "Ricordami" nel login
+// 2026-01-12: Aggiunto pulsante per mostrare/nascondere la password
 
 session_start();
 require 'includes/db_connect.php';
@@ -91,7 +92,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <div class="mb-3">
       <label class="form-label">Password</label>
-      <input type="password" name="password" class="form-control" required>
+      <div class="input-group">
+        <input type="password" name="password" id="passwordField" class="form-control" required>
+        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+          <i class="fa-solid fa-eye" id="eyeIcon"></i>
+        </button>
+      </div>
     </div>
     <div class="mb-3 form-check">
       <input type="checkbox" name="remember_me" class="form-check-input" id="rememberMe">
@@ -101,4 +107,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <button class="btn btn-primary w-100">Accedi</button>
   </form>
 </div>
+
+<script>
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const passwordField = document.getElementById('passwordField');
+    const eyeIcon = document.getElementById('eyeIcon');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        eyeIcon.classList.remove('fa-eye');
+        eyeIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        eyeIcon.classList.remove('fa-eye-slash');
+        eyeIcon.classList.add('fa-eye');
+    }
+});
+</script>
+
 <?php include 'includes/footer.php'; ?>

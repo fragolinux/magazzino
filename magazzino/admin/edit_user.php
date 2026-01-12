@@ -3,8 +3,9 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:10:52 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2025-10-20 20:01:02
+ * @Last Modified time: 2026-01-12 20:01:02
 */
+// 2026-01-12: Permetti ad un admin di modificare i propri dati senza perdere i privilegi
 
 require '../includes/auth_check.php';
 require '../includes/db_connect.php';
@@ -37,40 +38,43 @@ $isSelfEdit = ($id === intval($_SESSION['user_id']));
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
-    $role = $_POST['role'] ?? 'user';
+    
+    // Se è self-edit, mantieni il ruolo esistente, altrimenti prendi quello dal POST
+    if ($isSelfEdit) {
+        $role = $user['role']; // Mantieni il ruolo corrente
+    } else {
+        $role = $_POST['role'] ?? 'user';
+    }
 
     if ($username === '') {
         $error = "Il campo username è obbligatorio.";
+    } elseif ($password !== '' && strlen($password) < 8) {
+        $error = "La password deve contenere almeno 8 caratteri.";
     } else {
-        // Impedisci a un admin di togliersi il ruolo admin
-        if ($isSelfEdit && $role !== 'admin') {
-            $error = "Non puoi rimuovere i tuoi privilegi di amministratore.";
+        // Controlla se l'username è già usato da un altro utente
+        $stmtCheck = $pdo->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
+        $stmtCheck->execute([$username, $id]);
+        if ($stmtCheck->fetch()) {
+            $error = "Questo username è già utilizzato da un altro utente.";
         } else {
-            // Controlla se l'username è già usato da un altro utente
-            $stmtCheck = $pdo->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
-            $stmtCheck->execute([$username, $id]);
-            if ($stmtCheck->fetch()) {
-                $error = "Questo username è già utilizzato da un altro utente.";
+            // Aggiornamento query dinamico
+            if ($password !== '') {
+                $password_hash = hash('sha256', $password);
+                $stmtUpdate = $pdo->prepare("UPDATE users SET username = ?, password_hash = ?, role = ? WHERE id = ?");
+                $stmtUpdate->execute([$username, $password_hash, $role, $id]);
             } else {
-                // Aggiornamento query dinamico
-                if ($password !== '') {
-                    $password_hash = hash('sha256', $password);
-                    $stmtUpdate = $pdo->prepare("UPDATE users SET username = ?, password_hash = ?, role = ? WHERE id = ?");
-                    $stmtUpdate->execute([$username, $password_hash, $role, $id]);
-                } else {
-                    $stmtUpdate = $pdo->prepare("UPDATE users SET username = ?, role = ? WHERE id = ?");
-                    $stmtUpdate->execute([$username, $role, $id]);
-                }
+                $stmtUpdate = $pdo->prepare("UPDATE users SET username = ?, role = ? WHERE id = ?");
+                $stmtUpdate->execute([$username, $role, $id]);
+            }
 
-                $success = "Dati utente aggiornati con successo.";
-                // Aggiorna i dati mostrati
-                $user['username'] = $username;
-                $user['role'] = $role;
+            $success = "Dati utente aggiornati con successo.";
+            // Aggiorna i dati mostrati
+            $user['username'] = $username;
+            $user['role'] = $role;
 
-                // Se l'admin ha cambiato il proprio username, aggiorna la sessione
-                if ($isSelfEdit && $username !== $_SESSION['username']) {
-                    $_SESSION['username'] = $username;
-                }
+            // Se l'admin ha cambiato il proprio username, aggiorna la sessione
+            if ($isSelfEdit && $username !== $_SESSION['username']) {
+                $_SESSION['username'] = $username;
             }
         }
     }
@@ -95,15 +99,12 @@ include '../includes/header.php';
   <form method="post">
     <div class="mb-3">
       <label class="form-label">Username</label>
-      <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($user['username']) ?>" required <?= $isSelfEdit ? 'readonly' : '' ?>>
-      <?php if ($isSelfEdit): ?>
-        <div class="form-text text-muted">Non puoi modificare il tuo username mentre sei loggato.</div>
-      <?php endif; ?>
+      <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($user['username']) ?>" required>
     </div>
 
     <div class="mb-3">
-      <label class="form-label">Nuova password (lascia vuoto per non cambiare)</label>
-      <input type="password" name="password" class="form-control">
+      <label class="form-label">Nuova password min. 8 caratteri (lascia vuoto per non cambiare)</label>
+      <input type="text" name="password" class="form-control">
     </div>
 
     <div class="mb-3">

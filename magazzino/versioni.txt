@@ -82,3 +82,43 @@
                   \magazzino\warehouse\orphan_files.php
                   \magazzino\images\components\thumbs
 1.5 09/01/2026  Aggiornamento DB per associare tutte le posizioni al locale di default
+
+1.6 11/01/2026  Aggiornato file di configurazione connessione ad DB
+                Aggiornata struttura database
+                Nuovo sistema di Versioning e Migrazioni Database
+                Il nuovo sistema di gestione versioni permette agli utenti di *saltare versioni intermedie* 
+                durante gli aggiornamenti, applicando automaticamente solo le modifiche necessarie al database.
+                  \magazzino\includes\db_connect.php
+                  \magazzino\update\index.php 
+                  \magazzino\update\migration_manager.php
+                  \magazzino\update\run_migrations.php
+                  \magazzino\update\init_versioning.php
+                  \magazzino\update\migrations\1.1.sql
+                  \magazzino\update\migrations\1.2.sql
+                  \magazzino\update\migrations\1.3.sql
+                  \magazzino\update\migrations\1.4.sql
+                  \magazzino\update\migrations\1.5.sql
+                  \magazzino\update\migrations\1.6.sql
+1.7 12/01/2026  Aggiunta eliminazione file pdf del datasheet in edita componente
+                Controllo codici duplicati prima dell'inserimento del componente
+                Aggiunto link su card Tipi di componenti
+                Aggiunto URL in alternativa all'IP del PC
+                Aggiunta pagina utente per cambio password
+                Aggiunto pulsante per vedere la password digitata nella pagina login
+                Permesso ad admin di modificare i propri dati
+                Corretto bug che quando si elimina un componente non eliminava il pdf
+                Aggiunti nuovi campi al componente: prezzo, link fornitore, unità di misura, 
+                 package, tensione, corrente, potenza, hfe e tags
+                  \magazzino\warehouse\edit_component.php
+                  \magazzino\warehouse\delete_component_datasheet.php
+                  \magazzino\warehouse\add_component.php
+                  \magazzino\index.php
+                  \magazzino\settings.php
+                  \magazzino\warehouse\generate_qrcodes.php
+                  \magazzino\profile.php
+                  \magazzino\includes\header.php
+                  \magazzino\admin\edit_user.php
+                  \magazzino\login.php
+                  \magazzino\warehouse\delete_component.php
+                  \magazzino\warehouse\view_component.php
+                  \magazzino\warehouse\get_components.php

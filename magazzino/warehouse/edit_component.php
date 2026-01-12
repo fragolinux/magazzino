@@ -3,10 +3,12 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:53:16 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-09 15:16:19
+ * @Last Modified time: 2026-01-12
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-09: Aggiunta gestione immagine componente
+// 2026-01-11: aggiunto tasto per eliminare datasheet PDF esistente
+// 2026-01-12: Aggiunti campi per prezzo, link fornitore, unità di misura, package, tensione, corrente, potenza, hfe e tags; migliorata gestione equivalenti
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -45,7 +47,7 @@ $error = '';
 // Aggiornamento
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $codice_prodotto = trim($_POST['codice_prodotto']);
-  $category_id = isset($_POST['category_id']) ? intval($_POST['category_id']) : null;
+  $category_id = (isset($_POST['category_id']) && $_POST['category_id'] !== '') ? intval($_POST['category_id']) : null;
   $costruttore = trim($_POST['costruttore']);
   $fornitore = trim($_POST['fornitore']);
   $codice_fornitore = trim($_POST['codice_fornitore']);
@@ -55,8 +57,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $location_id = $_POST['location_id'] ?: null;
   $compartment_id = $_POST['compartment_id'] ?: null;
   $datasheet_url = trim($_POST['datasheet_url']);
-  $equivalents = isset($_POST['equivalents']) ? json_encode(array_filter(array_map('trim', explode(',', $_POST['equivalents'])))) : null;
+  
+  // Normalizza equivalenti: split per virgole E spazi
+  $equivalents_raw = trim($_POST['equivalents'] ?? '');
+  if ($equivalents_raw !== '') {
+    $equivalents_array = preg_split('/[\s,]+/', $equivalents_raw, -1, PREG_SPLIT_NO_EMPTY);
+    $equivalents = !empty($equivalents_array) ? json_encode($equivalents_array) : null;
+  } else {
+    $equivalents = null;
+  }
+  
   $notes = trim($_POST['notes']);
+  
+  // Nuovi campi dalla versione 1.7
+  $prezzo = isset($_POST['prezzo']) && $_POST['prezzo'] !== '' ? floatval($_POST['prezzo']) : null;
+  $link_fornitore = trim($_POST['link_fornitore'] ?? '');
+  $unita_misura = trim($_POST['unita_misura'] ?? 'pz');
+  $package = trim($_POST['package'] ?? '');
+  $tensione = trim($_POST['tensione'] ?? '');
+  $corrente = trim($_POST['corrente'] ?? '');
+  $potenza = trim($_POST['potenza'] ?? '');
+  $hfe = trim($_POST['hfe'] ?? '');
+  
+  // Normalizza tags: split per virgole E spazi
+  $tags_raw = trim($_POST['tags'] ?? '');
+  if ($tags_raw !== '') {
+    $tags_array = preg_split('/[\s,]+/', $tags_raw, -1, PREG_SPLIT_NO_EMPTY);
+    $tags = !empty($tags_array) ? json_encode($tags_array) : null;
+  } else {
+    $tags = null;
+  }
   
   $datasheet_file = $component['datasheet_file'];
   
@@ -99,9 +129,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $error = "Il campo codice prodotto è obbligatorio.";
   } else if (empty($error)) {
     $stmt = $pdo->prepare("UPDATE components SET 
-            codice_prodotto=?, category_id=?, costruttore=?, fornitore=?, codice_fornitore=?, quantity=?, quantity_min=?, location_id=?, compartment_id=?, datasheet_url=?, datasheet_file=?, equivalents=?, notes=?
+            codice_prodotto=?, category_id=?, costruttore=?, fornitore=?, codice_fornitore=?, quantity=?, quantity_min=?, location_id=?, compartment_id=?, datasheet_url=?, datasheet_file=?, equivalents=?, notes=?, prezzo=?, link_fornitore=?, unita_misura=?, package=?, tensione=?, corrente=?, potenza=?, hfe=?, tags=?
             WHERE id=?");
-    $stmt->execute([$codice_prodotto, $category_id, $costruttore, $fornitore, $codice_fornitore, $quantity, $quantity_min, $location_id, $compartment_id, $datasheet_url, $datasheet_file, $equivalents, $notes, $id]);
+    $stmt->execute([$codice_prodotto, $category_id, $costruttore, $fornitore, $codice_fornitore, $quantity, $quantity_min, $location_id, $compartment_id, $datasheet_url, $datasheet_file, $equivalents, $notes, $prezzo, $link_fornitore, $unita_misura, $package, $tensione, $corrente, $potenza, $hfe, $tags, $id]);
     // Messaggio di conferma e redirect per evitare reinvio del form
     $_SESSION['success'] = "Componente aggiornato con successo.";
     header("Location: " . $_SERVER['REQUEST_URI']); // Ricarica la stessa pagina
@@ -162,13 +192,25 @@ if (isset($_SESSION['success'])) {
         <label class="form-label">Codice fornitore</label>
         <input type="text" name="codice_fornitore" class="form-control" value="<?= htmlspecialchars($component['codice_fornitore']) ?>">
       </div>
-      <div class="col-md-3 mb-3">
+      <div class="col-md-2 mb-3">
         <label class="form-label">Quantità</label>
         <input type="number" name="quantity" class="form-control" value="<?= $component['quantity'] ?>">
       </div>
-      <div class="col-md-3 mb-3">
+      <div class="col-md-2 mb-3">
         <label class="form-label">Q.tà minima</label>
         <input type="number" name="quantity_min" class="form-control" value="<?= $component['quantity_min'] ?>">
+      </div>
+      <div class="col-md-2 mb-3">
+        <label class="form-label">Unità misura</label>
+        <select name="unita_misura" class="form-select">
+          <option value="pz" <?= ($component['unita_misura'] ?? 'pz') == 'pz' ? 'selected' : '' ?>>pz</option>
+          <option value="m" <?= ($component['unita_misura'] ?? '') == 'm' ? 'selected' : '' ?>>m</option>
+          <option value="cm" <?= ($component['unita_misura'] ?? '') == 'cm' ? 'selected' : '' ?>>cm</option>
+          <option value="kg" <?= ($component['unita_misura'] ?? '') == 'kg' ? 'selected' : '' ?>>kg</option>
+          <option value="g" <?= ($component['unita_misura'] ?? '') == 'g' ? 'selected' : '' ?>>g</option>
+          <option value="l" <?= ($component['unita_misura'] ?? '') == 'l' ? 'selected' : '' ?>>l</option>
+          <option value="ml" <?= ($component['unita_misura'] ?? '') == 'ml' ? 'selected' : '' ?>>ml</option>
+        </select>
       </div>
     </div>
 
@@ -193,6 +235,55 @@ if (isset($_SESSION['success'])) {
       </div>
     </div>
 
+    <div class="row">
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Prezzo (€)</label>
+        <input type="number" step="0.01" name="prezzo" class="form-control" value="<?= htmlspecialchars($component['prezzo'] ?? '') ?>" placeholder="0.00">
+      </div>
+      <div class="col-md-9 mb-3">
+        <label class="form-label">Link fornitore</label>
+        <input type="url" name="link_fornitore" class="form-control" value="<?= htmlspecialchars($component['link_fornitore'] ?? '') ?>" placeholder="https://">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Package</label>
+        <input type="text" name="package" class="form-control" value="<?= htmlspecialchars($component['package'] ?? '') ?>" placeholder="Es. TO-220, SO-8, DIP-8" list="packageList">
+        <datalist id="packageList">
+          <option value="TO-220">
+          <option value="TO-92">
+          <option value="TO-126">
+          <option value="TO-247">
+          <option value="SO-8">
+          <option value="SO-16">
+          <option value="DIP-8">
+          <option value="DIP-14">
+          <option value="DIP-16">
+          <option value="SMD">
+          <option value="0805">
+          <option value="1206">
+          <option value="SOT-23">
+        </datalist>
+      </div>
+      <div class="col-md-2 mb-3">
+        <label class="form-label">Tensione V</label>
+        <input type="text" name="tensione" class="form-control" value="<?= htmlspecialchars($component['tensione'] ?? '') ?>" placeholder="Es. 5, 12">
+      </div>
+      <div class="col-md-2 mb-3">
+        <label class="form-label">Corrente A</label>
+        <input type="text" name="corrente" class="form-control" value="<?= htmlspecialchars($component['corrente'] ?? '') ?>" placeholder="Es. 1, 0.5">
+      </div>
+      <div class="col-md-2 mb-3">
+        <label class="form-label">Potenza W</label>
+        <input type="text" name="potenza" class="form-control" value="<?= htmlspecialchars($component['potenza'] ?? '') ?>" placeholder="Es. 1, 0.25">
+      </div>
+      <div class="col-md-2 mb-3">
+        <label class="form-label">hFE (Guadagno)</label>
+        <input type="text" name="hfe" class="form-control" value="<?= htmlspecialchars($component['hfe'] ?? '') ?>" placeholder="Es. 100-300">
+      </div>
+    </div>
+
     <div class="mb-3">
       <label class="form-label">Link datasheet</label>
       <input type="url" name="datasheet_url" class="form-control" value="<?= htmlspecialchars($component['datasheet_url']) ?>">
@@ -201,13 +292,21 @@ if (isset($_SESSION['success'])) {
     <div class="mb-3">
       <label class="form-label">Datasheet PDF</label>
       <?php if ($component['datasheet_file']): ?>
-        <div class="mb-2">
+        <div class="mb-2" id="current-datasheet-container">
           <a href="/magazzino/datasheet/<?= htmlspecialchars($component['datasheet_file']) ?>" target="_blank" class="btn btn-sm btn-info">
             <i class="fa-solid fa-file-pdf me-1"></i>Visualizza PDF attuale
           </a>
+          <button type="button" id="delete-current-datasheet" class="btn btn-sm btn-outline-danger ms-2" title="Elimina datasheet">
+            <i class="fa-solid fa-trash"></i> Elimina
+          </button>
         </div>
       <?php endif; ?>
-      <input type="file" name="datasheet_file" class="form-control" accept=".pdf">
+      <div class="input-group">
+        <input type="file" name="datasheet_file" id="datasheet_file" class="form-control" accept=".pdf">
+        <button type="button" id="remove-datasheet" class="btn btn-outline-danger" title="Rimuovi datasheet" style="display:none;">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
       <small class="text-muted">Carica un nuovo PDF per sostituire quello attuale (Max 10MB)</small>
     </div>
 
@@ -226,20 +325,28 @@ if (isset($_SESSION['success'])) {
           </button>
         </div>
       <?php endif; ?>
-      <input type="file" id="component_image" class="form-control" accept="image/jpeg,image/jpg,image/gif,image/bmp,image/webp">
+      <div class="input-group">
+        <input type="file" id="component_image" class="form-control" accept="image/jpeg,image/jpg,image/gif,image/bmp,image/webp">
+        <button type="button" id="remove-image" class="btn btn-outline-danger" title="Rimuovi immagine" style="display:none;">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
       <small class="text-muted">JPG, GIF, BMP, WebP - verrà ridimensionata a 500x500px</small>
       <div id="image-preview-container" style="display:none; margin-top: 10px;">
         <img id="image-preview" src="" alt="Preview" style="max-width: 100px; border: 1px solid #ddd; border-radius: 4px;">
-        <button type="button" id="remove-image" class="btn btn-sm btn-outline-danger ms-2" title="Rimuovi">
-          <i class="fa-solid fa-times"></i>
-        </button>
       </div>
     </div>
 
     <div class="mb-3">
-      <label class="form-label">Componenti equivalenti (separati da virgola)</label>
-      <input type="text" name="equivalents" id="equivalents" class="form-control" placeholder="Es: UA78M05, LM340T5" value="<?= $component['equivalents'] ? implode(', ', json_decode($component['equivalents'], true)) : '' ?>">
-      <small class="text-muted">Separare i componenti equivalenti con una virgola.</small>
+      <label class="form-label">Componenti equivalenti (separati da virgola o spazio)</label>
+      <input type="text" name="equivalents" id="equivalents" class="form-control" placeholder="Es: UA78M05 LM340T5" value="<?= $component['equivalents'] ? implode(', ', json_decode($component['equivalents'], true) ?: []) : '' ?>">
+      <small class="text-muted">Separare i componenti equivalenti con virgole o spazi.</small>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Tags (separati da virgola o spazio)</label>
+      <input type="text" name="tags" id="tags" class="form-control" placeholder="Es: amplificatore vintage audio" value="<?= $component['tags'] ? implode(', ', json_decode($component['tags'], true) ?: []) : '' ?>">
+      <small class="text-muted">Usa le virgole o spazi per separare i tag</small>
     </div>
 
     <div class="mb-3">
@@ -262,6 +369,58 @@ if (isset($_SESSION['success'])) {
     let resizedImageData = null;
     let resizedThumbData = null;
     let deleteCurrentImage = false;
+
+    // Funzione per normalizzare equivalenti e tags (spazi e virgole sono separatori)
+    function normalizeCommaSpaceField(inputElement) {
+      let value = $(inputElement).val().trim();
+      if (value === '') return;
+      
+      let items = value.split(/[\s,]+/).filter(item => item !== '');
+      
+      if (items.length > 0) {
+        value = items.join(', ');
+        $(inputElement).val(value);
+      }
+    }
+
+    // Validazione in tempo reale per equivalenti e tags
+    $('#equivalents, #tags').on('blur', function() {
+      normalizeCommaSpaceField(this);
+    });
+
+    // Gestione selezione file datasheet PDF
+    $('#datasheet_file').on('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) {
+        $('#remove-datasheet').hide();
+        return;
+      }
+      $('#remove-datasheet').show();
+    });
+
+    // Rimuovi datasheet selezionato
+    $('#remove-datasheet').on('click', function() {
+      $('#datasheet_file').val('');
+      $(this).hide();
+    });
+
+    // Gestione eliminazione datasheet esistente
+    $('#delete-current-datasheet').on('click', function() {
+      if (!confirm('Sei sicuro di voler eliminare il datasheet PDF?')) return;
+      
+      $.ajax({
+        url: 'delete_component_datasheet.php',
+        method: 'POST',
+        data: { component_id: <?= $id ?> },
+        success: function() {
+          $('#current-datasheet-container').fadeOut();
+          alert('Datasheet eliminato con successo.');
+        },
+        error: function() {
+          alert('Errore durante l\'eliminazione del datasheet.');
+        }
+      });
+    });
 
     // Gestione eliminazione immagine esistente
     $('#delete-current-image').on('click', function() {
@@ -324,6 +483,7 @@ if (isset($_SESSION['success'])) {
           // Mostra anteprima
           $('#image-preview').attr('src', resizedThumbData);
           $('#image-preview-container').show();
+          $('#remove-image').show();
         };
         img.src = event.target.result;
       };
@@ -334,12 +494,17 @@ if (isset($_SESSION['success'])) {
     $('#remove-image').on('click', function() {
       $('#component_image').val('');
       $('#image-preview-container').hide();
+      $(this).hide();
       resizedImageData = null;
       resizedThumbData = null;
     });
 
     // Intercetta submit per caricare immagine se presente
     $('form').on('submit', function(e) {
+      // Normalizza sempre i campi prima del submit
+      normalizeCommaSpaceField($('#equivalents')[0]);
+      normalizeCommaSpaceField($('#tags')[0]);
+      
       if (!resizedImageData || !resizedThumbData) {
         return true; // Procedi normalmente
       }
