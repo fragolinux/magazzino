@@ -11,7 +11,7 @@ require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+// Rimossa CORS permissiva per sicurezza - le richieste vengono dallo stesso dominio
 
 $response = ['success' => false, 'message' => 'Errore sconosciuto'];
 

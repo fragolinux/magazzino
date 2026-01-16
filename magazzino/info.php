@@ -3,8 +3,9 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-03 10:15:23 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-03 10:41:31
+ * @Last Modified time: 2026-01-13 23:20:15
 */
+// 2026-01-13: Invertito ordine visualizzazione delle versioni
 
 require_once 'includes/db_connect.php';
 require_once 'includes/auth_check.php';
@@ -43,8 +44,35 @@ if (!empty($lines)) {
 
 // Leggi la licenza
 $licenza = file_get_contents('LICENSE.txt');
-// Leggi il file versioni completo
-$versioni = file_get_contents('versioni.txt');
+// Leggi il file versioni completo e invertilo per visualizzazione (più recente in alto)
+$versioniContent = file_get_contents('versioni.txt');
+$versioniLines = preg_split('/\r\n|\r|\n/', $versioniContent);
+
+// Raggruppa le righe per blocco di versione
+$blocks = [];
+$currentBlock = [];
+foreach ($versioniLines as $line) {
+    // Una riga che inizia con un numero è l'inizio di una nuova versione
+    if (preg_match('/^\d+\.\d+/', $line)) {
+        // Salva il blocco precedente se non è vuoto
+        if (!empty($currentBlock)) {
+            $blocks[] = implode("\n", $currentBlock);
+        }
+        // Inizia un nuovo blocco
+        $currentBlock = [$line];
+    } else {
+        // Aggiungi la riga al blocco corrente
+        $currentBlock[] = $line;
+    }
+}
+// Aggiungi l'ultimo blocco
+if (!empty($currentBlock)) {
+    $blocks[] = implode("\n", $currentBlock);
+}
+
+// Inverti i blocchi
+$blocks = array_reverse($blocks);
+$versioni = implode("\n", $blocks);
 
 ?>
 
@@ -60,25 +88,26 @@ $versioni = file_get_contents('versioni.txt');
                 <div class="card-body">
                     <!-- Versione -->
                     <div class="mb-4">
-                        <h5 class="border-bottom pb-2 mb-3">
-                            <i class="fa-solid fa-tag me-2 text-primary"></i>Versione
-                        </h5>
-                        <p class="fs-6">
-                            <strong><?= htmlspecialchars($versione) ?></strong>
-                            <?php if (!empty($versionDate)): ?>
-                                <span class="text-muted ms-2 small">(<?= htmlspecialchars($versionDate) ?>)</span>
-                            <?php endif; ?>
-                        </p>
+                        <div class="border-bottom pb-2 mb-3">
+                            <span class="fs-5">
+                                <i class="fa-solid fa-tag me-2 text-primary"></i><strong>Versione:</strong>
+                                <span class="ms-2"><?= htmlspecialchars($versione) ?>
+                                <?php if (!empty($versionDate)): ?>
+                                    <span class="text-muted ms-2 small">(<?= htmlspecialchars($versionDate) ?>)</span>
+                                <?php endif; ?>
+                                </span>
+                            </span>
+                        </div>
                     </div>
 
                     <!-- Autore -->
                     <div class="mb-4">
-                        <h5 class="border-bottom pb-2 mb-3">
-                            <i class="fa-solid fa-user me-2 text-primary"></i>Autore
-                        </h5>
-                        <p class="fs-6">
-                            <strong>Gabriele Riva</strong> (<a href="https://www.youtube.com/@rg4tech" target="_blank" rel="noopener noreferrer">RG4Tech Youtube Channel</a>)
-                        </p>
+                        <div class="border-bottom pb-2 mb-3">
+                            <span class="fs-5">
+                                <i class="fa-solid fa-user me-2 text-primary"></i><strong>Autore:</strong>
+                                <span class="ms-2">Gabriele Riva (<a href="https://www.youtube.com/@rg4tech" target="_blank" rel="noopener noreferrer">RG4Tech Youtube Channel</a>)</span>
+                            </span>
+                        </div>
                     </div>
 
                     <!-- Cronologia Versioni -->
@@ -86,7 +115,7 @@ $versioni = file_get_contents('versioni.txt');
                         <h5 class="border-bottom pb-2 mb-3">
                             <i class="fa-solid fa-history me-2 text-primary"></i>Cronologia Versioni
                         </h5>
-                        <div class="bg-light p-4 rounded border" style="max-height: 520px; overflow-y: auto;">
+                        <div class="bg-light p-4 rounded border" style="max-height: 600px; overflow-y: auto;">
                             <pre style="white-space: pre-wrap; word-wrap: break-word; font-size: 0.9rem;"><?= htmlspecialchars($versioni) ?></pre>
                         </div>
                     </div>

@@ -3,8 +3,9 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-08 18:49:46 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-08 18:56:34
+ * @Last Modified time: 2026-01-14
 */
+// 2026-01-14: Sistemati conteggi quantità per unità di misura
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -55,11 +56,12 @@ if (!$components) {
     $html .= '<tr><td colspan="7" class="text-center text-muted">Nessun componente sotto scorta.</td></tr>';
 } else {
     foreach ($components as $c) {
+        $unit = $c['unita_misura'] ?? 'pz';
         $html .= '<tr>
                     <td>'.htmlspecialchars($c['codice_prodotto']).'</td>
                     <td>'.htmlspecialchars($c['category_name'] ?? '-').'</td>
-                    <td>'.intval($c['quantity']).'</td>
-                    <td>'.intval($c['quantity_min']).'</td>
+                    <td>'.intval($c['quantity']).' '.htmlspecialchars($unit).'</td>
+                    <td>'.intval($c['quantity_min']).' '.htmlspecialchars($unit).'</td>
                     <td>'.htmlspecialchars($c['location_name'] ?? '-').'</td>
                     <td>'.htmlspecialchars($c['compartment_code'] ?? '-').'</td>
                     <td class="text-end print-hide">

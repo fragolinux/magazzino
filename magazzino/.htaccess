@@ -3,3 +3,29 @@
         Options -MultiViews -Indexes
     </IfModule>
 </IfModule>
+
+# Sicurezza base
+ServerSignature Off
+
+<IfModule mod_headers.c>
+    # Anti-clickjacking - sicuro
+    Header always set X-Frame-Options DENY
+
+    # Anti-MIME sniffing - sicuro
+    Header always set X-Content-Type-Options nosniff
+
+    # HTTPS Strict Transport Security (solo per produzione)
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    # Content Security Policy base
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+
+    # Referrer Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Permissions Policy (Feature Policy)
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+
+    # Rimuovi header rivelatori
+    Header always unset X-Powered-By
+</IfModule>

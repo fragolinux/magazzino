@@ -23,11 +23,65 @@ try {
 $migrationManagerPath = '/var/www/html/update/migration_manager.php';
 $migrationsDir = '/var/www/html/update/migrations';
 
+function isAdminDbUser(PDO $pdo): bool
+{
+    try {
+        $user = $pdo->query("SELECT USER()")->fetchColumn();
+        return $user !== false && stripos((string)$user, 'root') !== false;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+function filterSqlForNonAdmin(string $sql): string
+{
+    $statements = preg_split('/;\s*\n|;\s*$/', $sql);
+    $kept = [];
+
+    foreach ($statements as $stmt) {
+        $s = trim($stmt);
+        if ($s === '' || $s === ';') {
+            continue;
+        }
+        if (preg_match('/^\s*(CREATE\s+USER|REVOKE\s+ALL\s+PRIVILEGES|GRANT\s+|FLUSH\s+PRIVILEGES)\b/i', $s)) {
+            continue;
+        }
+        $kept[] = rtrim($s, ';');
+    }
+
+    if (empty($kept)) {
+        return '';
+    }
+
+    return implode(";\n\n", $kept) . ";\n";
+}
+
 if (file_exists($migrationManagerPath) && is_dir($migrationsDir)) {
+    $effectiveMigrationsDir = $migrationsDir;
+    $tempDir = null;
+
+    if (!isAdminDbUser($pdo)) {
+        $tempDir = sys_get_temp_dir() . '/magazzino_migrations_' . uniqid('', true);
+        if (@mkdir($tempDir, 0777, true)) {
+            foreach (glob($migrationsDir . '/*.sql') as $file) {
+                $dest = $tempDir . '/' . basename($file);
+                $content = file_get_contents($file);
+                if ($content === false) {
+                    continue;
+                }
+                if (basename($file) === '1.8.sql') {
+                    $content = filterSqlForNonAdmin($content);
+                }
+                file_put_contents($dest, $content);
+            }
+            $effectiveMigrationsDir = $tempDir;
+        }
+    }
+
     require_once $migrationManagerPath;
 
     if (class_exists('MigrationManager')) {
-        $manager = new MigrationManager($pdo, $migrationsDir);
+        $manager = new MigrationManager($pdo, $effectiveMigrationsDir);
         $result = $manager->runPendingMigrations();
         $applied = $result['applied'] ?? [];
         $hasErrors = false;
@@ -46,6 +100,13 @@ if (file_exists($migrationManagerPath) && is_dir($migrationsDir)) {
         if ($hasErrors) {
             fwrite(STDERR, "DB migration errors detected.\n");
             exit(1);
+        }
+
+        if ($tempDir !== null) {
+            foreach (glob($tempDir . '/*.sql') as $file) {
+                @unlink($file);
+            }
+            @rmdir($tempDir);
         }
 
         exit(0);

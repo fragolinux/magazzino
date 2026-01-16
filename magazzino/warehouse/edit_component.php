@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:53:16 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-12
+ * @Last Modified time: 2026-01-15 20:36:12
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-09: Aggiunta gestione immagine componente
@@ -12,6 +12,7 @@
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
+require_once '../includes/secure_upload.php';
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
   header("Location: components.php");
@@ -92,35 +93,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   
   // Gestione upload nuovo file datasheet
   if (isset($_FILES['datasheet_file']) && $_FILES['datasheet_file']['error'] === UPLOAD_ERR_OK) {
-    $file = $_FILES['datasheet_file'];
-    $maxSize = 10 * 1024 * 1024; // 10MB max
-    $allowedTypes = ['application/pdf'];
+    $validator = new SecureUploadValidator(__DIR__ . '/../datasheet');
+    $validation = $validator->validateUpload($_FILES['datasheet_file'], ['application/pdf']);
     
-    if ($file['size'] > $maxSize) {
-      $error = "File datasheet troppo grande (max 10MB).";
-    } elseif (!in_array($file['type'], $allowedTypes)) {
-      $error = "Solo file PDF sono consentiti per il datasheet.";
+    if (!$validation['valid']) {
+      $error = 'File datasheet non valido: ' . implode(', ', $validation['errors']);
     } else {
-      $datasheet_dir = realpath(__DIR__ . '/..') . '/datasheet';
-      if (!is_dir($datasheet_dir)) {
-        @mkdir($datasheet_dir, 0755, true);
-      }
-      
       // Elimina il vecchio file se esiste
       if ($datasheet_file) {
-        $old_file_path = $datasheet_dir . DIRECTORY_SEPARATOR . $datasheet_file;
-        if (file_exists($old_file_path)) {
+        $old_file_path = realpath(__DIR__ . '/../datasheet/' . $datasheet_file);
+        if ($old_file_path && file_exists($old_file_path)) {
           @unlink($old_file_path);
         }
       }
       
-      // Nome file: id.pdf
-      $datasheet_file = $id . '.pdf';
-      $file_path = $datasheet_dir . DIRECTORY_SEPARATOR . $datasheet_file;
-      
-      if (!@move_uploaded_file($file['tmp_name'], $file_path)) {
+      // Salva il nuovo file direttamente
+      $customFilename = $id . '.pdf';
+      $targetPath = realpath(__DIR__ . '/../datasheet') . DIRECTORY_SEPARATOR . $customFilename;
+      if (move_uploaded_file($_FILES['datasheet_file']['tmp_name'], $targetPath)) {
+        $datasheet_file = $customFilename;
+      } else {
         $error = "Impossibile salvare il file datasheet.";
-        $datasheet_file = $component['datasheet_file'];
       }
     }
   }

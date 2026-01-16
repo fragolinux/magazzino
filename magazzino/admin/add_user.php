@@ -3,11 +3,12 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:04:40 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2025-10-20 20:00:41
+ * @Last Modified time: 2026-01-15
 */
 
 require '../includes/auth_check.php';
 require '../includes/db_connect.php';
+require '../includes/csrf.php';
 
 if ($_SESSION['role'] !== 'admin') {
     die("Accesso negato.");
@@ -17,7 +18,11 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username'] ?? '');
+    // Verifica CSRF token
+    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+        $error = "Token di sicurezza non valido. Ricarica la pagina e riprova.";
+    } else {
+        $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     $role = $_POST['role'] ?? 'user';
 
@@ -30,12 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->fetch()) {
             $error = "Username già utilizzato.";
         } else {
-            $password_hash = hash('sha256', $password);
+            $password_hash = password_hash($password, PASSWORD_DEFAULT);
             $stmt2 = $pdo->prepare("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)");
             $stmt2->execute([$username, $password_hash, $role]);
             $success = "Utente creato con successo.";
         }
     }
+    } // Chiude il blocco else della verifica CSRF
 }
 
 include '../includes/header.php';
@@ -64,6 +70,7 @@ include '../includes/header.php';
       <option value="admin">Admin</option>
     </select>
   </div>
+  <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generate_csrf_token()) ?>">
   <button type="submit" class="btn btn-primary">Crea utente</button>
 </form>
 

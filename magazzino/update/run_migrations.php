@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-11 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-11 19:30:00
+ * @Last Modified time: 2026-01-15 23:11:11
  *
  * Script per eseguire manualmente le migrazioni del database
  * Da usare dopo aver aggiornato i file del sistema
@@ -23,6 +23,30 @@ if (empty($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 // Esegui le migrazioni
 $migrationManager = new MigrationManager($pdo);
 $migrationResult = $migrationManager->runPendingMigrations();
+
+// Dopo le migrazioni, verifica se dobbiamo aggiornare le credenziali DB
+$currentVersion = $migrationManager->getCurrentVersion();
+$configUpdated = false;
+if (version_compare($currentVersion, '1.8', '>=')) {
+    // Aggiorna il config/database.php con magazzino_user (l'utente è stato creato dalla migrazione 1.8)
+    $configFile = realpath(__DIR__ . '/../config/database.php');
+    if (is_writable($configFile)) {
+        $configContent = file_get_contents($configFile);
+        
+        // Sostituisci l'utente e password con quelli dedicati
+        $configContent = preg_replace("/'user'\s*=>\s*'[^']*'/", "'user' => 'magazzino_user'", $configContent);
+        $configContent = preg_replace("/'pass'\s*=>\s*'[^']*'/", "'pass' => 'SecurePass2024!'", $configContent);
+        
+        $result = file_put_contents($configFile, $configContent);
+        if ($result !== false) {
+            $configUpdated = true;
+        } else {
+            error_log("Errore scrittura config: $configFile");
+        }
+    } else {
+        error_log("File config non scrivibile: $configFile");
+    }
+}
 
 // Leggi la versione corrente dal file versioni.txt e registrala nel DB
 $versionFile = __DIR__ . '/../versioni.txt';
@@ -70,12 +94,12 @@ if (!empty($migrationResult['applied'])) {
 		'no_effect_statements' => $totalSkipped,
 		'failed_statements' => $totalErrors,
 		'details' => $allDetails,
-		'message' => $migrationResult['message']
+		'message' => $migrationResult['message'] . ($configUpdated ? ' Configurazione database aggiornata con utente dedicato.' : ' (Config non aggiornato. Versione: ' . $currentVersion . ')')
 	];
 } else {
 	$dbReport = [
 		'success' => true,
-		'message' => $migrationResult['message']
+		'message' => $migrationResult['message'] . ($configUpdated ? ' Configurazione database aggiornata con utente dedicato.' : ' (Versione corrente: ' . $currentVersion . ')')
 	];
 }
 
@@ -127,7 +151,7 @@ if (!empty($migrationResult['applied'])) {
 							<h6>Dettagli:</h6>
 							<ul class="mb-0">
 								<?php foreach ($dbReport['details'] as $detail): ?>
-									<li><?= htmlspecialchars($detail) ?></li>
+								<li><?= $detail ?></li>
 								<?php endforeach; ?>
 							</ul>
 						<?php endif; ?>

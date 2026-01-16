@@ -3,7 +3,7 @@
 SHELL := /bin/sh
 UNAME_S := $(shell uname -s)
 
-.PHONY: help up down devup devdown backup restore release
+.PHONY: help up down devup devdown backup restore release logs
 
 help:
 > @echo "Usage: make <target>"
@@ -16,6 +16,7 @@ help:
 > @echo "  backup   Run DB backup (scripts/backup.sh)"
 > @echo "  restore  Restore DB from BACKUP path (scripts/restore.sh BACKUP=...)"
 > @echo "  release  Push main and create/push tag (TAG=...)"
+> @echo "  logs     Tail logs for the active stack (dev or prod)"
 > @echo ""
 > @echo "Examples:"
 > @echo "  make up"
@@ -40,6 +41,13 @@ devup: check-linux
 
 devdown: check-linux
 > docker compose -f docker-compose.dev.yml down
+
+logs: check-linux
+> if docker compose -f docker-compose.dev.yml ps >/dev/null 2>&1; then \
+>   docker compose -f docker-compose.dev.yml logs -f --tail=200; \
+> else \
+>   docker compose logs -f --tail=200; \
+> fi
 
 backup: check-linux
 > ./scripts/backup.sh

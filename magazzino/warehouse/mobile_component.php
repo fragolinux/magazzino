@@ -3,9 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-07 13:30:00 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-07 13:33:49
+ * @Last Modified time: 2026-01-14
 */
 // Pagina mobile-friendly per carico/scarico componente via QR code
+// 2026-01-14: Sistemati conteggi quantità per unità di misura
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -19,7 +20,8 @@ if ($component_id === 0) {
 }
 
 // Recupera dettagli componente
-$stmt = $pdo->prepare("SELECT c.id, c.codice_prodotto, c.quantity, cat.name AS category_name, l.name AS location_name, cmp.code AS compartment_code
+// 2026-01-14: Aggiunta unità di misura
+$stmt = $pdo->prepare("SELECT c.id, c.codice_prodotto, c.quantity, c.unita_misura, cat.name AS category_name, l.name AS location_name, cmp.code AS compartment_code
                        FROM components c
                        LEFT JOIN categories cat ON c.category_id = cat.id
                        LEFT JOIN locations l ON c.location_id = l.id
@@ -90,7 +92,7 @@ if (!$component) {
 
         <div class="info-group">
             <div class="info-label">Quantità attuale</div>
-            <div class="info-value" id="current-qty"><?= intval($component['quantity']) ?></div>
+            <div class="info-value" id="current-qty"><?= intval($component['quantity']) . ' ' . htmlspecialchars($component['unita_misura'] ?? 'pz') ?></div>
         </div>
 
         <!-- Operazione -->

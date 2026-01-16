@@ -1,11 +1,10 @@
 <?php
 /*
- * @Author: gabriele.riva 
- * @Date: 2026-01-05 09:15:19 
+ * @Author: gabriele.riva
+ * @Date: 2026-01-15
  * @Last Modified by: gabriele.riva
  * @Last Modified time: 2026-01-15
 */
-// 2026-01-15: Aggiunta nota informativa sull'uso del sistema QR Code
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/db_connect.php';
 
@@ -25,13 +24,13 @@ $locations = $pdo->query("SELECT id, name FROM locations ORDER BY name ASC")->fe
 
 <div class="container py-4">
 	<div class="d-flex justify-content-between align-items-center mb-3">
-		<h2><i class="fa-solid fa-qrcode me-2"></i>Genera QR Code</h2>
+		<h2><i class="fa-solid fa-barcode me-2"></i>Genera Barcode</h2>
 		<a href="/magazzino/warehouse/components.php" class="btn btn-secondary">Torna a componenti</a>
 	</div>
 
 	<div class="card" style="max-width:900px;">
 		<div class="card-body">
-			<form id="qrForm" method="post" action="generate_qrcodes.php" target="_blank">
+			<form id="barcodeForm" method="post" action="generate_barcodes.php" target="_blank">
 				<div class="row g-3">
 					<div class="col-md-6">
 						<label for="location_id" class="form-label">Posizione</label>
@@ -59,13 +58,13 @@ $locations = $pdo->query("SELECT id, name FROM locations ORDER BY name ASC")->fe
 					<div class="col-12">
 						<label class="form-label">Opzioni stampa</label>
 						<div class="form-check">
-							<input class="form-check-input" type="checkbox" name="include_code_under_qr" id="include_code_under_qr" checked>
-							<label class="form-check-label" for="include_code_under_qr">Mostra il codice del prodotto sotto il QR (opzionale)</label>
+							<input class="form-check-input" type="checkbox" name="include_code_under_barcode" id="include_code_under_barcode" checked>
+							<label class="form-check-label" for="include_code_under_barcode">Mostra il codice del prodotto sotto il barcode (opzionale)</label>
 						</div>
 					</div>
 
 					<div class="col-12 text-end">
-						<button id="generateBtn" type="submit" class="btn btn-primary" disabled>Genera PDF QR Code</button>
+						<button id="generateBtn" type="submit" class="btn btn-primary" disabled>Genera PDF Barcode</button>
 					</div>
 				</div>
 			</form>
@@ -76,14 +75,14 @@ $locations = $pdo->query("SELECT id, name FROM locations ORDER BY name ASC")->fe
 <!-- Nota informativa -->
 <div class="container mt-4" style="max-width:900px;">
 	<div class="alert alert-info">
-		<h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Come utilizzare il sistema QR Code</h6>
+		<h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Come utilizzare i Barcode</h6>
 		<small>
-			Questo sistema di QR Code utilizza la fotocamera dello smartphone per accedere a una pagina web specifica, consentendo il carico e lo scarico diretto del componente.<br><br>
+			I barcode vengono utilizzati per identificare univocamente ciascun componente nel magazzino. Ogni barcode contiene l'ID numerico del componente nel database.<br><br>
 			<strong>Istruzioni per l'uso:</strong><br>
-			1. <strong>Impostazioni iniziali:</strong> alla prima apertura, vai nelle impostazioni e imposta l'IP/URL dell'applicativo (questo verrà inserito nel QR Code).<br>
-			2. <strong>Generazione dei QR Code:</strong> segui la procedura per generare i QR Code, stampali e posizionali sui comparti del magazzino.<br>
-			3. <strong>Accesso alla pagina web:</strong> Inquadra il QR Code con la fotocamera dello smartphone per accedere alla rispettiva pagina web precedentemente configurata.<br>
-			4. <strong>Login iniziale:</strong> se è la prima volta che accedi alla pagina, verrà richiesto di effettuare il login. Seleziona la casella "Ricordami" per facilitare l'accesso futuro. Nelle volte successive, sarà sufficiente inquadrare il QR Code, e verrai portato direttamente alla schermata di carico/scarico della quantità del prodotto.
+			1. <strong>Selezione componenti:</strong> scegli una categoria per filtrare i componenti, oppure seleziona manualmente quelli desiderati.<br>
+			2. <strong>Generazione barcode:</strong> clicca su "Genera PDF Barcode" per creare un PDF con tutti i barcode selezionati.<br>
+			3. <strong>Stampa e applicazione:</strong> stampa il PDF e applica i barcode sui componenti fisici nel magazzino.<br>
+			4. <strong>Utilizzo:</strong> i barcode verranno utilizzati per identificare rapidamente i componenti durante le operazioni di carico/scarico tramite scanner barcode alla pagina <a href="/magazzino/warehouse/barcode_scan.php">Barcode</a>.
 		</small>
 	</div>
 </div>
@@ -171,8 +170,8 @@ $(function(){
 		$('#generateBtn').prop('disabled', total <= 0);
 	}
 
-	// submit: apri generate_qrcodes.php in nuova finestra (target _blank)
-	$('#qrForm').on('submit', function(e){
+	// submit: apri generate_barcodes.php in nuova finestra (target _blank)
+	$('#barcodeForm').on('submit', function(e){
 		// blocca l'invio se non ci sono componenti selezionati
 		if ($('#generateBtn').is(':disabled')){
 			e.preventDefault();

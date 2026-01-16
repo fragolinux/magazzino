@@ -3,6 +3,15 @@ backup/*
 !backup/.gitkeep
 data/*
 !data/.gitkeep
+!data/db/
+data/db/*
+!data/db/.gitkeep
+!data/nginx-logs/
+data/nginx-logs/*
+!data/nginx-logs/.gitkeep
+!data/php-logs/
+data/php-logs/*
+!data/php-logs/.gitkeep
 !data/uploads/.gitkeep
 !data/uploads/datasheet/.gitkeep
 !data/uploads/images/.gitkeep

@@ -3,18 +3,23 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-12
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-12
+ * @Last Modified time: 2026-01-15
 */
 // Pagina profilo utente - gestione password e impostazioni personali
 
 require 'includes/auth_check.php';
 require 'includes/db_connect.php';
+require 'includes/csrf.php';
 
 $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $newPassword = $_POST['new_password'] ?? '';
+    // Verifica CSRF token
+    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+        $error = "Token di sicurezza non valido. Ricarica la pagina e riprova.";
+    } else {
+        $newPassword = $_POST['new_password'] ?? '';
 
     if (empty($newPassword)) {
         $error = "Il campo password è obbligatorio.";
@@ -22,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "La password deve contenere almeno 8 caratteri.";
     } else {
         // Aggiorna la password
-        $newPasswordHash = hash('sha256', $newPassword);
+        $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
         $stmtUpdate = $pdo->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
         $stmtUpdate->execute([$newPasswordHash, $_SESSION['user_id']]);
 
@@ -30,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Reset dei campi
         $_POST = [];
     }
+    } // Chiude il blocco else della verifica CSRF
 }
 
 include 'includes/header.php';
@@ -66,6 +72,8 @@ include 'includes/header.php';
                                autocomplete="off">
                         <div class="form-text">La password deve contenere almeno 8 caratteri.</div>
                     </div>
+
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generate_csrf_token()) ?>">
 
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">

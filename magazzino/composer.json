@@ -1,0 +1,14 @@
+{
+    "name": "magazzino/magazzino",
+    "description": "Sistema di magazzino",
+    "type": "project",
+    "authors": [
+        {
+            "name": "gabriele.riva",
+            "email": "gabriele.riva@example.com"
+        }
+    ],
+    "require": {
+        "picqer/php-barcode-generator": "^2.4"
+    }
+}

@@ -3,12 +3,13 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:10:52 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-12 20:01:02
+ * @Last Modified time: 2026-01-15
 */
 // 2026-01-12: Permetti ad un admin di modificare i propri dati senza perdere i privilegi
 
 require '../includes/auth_check.php';
 require '../includes/db_connect.php';
+require '../includes/csrf.php';
 
 if ($_SESSION['role'] !== 'admin') {
     die("Accesso negato.");
@@ -36,7 +37,11 @@ $success = '';
 $isSelfEdit = ($id === intval($_SESSION['user_id']));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username'] ?? '');
+    // Verifica CSRF token
+    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+        $error = "Token di sicurezza non valido. Ricarica la pagina e riprova.";
+    } else {
+        $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     
     // Se è self-edit, mantieni il ruolo esistente, altrimenti prendi quello dal POST
@@ -59,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             // Aggiornamento query dinamico
             if ($password !== '') {
-                $password_hash = hash('sha256', $password);
+                $password_hash = password_hash($password, PASSWORD_DEFAULT);
                 $stmtUpdate = $pdo->prepare("UPDATE users SET username = ?, password_hash = ?, role = ? WHERE id = ?");
                 $stmtUpdate->execute([$username, $password_hash, $role, $id]);
             } else {
@@ -78,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+    } // Chiude il blocco else della verifica CSRF
 }
 
 include '../includes/header.php';
@@ -117,6 +123,8 @@ include '../includes/header.php';
         <div class="form-text text-muted">Non puoi modificare il tuo ruolo mentre sei loggato.</div>
       <?php endif; ?>
     </div>
+
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generate_csrf_token()) ?>">
 
     <button type="submit" class="btn btn-primary">
       <i class="fa fa-save"></i> Salva modifiche

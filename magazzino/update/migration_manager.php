@@ -1,7 +1,7 @@
 <?php
 /*
  * @Author: gabriele.riva 
- * @Date: 2026-01-11
+ * @Date: 2026-01-15
  * 
  * Migration Manager - Sistema intelligente di gestione aggiornamenti DB
  * Applica solo le migrazioni necessarie in base alla versione corrente
@@ -74,8 +74,20 @@ class MigrationManager {
             $this->createDbVersionTable();
         }
         
-        $stmt = $this->pdo->prepare("INSERT INTO db_version (version, description) VALUES (?, ?)");
-        $stmt->execute([$version, $description]);
+        // Controlla se la versione esiste già
+        $stmt = $this->pdo->prepare("SELECT id FROM db_version WHERE version = ?");
+        $stmt->execute([$version]);
+        $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($existing) {
+            // Aggiorna la descrizione se diversa
+            $stmt = $this->pdo->prepare("UPDATE db_version SET description = ?, applied_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt->execute([$description, $existing['id']]);
+        } else {
+            // Inserisci nuova
+            $stmt = $this->pdo->prepare("INSERT INTO db_version (version, description) VALUES (?, ?)");
+            $stmt->execute([$version, $description]);
+        }
     }
     
     /**
@@ -176,7 +188,8 @@ class MigrationManager {
                     $details[] = "✓ " . $shortStmt;
                 } else {
                     $skipped++;
-                    $details[] = "⊘ Nessun effetto";
+                    $shortStmt = strlen($s) > 60 ? substr($s, 0, 60) . '...' : $s;
+                    $details[] = "⊘ " . $shortStmt;
                 }
                 
             } catch (PDOException $e) {
@@ -192,7 +205,8 @@ class MigrationManager {
                     strpos($errorMsg, 'already exists') !== false ||
                     strpos($errorMsg, 'Duplicate') !== false) {
                     $skipped++;
-                    $details[] = "⊘ Già esistente o duplicato";
+                    $shortStmt = strlen($s) > 60 ? substr($s, 0, 60) . '...' : $s;
+                    $details[] = "⊘ " . $shortStmt . " (già esistente)";
                 } else {
                     $errors++;
                     $details[] = "✗ ERRORE: " . $e->getMessage();

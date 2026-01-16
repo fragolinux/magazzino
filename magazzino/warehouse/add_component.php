@@ -3,27 +3,30 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:52:20 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-12 14:19:48
+ * @Last Modified time: 2026-01-15 20:31:29
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-08: aggiunti quick add per posizioni e categorie
 // 2026-01-09: Aggiunta gestione upload immagini
 // 2026-01-11: Aggiunto controllo duplicati
 // 2026-01-12: Aggiunti campi per prezzo, link fornitore, unità di misura, package, tensione, corrente, potenza, hfe e tags; migliorata gestione equivalenti
+// 2026-01-14: Sistemati conteggi quantità per unità di misura
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
+require_once '../includes/secure_upload.php';
 
 $error = '';
 $success = '';
 $component = [];
 
 // Recupero posizioni, categorie e ultimi componenti
+// 2026-01-14: Aggiunta unità di misura
 $locations = $pdo->query("SELECT * FROM locations ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 $lastComponents = $pdo->query("
-    SELECT c.id, c.codice_prodotto, c.quantity, cat.name AS category_name, l.name AS location_name, cmp.code AS compartment_code
+    SELECT c.id, c.codice_prodotto, c.quantity, c.unita_misura, cat.name AS category_name, l.name AS location_name, cmp.code AS compartment_code
     FROM components c
     LEFT JOIN categories cat ON c.category_id = cat.id
     LEFT JOIN locations l ON c.location_id = l.id
@@ -92,16 +95,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['codice_prodotto']) &&
     $datasheet_file = null;
     // Gestione upload file datasheet
     if (isset($_FILES['datasheet_file']) && $_FILES['datasheet_file']['error'] === UPLOAD_ERR_OK) {
-        $file = $_FILES['datasheet_file'];
-        $maxSize = 10 * 1024 * 1024; // 10MB max
-        $allowedTypes = ['application/pdf'];
+        $validator = new SecureUploadValidator(__DIR__ . '/../datasheet');
+        $validation = $validator->validateUpload($_FILES['datasheet_file'], ['application/pdf']);
         
-        if ($file['size'] > $maxSize) {
-            $error = "File datasheet troppo grande (max 10MB).";
-        } elseif (!in_array($file['type'], $allowedTypes)) {
-            $error = "Solo file PDF sono consentiti per il datasheet.";
+        if (!$validation['valid']) {
+            $error = 'File datasheet non valido: ' . implode(', ', $validation['errors']);
         }
-        // Se validazione OK, memorizziamo il file temporaneamente per elaborarlo dopo l'INSERT
+        // Se validazione OK, il file verrà salvato dopo l'INSERT del componente
     }
 
     if ($codice_prodotto === '') {
@@ -169,22 +169,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['codice_prodotto']) &&
             
             // Ora elabora il file datasheet se presente e non ci sono errori
             if (isset($_FILES['datasheet_file']) && $_FILES['datasheet_file']['error'] === UPLOAD_ERR_OK && empty($error)) {
-                $file = $_FILES['datasheet_file'];
-                $datasheet_dir = realpath(__DIR__ . '/..') . '/datasheet';
-                if (!is_dir($datasheet_dir)) {
-                    @mkdir($datasheet_dir, 0755, true);
+                $validator = new SecureUploadValidator(__DIR__ . '/../datasheet');
+                $validation = $validator->validateUpload($_FILES['datasheet_file'], ['application/pdf']);
+                
+                if ($validation['valid']) {
+                    // Salva il file direttamente
+                    $customFilename = $component_id . '.pdf';
+                    $uploadDir = realpath(__DIR__ . '/../datasheet');
+                    $filePath = $uploadDir . DIRECTORY_SEPARATOR . $customFilename;
+                    
+                    if (move_uploaded_file($_FILES['datasheet_file']['tmp_name'], $filePath)) {
+                        // Aggiorna il record con il nome del file
+                        $upd = $pdo->prepare("UPDATE components SET datasheet_file = ? WHERE id = ?");
+                        $upd->execute([$customFilename, $component_id]);
+                    } else {
+                        $error = "Impossibile salvare il file datasheet.";
+                    }
                 }
+            }
+            
+            // Ora elabora l'immagine se presente e non ci sono errori
+            $resizedImageData = $_POST['resized_image_data'] ?? '';
+            $resizedThumbData = $_POST['resized_thumb_data'] ?? '';
+            if (!empty($resizedImageData) && !empty($resizedThumbData) && empty($error)) {
+                // Decodifica le immagini base64
+                $image_data = preg_replace('/^data:image\/(jpeg|webp);base64,/', '', $resizedImageData);
+                $image_data = str_replace(' ', '+', $image_data);
+                $image_binary = base64_decode($image_data);
                 
-                // Nome file: id.pdf
-                $datasheet_file = $component_id . '.pdf';
-                $file_path = $datasheet_dir . DIRECTORY_SEPARATOR . $datasheet_file;
+                $thumb_data = preg_replace('/^data:image\/(jpeg|webp);base64,/', '', $resizedThumbData);
+                $thumb_data = str_replace(' ', '+', $thumb_data);
+                $thumb_binary = base64_decode($thumb_data);
                 
-                if (@move_uploaded_file($file['tmp_name'], $file_path)) {
-                    // Aggiorna il record con il nome del file
-                    $upd = $pdo->prepare("UPDATE components SET datasheet_file = ? WHERE id = ?");
-                    $upd->execute([$datasheet_file, $component_id]);
+                if ($image_binary && $thumb_binary) {
+                    // Percorsi delle cartelle
+                    $base_dir = realpath(__DIR__ . '/../images/components');
+                    $thumb_dir = $base_dir . '/thumbs';
+                    
+                    // Verifica che le cartelle esistano
+                    if (!is_dir($base_dir)) {
+                        $error = "Cartella images/components non trovata";
+                    } elseif (!is_dir($thumb_dir)) {
+                        $error = "Cartella images/components/thumbs non trovata";
+                    } else {
+                        // Nomi dei file
+                        $filename = $component_id . '.jpg';
+                        $image_path = $base_dir . DIRECTORY_SEPARATOR . $filename;
+                        $thumb_path = $thumb_dir . DIRECTORY_SEPARATOR . $filename;
+                        
+                        // Salva le immagini
+                        $image_saved = @file_put_contents($image_path, $image_binary);
+                        $thumb_saved = @file_put_contents($thumb_path, $thumb_binary);
+                        
+                        if ($image_saved === false || $thumb_saved === false) {
+                            $error = "Impossibile salvare le immagini sul server";
+                        }
+                    }
                 } else {
-                    $error = "Impossibile salvare il file datasheet.";
+                    $error = "Errore nella decodifica delle immagini";
                 }
             }
             
@@ -433,6 +475,8 @@ include '../includes/header.php';
                       </button>
                     </div>
                     <small class="text-muted">JPG, GIF, BMP, WebP - verrà ridimensionata a 500x500px</small>
+                    <input type="hidden" name="resized_image_data" id="resized_image_data">
+                    <input type="hidden" name="resized_thumb_data" id="resized_thumb_data">
                   </div>
 
                   <div class="col-md-4" id="image-preview-container" style="display:none;">
@@ -499,7 +543,7 @@ include '../includes/header.php';
                 <td><?= htmlspecialchars($c['category_name'] ?? '—') ?></td>
                 <td><?= htmlspecialchars($c['location_name'] ?? '—') ?></td>
                 <td><?= htmlspecialchars($c['compartment_code'] ?? '—') ?></td>
-                <td class="text-end"><?= htmlspecialchars($c['quantity']) ?></td>
+                <td class="text-end"><?= htmlspecialchars($c['quantity']) . ' ' . htmlspecialchars($c['unita_misura'] ?? 'pz') ?></td>
                 <td class="text-center">
                   <button type="button" class="btn btn-sm btn-outline-danger btn-delete-component" data-id="<?= $c['id'] ?>" data-name="<?= htmlspecialchars($c['codice_prodotto']) ?>" title="Elimina componente">
                     <i class="fa-solid fa-trash"></i>
@@ -666,6 +710,10 @@ $(function() {
         ctx500.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 500, 500);
         resizedImageData = canvas500.toDataURL('image/jpeg', 0.9);
         
+        // Imposta il campo hidden
+        $('#resized_image_data').val(resizedImageData);
+        console.log('Image data set, length:', resizedImageData.length);
+        
         // Ridimensiona a 80x80 per thumbnail
         const canvas80 = document.createElement('canvas');
         canvas80.width = 80;
@@ -673,6 +721,10 @@ $(function() {
         const ctx80 = canvas80.getContext('2d');
         ctx80.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 80, 80);
         resizedThumbData = canvas80.toDataURL('image/jpeg', 0.85);
+        
+        // Imposta il campo hidden
+        $('#resized_thumb_data').val(resizedThumbData);
+        console.log('Thumb data set, length:', resizedThumbData.length);
         
         // Mostra anteprima
         $('#image-preview').attr('src', resizedThumbData);
@@ -691,75 +743,23 @@ $(function() {
     $(this).hide();
     resizedImageData = null;
     resizedThumbData = null;
+    $('#resized_image_data').val('');
+    $('#resized_thumb_data').val('');
   });
 
-  // Intercetta submit del form per caricare l'immagine dopo l'inserimento
+  // Intercetta submit del form per gestire l'immagine
   const $form = $('#componentForm');
-  const originalAction = $form.attr('action') || '';
   
   $form.on('submit', function(e) {
-    // PRIMA normalizza sempre i campi
+    // Normalizza i campi
     normalizeCommaSpaceField($('#equivalents')[0]);
     normalizeCommaSpaceField($('input[name="tags"]')[0]);
     
-    // Se non c'è immagine, procedi normalmente (submit normale del form)
-    if (!resizedImageData || !resizedThumbData) {
-      return true;
-    }
+    console.log('Submitting form, image data length:', $('#resized_image_data').val().length);
+    console.log('Thumb data length:', $('#resized_thumb_data').val().length);
     
-    // Se c'è un'immagine, blocca il submit normale e usa AJAX
-    e.preventDefault();
-    
-    const $submitBtn = $form.find('button[type="submit"]');
-    $submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Salvataggio...');
-    
-    // IMPORTANTE: Crea FormData DOPO aver normalizzato i campi
-    const formData = new FormData(this);
-    
-    $.ajax({
-      url: originalAction,
-      method: 'POST',
-      data: formData,
-      processData: false,
-      contentType: false,
-      success: function(response) {
-        // Estrai l'ID del componente dalla risposta (cerca nell'HTML)
-        const $response = $(response);
-        const successMsg = $response.find('.alert-success').text();
-        
-        // Se il componente è stato creato, cerca l'ID nell'ultima tabella
-        const $lastTable = $response.find('tbody tr').first();
-        const componentId = $lastTable.data('component-id');
-        
-        if (componentId && resizedImageData && resizedThumbData) {
-          // Carica l'immagine
-          $.ajax({
-            url: 'upload_component_image.php',
-            method: 'POST',
-            data: {
-              component_id: componentId,
-              image_data: resizedImageData,
-              thumb_data: resizedThumbData
-            },
-            success: function() {
-              // Redirect alla stessa pagina per evitare ritrasmissione POST
-              window.location.href = window.location.pathname;
-            },
-            error: function() {
-              alert('Componente creato ma errore nel caricamento dell\'immagine.');
-              window.location.href = window.location.pathname;
-            }
-          });
-        } else {
-          // Nessun ID trovato o errore, ricarica comunque
-          window.location.href = window.location.pathname;
-        }
-      },
-      error: function() {
-        $submitBtn.prop('disabled', false).html('<i class="fa-solid fa-save me-1"></i> Salva');
-        alert('Errore durante il salvataggio del componente.');
-      }
-    });
+    // Procedi con il submit normale
+    return true;
   });
 
   // Gestione modal aggiunta posizione

@@ -1,0 +1,138 @@
+/*
+ * BOM Report Print Styles
+ * Ottimizzazione stampa per report BOM
+ */
+
+@media print {
+	/* Nascondi elementi non necessari */
+	nav, .btn, .form-control, .form-select, .form-text, form, .d-flex.justify-content-between, .btn-group, input[type="radio"], label[for] {
+		display: none !important;
+	}
+	
+	/* Rimuovi padding/margin container */
+	body, .container {
+		margin: 0 !important;
+		padding: 0 !important;
+		width: 100% !important;
+		max-width: 100% !important;
+	}
+	
+	/* Orientamento landscape e margini ridotti */
+	@page {
+		size: A4 landscape;
+		margin: 10mm;
+	}
+	
+	/* Ottimizza tabella per stampa */
+	.table-responsive {
+		overflow: visible !important;
+	}
+	
+	table {
+		width: 100% !important;
+		font-size: 9pt !important;
+		page-break-inside: auto;
+	}
+	
+	thead {
+		display: table-header-group;
+		font-weight: bold;
+	}
+	
+	tr {
+		page-break-inside: avoid;
+		page-break-after: auto;
+	}
+	
+	th, td {
+		padding: 3px 5px !important;
+		font-size: 9pt !important;
+		border: 1px solid #000 !important;
+	}
+	
+	/* Nascondi progress bar e mostra solo percentuale */
+	.progress {
+		border: none !important;
+		background: none !important;
+		height: auto !important;
+	}
+	
+	.progress-bar {
+		position: static !important;
+		width: auto !important;
+		background: none !important;
+		color: #000 !important;
+	}
+	
+	/* Badge in bianco e nero */
+	.badge {
+		border: 1px solid #000 !important;
+		background: white !important;
+		color: #000 !important;
+		padding: 2px 4px !important;
+	}
+	
+	/* Alert compatti */
+	.alert {
+		padding: 2px 4px !important;
+		margin: 2px 0 !important;
+		border: 1px solid #000 !important;
+		background: white !important;
+		color: #000 !important;
+	}
+	
+	/* Nascondi completamente le card statistiche */
+	.row.mb-4 {
+		display: none !important;
+	}
+	
+	.card {
+		display: none !important;
+	}
+	
+	.card-body {
+		display: none !important;
+	}
+	
+	h2, h5 {
+		font-size: 12pt !important;
+		margin: 5px 0 !important;
+	}
+	
+	/* Colori di background in bianco per stampa */
+	.table-success-subtle, .table-warning, .table-danger {
+		background-color: white !important;
+	}
+	
+	/* Mantieni bordi per distinguere le righe */
+	.table-warning td {
+		border-left: 3px solid #000 !important;
+	}
+	
+	.table-danger td {
+		border-left: 5px solid #000 !important;
+	}
+	
+	/* Titolo centrato */
+	h2:first-of-type {
+		text-align: center;
+		font-size: 16pt !important;
+		margin-bottom: 10px !important;
+	}
+	
+	/* Nascondi icone FA che potrebbero non renderizzare bene */
+	.fa-solid::before {
+		content: '' !important;
+	}
+	
+	/* Small text leggibile */
+	small {
+		font-size: 8pt !important;
+	}
+}
+
+@media print and (orientation: landscape) {
+	body {
+		width: 297mm;
+	}
+}

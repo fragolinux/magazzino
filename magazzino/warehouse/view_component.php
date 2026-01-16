@@ -3,11 +3,12 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-21 08:47:13 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-12 15:25:32
+ * @Last Modified time: 2026-01-14
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-08: Aggiunto locale
 // 2026-01-09: Aggiunta gestione immagine componente
+// 2026-01-14: Sistemati conteggi quantità per unità di misura
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -71,17 +72,20 @@ $hasImage = $imagePath && file_exists($imagePath);
     <table class="table table-bordered table-sm align-middle mb-0">
         <?= field('Codice prodotto', htmlspecialchars($component['codice_prodotto'])) ?>
         <?= field('Categoria', htmlspecialchars($component['category_name'] ?? '')) ?>
-        <?= field('Unità misura', htmlspecialchars($component['unita_misura'] ?? 'pz')) ?>
-        <?= field('Quantità', intval($component['quantity'])) ?>
         <?php 
-        $qty_min = $component['quantity_min'];
+        $unit = $component['unita_misura'] ?? 'pz';
         $qty = intval($component['quantity']);
+        $qty_min = $component['quantity_min'];
+        ?>
+        <?= field('Quantità', $qty . ' ' . htmlspecialchars($unit)) ?>
+        <?php 
         $rowClass = '';
         if ($qty_min !== null && $qty_min != 0 && $qty_min > $qty) {
             $rowClass = ' class="table-danger"';
         }
         ?>
-        <tr<?= $rowClass ?>><th style="width:30%;white-space:nowrap;">Q.tà minima</th><td><?= ($qty_min !== null && $qty_min != 0 ? $qty_min : '<span class="text-muted">-</span>') ?></td></tr>
+        <tr<?= $rowClass ?>><th style="width:30%;white-space:nowrap;">Q.tà minima</th><td><?= ($qty_min !== null && $qty_min != 0 ? $qty_min . ' ' . htmlspecialchars($unit) : '<span class="text-muted">-</span>') ?></td></tr>
+        <?= field('Unità misura', htmlspecialchars($unit)) ?>
         <?= field('Locale', htmlspecialchars($component['locale_name'] ?? '')) ?>
         <?= field('Posizione', htmlspecialchars($component['location_name'] ?? '')) ?>
         <?= field('Comparto', htmlspecialchars($component['compartment_code'] ?? '')) ?>

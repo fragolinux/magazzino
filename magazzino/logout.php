@@ -3,11 +3,14 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:50:47 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-07 14:32:15
-*/
+ * @Last Modified time: 2026-01-15
+ */
+// 2026-01-15: protezione CSRF
 
+require 'includes/session_config.php';
 session_start();
 require 'includes/db_connect.php';
+require 'includes/csrf.php';
 
 $user_id = $_SESSION['user_id'] ?? null;
 
@@ -29,6 +32,10 @@ if (isset($_COOKIE['remember_token'])) {
 // Distruggi la sessione
 session_unset();
 session_destroy();
+
+// Rigenera token CSRF per sicurezza
+regenerate_csrf_token();
+
 header('Location: login.php');
 exit;
 ?>

@@ -3,13 +3,14 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 18:00:51 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-12 09:59:28
+ * @Last Modified time: 2026-01-14 15:28:159
 */
 // 2026-01-03: Aggiunta funzionalità carico/scarico quantità componente
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-08: Aggiunto filtro per locale
 // 2026-01-09: Aggiunta gestione immagine componente
 // 2026-01-12: Aggiunti ricerca anche per tags
+// 2026-01-14: Sistemati conteggi quantità per unità di misura
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -104,7 +105,10 @@ if (!$components) {
     foreach ($components as $c) {
         $qty = intval($c['quantity']);
         $qty_min = $c['quantity_min'];
-        $qty_cell = $qty;
+        $unit = $c['unita_misura'] ?? 'pz';
+        
+        // Formatta quantità con unità di misura
+        $qty_cell = $qty . ' ' . htmlspecialchars($unit);
         
         // Aggiungi icona rossa se quantità sotto scorta
         if ($qty_min !== null && $qty_min != 0 && $qty < $qty_min) {

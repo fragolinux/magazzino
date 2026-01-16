@@ -1,0 +1,35 @@
+# File di configurazione sensibili
+config/database.php
+config/settings.php
+
+# File temporanei e cache
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# File caricati dagli utenti
+datasheet/*.pdf
+images/components/*.jpg
+images/components/*.png
+images/components/*.gif
+images/components/thumbs/
+
+# Log e debug
+*.log
+error_log
+debug.log
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Composer (se usato in futuro)
+/vendor/
+
+# File di backup
+_DOC/bak/
+*.sql.bak

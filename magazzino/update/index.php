@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-04 12:59:50 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-11 18:03:00
+ * @Last Modified time: 2026-01-16 14:30:20
  *
  * Update script:
  * - apre file .zip nella stessa cartella
@@ -24,7 +24,8 @@ if (empty($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 		exit;
 }
 
-ini_set('display_errors', 0);
+// Esegui pulizia preventiva SOLO di file temporanei (non ZIP)
+include __DIR__ . '/cleanup.php';
 
 // Flag per indicare che siamo nella fase 2 (dopo aver aggiornato i file)
 $isPhase2 = isset($_GET['phase2']) && $_GET['phase2'] === '1';
@@ -49,6 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['updateZip'])) {
 		$destPath = $uploadDir . DIRECTORY_SEPARATOR . 'update.zip';
 		if (@move_uploaded_file($file['tmp_name'], $destPath)) {
 			$uploadSuccess = true;
+			// Segna che abbiamo appena caricato un file
+			$_SESSION['just_uploaded_zip'] = true;
 			// Ricarica la pagina per iniziare l'estrazione
 			header('Location: ' . $_SERVER['REQUEST_URI']);
 			exit;
@@ -69,8 +72,45 @@ function rrmdir($dir) {
 		@rmdir($dir);
 }
 
+/**
+ * Pulisce file e cartelle temporanee dalla cartella update
+ */
+function cleanupOldFiles($updateDir) {
+    $cleaned = ['temp_dirs' => [], 'zip_files' => []];
+    
+    // Elimina cartelle temporanee (_temp_*)
+    $tempDirs = glob($updateDir . DIRECTORY_SEPARATOR . '_temp_*', GLOB_ONLYDIR);
+    foreach ($tempDirs as $dir) {
+        if (is_dir($dir)) {
+            rrmdir($dir);
+            $cleaned['temp_dirs'][] = basename($dir);
+        }
+    }
+    
+    // Elimina file ZIP vecchi (tranne update.zip se presente)
+    $zipFiles = glob($updateDir . DIRECTORY_SEPARATOR . '*.zip');
+    foreach ($zipFiles as $zipFile) {
+        $basename = basename($zipFile);
+        // Mantieni update.zip se è stato appena caricato, ma elimina altri ZIP
+        $justUploaded = isset($_SESSION['just_uploaded_zip']) && $_SESSION['just_uploaded_zip'];
+        if ($basename !== 'update.zip' || !$justUploaded) {
+            if (@unlink($zipFile)) {
+                $cleaned['zip_files'][] = $basename;
+            }
+        }
+    }
+    
+    return $cleaned;
+}
+
 // Percorsi
 $projectRoot = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..');
+
+// Variabili per la pulizia
+$tmpDir = null;
+
+// Pulizia preventiva di file/cartelle temporanee
+$cleanupResult = cleanupOldFiles(__DIR__);
 
 // Cerca qualsiasi file .zip nella cartella update (scegli il più recente)
 $zipFilesInDir = glob(__DIR__ . '/*.zip');
@@ -113,6 +153,20 @@ if ($zipPath === null) {
 			</div>
 		<?php endif; ?>
 		
+		<?php if (!empty($cleanupResult['temp_dirs']) || !empty($cleanupResult['zip_files'])): ?>
+			<div class="alert alert-success">
+				<i class="fa-solid fa-broom me-2"></i>
+				<strong>Pulizia completata:</strong>
+				<?php if (!empty($cleanupResult['temp_dirs'])): ?>
+					Cartelle temporanee eliminate: <?= implode(', ', $cleanupResult['temp_dirs']) ?>
+				<?php endif; ?>
+				<?php if (!empty($cleanupResult['zip_files'])): ?>
+					<?php if (!empty($cleanupResult['temp_dirs'])): ?><br><?php endif; ?>
+					File ZIP eliminati: <?= implode(', ', $cleanupResult['zip_files']) ?>
+				<?php endif; ?>
+			</div>
+		<?php endif; ?>
+		
 		<div class="card mt-4" style="max-width: 600px;">
 			<div class="card-header">
 				<h5 class="mb-0">Carica file di aggiornamento</h5>
@@ -145,6 +199,9 @@ if (!$projectRoot) {
 	echo "Errore: impossibile determinare la root del progetto.";
 	exit;
 }
+
+// Reset del flag di upload appena fatto
+unset($_SESSION['just_uploaded_zip']);
 
 // Funzione per estrarre versione da versioni.txt
 function getLatestVersion($versionFile) {
@@ -198,6 +255,13 @@ if (!$zip->extractTo($tmpDir)) {
 		http_response_code(500);
 		echo "Estrazione fallita.";
 		exit;
+}
+
+$zip->close();
+
+// Elimina il file ZIP originale dopo l'estrazione (non serve più)
+if (file_exists($zipPath)) {
+    @unlink($zipPath);
 }
 
 // Leggi versione NUOVA dalla cartella temporanea
@@ -270,88 +334,90 @@ if ($isDowngrade && !isset($_GET['confirm_downgrade'])) {
 	exit;
 }
 
-$filesReport = ['updated' => [], 'skipped' => [], 'errors' => [], 'currentVersion' => $currentVersion, 'newVersion' => $newVersion];
+$filesReport = ['updated' => [], 'skipped' => [], 'errors' => [], 'unchanged' => [], 'currentVersion' => $currentVersion, 'newVersion' => $newVersion];
 
-// Copia file uno per uno, proteggendo da path traversal
-for ($i = 0; $i < $zip->numFiles; $i++) {
-		$entry = $zip->getNameIndex($i);
-		
-		// normalizza percorso e impedisce path traversal
-		$rel = str_replace(['\\', '/\0'], ['/', ''], $entry);
-		$rel = preg_replace('#(^/|\.{2}/)#', '', $rel);
-		$rel = ltrim($rel, '/');
-		
-		// Se è una directory (termina con /), creala e continua
-		if (substr($entry, -1) === '/') {
-			if ($rel === '') continue;
-			$destDir = $projectRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, rtrim($rel, '/'));
-			if (!is_dir($destDir)) {
-				if (@mkdir($destDir, 0777, true)) {
-					$filesReport['updated'][] = $rel . ' (cartella)';
-				} else {
-					$filesReport['errors'][] = [ 'file' => $rel, 'message' => 'Impossibile creare cartella' ];
-				}
-			}
-			continue;
-		}
-		
-		// non copiare il file db_update.php: verrà eseguito separatamente
-		if (strtolower(basename($rel)) === 'db_update.php') {
-			continue;
-		}
-		if ($rel === '') continue;
-
-		$source = $tmpDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $entry);
-		$dest = $projectRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
-
-		// sicurezza: il destinazione deve iniziare con project root
-		$destDir = dirname($dest);
-		if (strpos(realpath($destDir) ?: $destDir, $projectRoot) !== 0) {
-				$filesReport['errors'][] = [ 'file' => $rel, 'message' => 'Percorso non consentito' ];
-				continue;
-		}
-
-		// crea directory se serve
-		if (!is_dir($destDir)) {
-				if (!@mkdir($destDir, 0777, true)) {
-						// prova a cambiare permessi alla directory padre
-						$filesReport['errors'][] = [ 'file' => $rel, 'message' => 'Impossibile creare directory: ' . $destDir ];
-						continue;
-				}
-		}
-
-		// controllo permessi scrittura
-		if (file_exists($dest) && !is_writable($dest)) {
-				@chmod($dest, 0666);
-		}
-		if (!is_writable($destDir)) {
-				@chmod($destDir, 0777);
-		}
-		if (!is_writable($destDir)) {
-				$filesReport['errors'][] = [ 'file' => $rel, 'message' => 'Destinazione non scrivibile: ' . $destDir ];
-				continue;
-		}
-
-		// Se il file esiste, controlla se è già aggiornato
-		if (file_exists($dest)) {
-				$sourceHash = md5_file($source);
-				$destHash = md5_file($dest);
-				if ($sourceHash === $destHash) {
-						// File identico, non serve copiare
-						$filesReport['unchanged'][] = $rel;
-						continue;
-				}
-		}
-
-		// copia file
-		if (!copy($source, $dest)) {
-				$filesReport['errors'][] = [ 'file' => $rel, 'message' => 'Copia fallita' ];
-				continue;
-		}
-		$filesReport['updated'][] = $rel;
+// Funzione per ottenere tutti i file dalla cartella temporanea in modo ricorsivo
+function getAllFiles($dir, $baseDir = '') {
+    $files = [];
+    $items = scandir($dir);
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..') continue;
+        $path = $dir . DIRECTORY_SEPARATOR . $item;
+        $relPath = $baseDir ? $baseDir . '/' . $item : $item;
+        if (is_dir($path)) {
+            $files = array_merge($files, getAllFiles($path, $relPath));
+        } else {
+            $files[] = $relPath;
+        }
+    }
+    return $files;
 }
 
-$zip->close();
+// Ottieni tutti i file dalla cartella temporanea
+$allFiles = getAllFiles($tmpDir);
+
+// Copia file uno per uno, proteggendo da path traversal
+foreach ($allFiles as $rel) {
+    // normalizza percorso e impedisce path traversal
+    $rel = str_replace(['\\', '/\0'], ['/', ''], $rel);
+    $rel = preg_replace('#(^/|\.{2}/)#', '', $rel);
+    $rel = ltrim($rel, '/');
+    
+    // non copiare il file db_update.php: verrà eseguito separatamente
+    if (strtolower(basename($rel)) === 'db_update.php') {
+        continue;
+    }
+    if ($rel === '') continue;
+
+    $source = $tmpDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+    $dest = $projectRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+    $destDir = dirname($dest);
+    
+    // sicurezza: il destinazione deve iniziare con project root
+    if (strpos(realpath($destDir) ?: $destDir, $projectRoot) !== 0) {
+        $filesReport['errors'][] = [ 'file' => $rel, 'message' => 'Percorso non consentito' ];
+        continue;
+    }
+
+    // crea directory se serve
+    if (!is_dir($destDir)) {
+        if (!@mkdir($destDir, 0777, true)) {
+            // prova a cambiare permessi alla directory padre
+            $filesReport['errors'][] = [ 'file' => $rel, 'message' => 'Impossibile creare directory: ' . $destDir ];
+            continue;
+        }
+    }
+
+    // controllo permessi scrittura
+    if (file_exists($dest) && !is_writable($dest)) {
+        @chmod($dest, 0666);
+    }
+    if (!is_writable($destDir)) {
+        @chmod($destDir, 0777);
+    }
+    if (!is_writable($destDir)) {
+        $filesReport['errors'][] = [ 'file' => $rel, 'message' => 'Destinazione non scrivibile: ' . $destDir ];
+        continue;
+    }
+
+    // Se il file esiste, controlla se è già aggiornato
+    if (file_exists($dest)) {
+        $sourceHash = md5_file($source);
+        $destHash = md5_file($dest);
+        if ($sourceHash === $destHash) {
+            // File identico, non serve copiare
+            $filesReport['unchanged'][] = $rel;
+            continue;
+        }
+    }
+
+    // copia file
+    if (!copy($source, $dest)) {
+        $filesReport['errors'][] = [ 'file' => $rel, 'message' => 'Copia fallita' ];
+        continue;
+    }
+    $filesReport['updated'][] = $rel;
+}
 
 // Controlla se update/index.php o migration_manager.php sono stati aggiornati
 $needsManualMigration = in_array('update/index.php', $filesReport['updated']) || 
@@ -380,7 +446,7 @@ if ($needsManualMigration && !$isPhase2) {
 			<div class="alert alert-warning">
 				<i class="fa-solid fa-info-circle me-2"></i>
 				<strong>Importante:</strong> I file del sistema di aggiornamento sono stati modificati.<br>
-				<strong>Clicca sul pulsante qui sotto per completare l'aggiornamento del database.</strong>
+				<strong>Clicca sul pulsante in fondo alla pagina </strong>per completare l'aggiornamento del database.
 			</div>
 			
 			<?php if (!empty($filesReport['currentVersion']) || !empty($filesReport['newVersion'])): ?>
@@ -440,10 +506,29 @@ if ($needsManualMigration && !$isPhase2) {
 }
 
 // Se non serve migrazione manuale, esegui subito le migrazioni
+$configUpdated = false;
 if (!$isPhase2) {
 	// Usa il nuovo sistema di migrazioni
 	$migrationManager = new MigrationManager($pdo);
 	$migrationResult = $migrationManager->runPendingMigrations();
+	
+	// Dopo le migrazioni, verifica se dobbiamo aggiornare le credenziali DB
+	$currentVersion = $migrationManager->getCurrentVersion();
+	$configUpdated = false;
+	$configFile = realpath(__DIR__ . '/../config/database.php');
+	if (file_exists($configFile) && is_writable($configFile)) {
+		$configContent = file_get_contents($configFile);
+		
+		// Sostituisci l'utente e password con quelli dedicati
+		$configContent = preg_replace("/'user'\s*=>\s*'[^']*'/", "'user' => 'magazzino_user'", $configContent);
+		$configContent = preg_replace("/'pass'\s*=>\s*'[^']*'/", "'pass' => 'SecurePass2024!'", $configContent);
+		
+		if (file_put_contents($configFile, $configContent) !== false) {
+			$configUpdated = true;
+		} else {
+			error_log("Errore scrittura config: $configFile");
+		}
+	}
 	
 	// NON registrare la versione qui per evitare problemi con PDO unbuffered queries
 	// La versione verrà registrata automaticamente da runPendingMigrations()
@@ -477,7 +562,7 @@ if (!empty($migrationResult['applied'])) {
 		'no_effect_statements' => $totalSkipped,
 		'failed_statements' => $totalErrors,
 		'details' => $allDetails,
-		'message' => $migrationResult['message']
+		'message' => $migrationResult['message'] . ($configUpdated ? ' Configurazione database aggiornata con utente dedicato.' : ' (Config non aggiornato)')
 	];
 } else {
 	// Nessuna migrazione applicata
@@ -506,7 +591,10 @@ foreach ($zipFiles as $zf) {
 }
 
 // Report HTML semplice
-?><!doctype html>
+// Esegui la pulizia finale
+include __DIR__ . '/cleanup.php';
+?>
+<!doctype html>
 <html lang="it">
 <head>
 	<meta charset="utf-8">
@@ -605,7 +693,7 @@ foreach ($zipFiles as $zf) {
 						<?php if (!empty($dbReport['details'])): ?>
 							<ul class="mt-2 mb-0">
 								<?php foreach ($dbReport['details'] as $detail): ?>
-									<li><?= htmlspecialchars($detail) ?></li>
+								<li><?= $detail ?></li>
 								<?php endforeach; ?>
 							</ul>
 						<?php endif; ?>
@@ -626,4 +714,7 @@ foreach ($zipFiles as $zf) {
 </html>
 
 <?php
+// Pulizia finale: elimina file ZIP e cartelle temporanee
+$_GET['cleanup_zips'] = '1';
+include __DIR__ . '/cleanup.php';
 exit;

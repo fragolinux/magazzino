@@ -3,9 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:45:58 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-07 14:32:20
+ * @Last Modified time: 2026-01-15
 */
 
+require 'session_config.php';
 session_start();
 
 // If already logged in, nothing to do

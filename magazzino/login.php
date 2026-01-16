@@ -3,15 +3,21 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:44:57 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-12 14:32:06
+ * @Last Modified time: 2026-01-15 18:07:58
 */
 // 2026-01-04: Aggiunta opzione "Ricordami" nel login
 // 2026-01-12: Aggiunto pulsante per mostrare/nascondere la password
+// 2026-01-15: Implementata protezione CSRF, migrazione password_hash, rate limiting contro brute force
 
+require 'includes/session_config.php';
 session_start();
 require 'includes/db_connect.php';
+require 'includes/csrf.php';
+require 'includes/rate_limiter.php';
 
-// Pulisce eventuali token scaduti (silenzioso se la tabella non esiste ancora)
+// Inizializza il rate limiter avanzato
+$rateLimiter = new RateLimiter($pdo);
+
 try {
   $pdo->prepare("DELETE FROM remember_tokens WHERE expires < NOW()")->execute();
 } catch (Exception $e) {
@@ -50,31 +56,81 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username']);
-    $password = $_POST['password'];
-
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-    $stmt->execute([$username]);
-    $user = $stmt->fetch();
-
-    if ($user && hash('sha256', $password) === $user['password_hash']) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['username'];
-        $_SESSION['role'] = $user['role'];
-        
-        // Gestisci il checkbox "Ricordami"
-        if (isset($_POST['remember_me']) && $_POST['remember_me'] === 'on') {
-          $token = bin2hex(random_bytes(32));
-          $expires = date('Y-m-d H:i:s', strtotime('+1 year'));
-          $stmt = $pdo->prepare("INSERT INTO remember_tokens (user_id, token, expires, created_at) VALUES (?, ?, ?, NOW())");
-          $stmt->execute([$user['id'], $token, $expires]);
-          setcookie('remember_token', $token, strtotime('+1 year'), '/', '', $secure, true);
-        }
-        
-        header('Location: index.php');
-        exit;
+    // Verifica CSRF token
+    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+        $error = "Token di sicurezza non valido. Ricarica la pagina e riprova.";
     } else {
-        $error = "Credenziali non valide";
+        $username = trim($_POST['username']);
+        $password = $_POST['password'];
+
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        $user = $stmt->fetch();
+
+        if ($user && password_verify($password, $user['password_hash'])) {
+            // Reset contatore tentativi falliti
+            $rateLimiter->resetAttempts($username);
+            // Pulizia periodica dei vecchi tentativi falliti
+            $rateLimiter->cleanupOldAttempts();
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['role'] = $user['role'];
+            
+            // Gestisci il checkbox "Ricordami"
+            if (isset($_POST['remember_me']) && $_POST['remember_me'] === 'on') {
+              $token = bin2hex(random_bytes(32));
+              $expires = date('Y-m-d H:i:s', strtotime('+1 year'));
+              $stmt = $pdo->prepare("INSERT INTO remember_tokens (user_id, token, expires, created_at) VALUES (?, ?, ?, NOW())");
+              $stmt->execute([$user['id'], $token, $expires]);
+              setcookie('remember_token', $token, strtotime('+1 year'), '/', '', $secure, true);
+            }
+            
+            // Rigenera token CSRF dopo login per sicurezza
+            regenerate_csrf_token();
+            
+            header('Location: index.php');
+            exit;
+        } elseif ($user && hash('sha256', $password) === $user['password_hash']) {
+            // Password vecchia con SHA256 - aggiorna automaticamente al nuovo hash sicuro
+            // Reset contatore tentativi falliti
+            $rateLimiter->resetAttempts($username);
+            // Pulizia periodica dei vecchi tentativi falliti
+            $rateLimiter->cleanupOldAttempts();
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['role'] = $user['role'];
+            
+            // Aggiorna la password al nuovo hash sicuro
+            $newPasswordHash = password_hash($password, PASSWORD_DEFAULT);
+            $stmtUpdate = $pdo->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
+            $stmtUpdate->execute([$newPasswordHash, $user['id']]);
+            
+            // Gestisci il checkbox "Ricordami"
+            if (isset($_POST['remember_me']) && $_POST['remember_me'] === 'on') {
+              $token = bin2hex(random_bytes(32));
+              $expires = date('Y-m-d H:i:s', strtotime('+1 year'));
+              $stmt = $pdo->prepare("INSERT INTO remember_tokens (user_id, token, expires, created_at) VALUES (?, ?, ?, NOW())");
+              $stmt->execute([$user['id'], $token, $expires]);
+              setcookie('remember_token', $token, strtotime('+1 year'), '/', '', $secure, true);
+            }
+            
+            // Rigenera token CSRF dopo login per sicurezza
+            regenerate_csrf_token();
+            
+            header('Location: index.php');
+            exit;
+        } else {
+            // Login fallito - registra tentativo nel rate limiter
+            $rateLimiter->recordFailedAttempt($username);
+
+            // Controlla se ora siamo bloccati per questo utente specifico
+            $userBlockStatus = $rateLimiter->isBlocked($username);
+            if ($userBlockStatus['blocked']) {
+                $error = $userBlockStatus['reason'];
+            } else {
+                $error = "Credenziali non valide";
+            }
+        }
     }
 }
 ?>
@@ -103,6 +159,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <input type="checkbox" name="remember_me" class="form-check-input" id="rememberMe">
       <label class="form-check-label" for="rememberMe">Ricordami</label>
     </div>
+
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generate_csrf_token()) ?>">
 
     <button class="btn btn-primary w-100">Accedi</button>
   </form>

@@ -3,13 +3,14 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-09
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-09
+ * @Last Modified time: 2026-01-15 18:08:02
 */
 // Upload e salvataggio immagini componenti
 // Riceve immagini ridimensionate dal browser in formato base64
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
+require_once '../includes/secure_upload.php';
 
 header('Content-Type: application/json');
 
