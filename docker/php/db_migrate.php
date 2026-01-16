@@ -56,26 +56,30 @@ function filterSqlForNonAdmin(string $sql): string
     return implode(";\n\n", $kept) . ";\n";
 }
 
+function normalizeSqlForMariaDb(string $sql): string
+{
+    return preg_replace('/\bCREATE\s+INDEX\s+IF\s+NOT\s+EXISTS\b/i', 'CREATE INDEX', $sql);
+}
+
 if (file_exists($migrationManagerPath) && is_dir($migrationsDir)) {
     $effectiveMigrationsDir = $migrationsDir;
-    $tempDir = null;
+    $tempDir = sys_get_temp_dir() . '/magazzino_migrations_' . uniqid('', true);
+    $isAdmin = isAdminDbUser($pdo);
 
-    if (!isAdminDbUser($pdo)) {
-        $tempDir = sys_get_temp_dir() . '/magazzino_migrations_' . uniqid('', true);
-        if (@mkdir($tempDir, 0777, true)) {
-            foreach (glob($migrationsDir . '/*.sql') as $file) {
-                $dest = $tempDir . '/' . basename($file);
-                $content = file_get_contents($file);
-                if ($content === false) {
-                    continue;
-                }
-                if (basename($file) === '1.8.sql') {
-                    $content = filterSqlForNonAdmin($content);
-                }
-                file_put_contents($dest, $content);
+    if (@mkdir($tempDir, 0777, true)) {
+        foreach (glob($migrationsDir . '/*.sql') as $file) {
+            $dest = $tempDir . '/' . basename($file);
+            $content = file_get_contents($file);
+            if ($content === false) {
+                continue;
             }
-            $effectiveMigrationsDir = $tempDir;
+            $content = normalizeSqlForMariaDb($content);
+            if (!$isAdmin && basename($file) === '1.8.sql') {
+                $content = filterSqlForNonAdmin($content);
+            }
+            file_put_contents($dest, $content);
         }
+        $effectiveMigrationsDir = $tempDir;
     }
 
     require_once $migrationManagerPath;

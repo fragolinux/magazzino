@@ -7,7 +7,7 @@ images_dir="${uploads_dir}/images"
 
 mkdir -p "$datasheet_dir" "$images_dir"
 chown -R www-data:www-data "$datasheet_dir" "$images_dir" 2>/dev/null || true
-chmod -R 775 "$datasheet_dir" "$images_dir" 2>/dev/null || true
+find "$datasheet_dir" "$images_dir" -type d -exec chmod 775 {} + 2>/dev/null || true
 
 tries=30
 while ! php /usr/local/bin/db_migrate.php; do

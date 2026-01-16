@@ -65,7 +65,7 @@ if [[ "$needs_fix" -eq 1 ]]; then
   if command -v sudo >/dev/null 2>&1; then
     echo "Adjusting permissions for data/uploads (requires sudo)..." >&2
     sudo chown -R 33:33 "${upload_dirs[@]}"
-    sudo chmod -R 775 "${upload_dirs[@]}"
+    sudo find "${upload_dirs[@]}" -type d -exec chmod 775 {} +
   else
     echo "Warning: data/uploads not writable by container user; run chmod/chown manually." >&2
   fi
