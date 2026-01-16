@@ -40,6 +40,10 @@ function filterSqlForNonAdmin(string $sql): string
 
     foreach ($statements as $stmt) {
         $s = trim($stmt);
+        $s = preg_replace('/--.*$/m', '', $s);
+        $s = preg_replace('/\/\*.*?\*\//s', '', $s);
+        $s = preg_replace('/^#.*$/m', '', $s);
+        $s = trim($s);
         if ($s === '' || $s === ';') {
             continue;
         }
