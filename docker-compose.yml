@@ -20,6 +20,7 @@ services:
       - ./overrides/db_connect.php:/var/www/html/includes/db_connect.php:ro
       - ./overrides/update_index.php:/var/www/html/update/index.php:ro
       - ./overrides/database.php:/var/www/html/config/database.php:ro
+      - ./overrides/settings.php:/var/www/html/settings.php:ro
       - ./data/uploads/datasheet:/var/www/html/datasheet
       - ./data/uploads/images:/var/www/html/images
     depends_on:
