@@ -215,6 +215,20 @@ Linux/WSL (bash):
 ./scripts/backup.sh
 ```
 
+## Comandi Make (Linux)
+
+Da root del repo (Linux):
+
+```bash
+make up       # avvio prod (pull immagini incluso)
+make down     # stop prod
+make devup    # avvio dev (build locale)
+make devdown  # stop dev
+make logs     # log stack attivo
+make run      # aggiorna repo + restart prod
+make clone    # clone pulito su nuova cartella + copia dati utente
+```
+
 ## Restore (DB)
 
 Ripristina da un backup specifico:
