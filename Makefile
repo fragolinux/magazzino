@@ -3,7 +3,7 @@
 SHELL := /bin/sh
 UNAME_S := $(shell uname -s)
 
-.PHONY: help up down devup devdown backup restore release logs run
+.PHONY: help up down devup devdown backup restore release logs run clone
 
 help:
 > @echo "Usage: make <target>"
@@ -14,6 +14,7 @@ help:
 > @echo "  devup    Start dev stack (scripts/start-dev.sh)"
 > @echo "  devdown  Stop dev stack (docker compose -f docker-compose.dev.yml down)"
 > @echo "  run      Update repo and restart production stack"
+> @echo "  clone    Clone latest tag into a new folder and copy user data"
 > @echo "  backup   Run DB backup (scripts/backup.sh)"
 > @echo "  restore  Restore DB from BACKUP path (scripts/restore.sh BACKUP=...)"
 > @echo "  release  Push main and create/push tag (TAG=...)"
@@ -47,6 +48,9 @@ run: check-linux
 > git pull --rebase
 > docker compose down
 > ./scripts/start.sh
+
+clone: check-linux
+> ./scripts/clone.sh
 
 logs: check-linux
 > if docker compose -f docker-compose.dev.yml ps >/dev/null 2>&1; then \
