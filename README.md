@@ -28,6 +28,14 @@ cd magazzino
 ./scripts/start.sh
 ```
 
+## TL;DR (aggiornamento rapido, Linux)
+
+```bash
+make clone
+cd "$(ls -d ../magazzino-* 2>/dev/null | sort -V | tail -n1)"
+make run
+```
+
 Apri `http://localhost` e accedi con `RG4Tech / 12345678`.
 Per cambiare password o altre impostazioni avanzate, leggi il resto del README.
 
