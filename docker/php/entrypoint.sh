@@ -16,6 +16,17 @@ if [ -d "$config_dir" ]; then
     find "$config_dir" -type f -exec chmod 664 {} + 2>/dev/null || true
 fi
 
+if [ -f "/var/www/html/composer.json" ] && [ ! -f "/var/www/html/vendor/autoload.php" ]; then
+    if command -v composer >/dev/null 2>&1; then
+        echo "Installing PHP dependencies (composer)..." >&2
+        export COMPOSER_ALLOW_SUPERUSER=1
+        composer install --no-interaction --no-dev --prefer-dist --optimize-autoloader || \
+            echo "Composer install failed; barcode features may not work." >&2
+    else
+        echo "Composer not available; barcode features may not work." >&2
+    fi
+fi
+
 tries=30
 while ! php /usr/local/bin/db_migrate.php; do
     tries=$((tries - 1))
