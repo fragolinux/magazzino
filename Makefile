@@ -3,7 +3,7 @@
 SHELL := /bin/sh
 UNAME_S := $(shell uname -s)
 
-.PHONY: help up down devup devdown backup restore release logs run clone
+.PHONY: help up down devup devdown backup restore release logs run clone dbcheck
 
 help:
 > @echo "Usage: make <target>"
@@ -19,6 +19,7 @@ help:
 > @echo "  restore  Restore DB from BACKUP path (scripts/restore.sh BACKUP=...)"
 > @echo "  release  Push main and create/push tag (TAG=...)"
 > @echo "  logs     Tail logs for the active stack (dev or prod)"
+> @echo "  dbcheck  Check pending DB migrations (dev stack)"
 > @echo ""
 > @echo "Examples:"
 > @echo "  make up"
@@ -57,6 +58,13 @@ logs: check-linux
 >   docker compose -f docker-compose.dev.yml logs -f --tail=200; \
 > else \
 >   docker compose logs -f --tail=200; \
+> fi
+
+dbcheck: check-linux
+> if docker compose -f docker-compose.dev.yml ps >/dev/null 2>&1; then \
+>   docker compose -f docker-compose.dev.yml exec -T php php /var/www/html/update/check_migrations.php; \
+> else \
+>   docker compose exec -T php php /var/www/html/update/check_migrations.php; \
 > fi
 
 backup: check-linux

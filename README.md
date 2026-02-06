@@ -138,6 +138,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\win-expose-80.ps1
 - Al primo avvio (cartella `data/db` vuota), MariaDB importa `magazzino_db.sql`.
 - Ad ogni avvio, il container PHP esegue migrazioni idempotenti per allineare lo schema alle ultime versioni.
 - Nome/utente/password DB vengono creati da `.env`.
+- Le migrazioni vengono eseguite automaticamente con l'utente root del DB (usando `DB_ROOT_PASSWORD`),
+  mentre l'app continua a usare `DB_USER/DB_PASS`. Non sono richieste azioni manuali da parte dell'utente.
 
 Per reimportare da zero (DISTRUGGE i dati):
 Windows (PowerShell):
@@ -233,6 +235,7 @@ make down     # stop prod
 make devup    # avvio dev (build locale)
 make devdown  # stop dev
 make logs     # log stack attivo
+make dbcheck  # verifica migrazioni pendenti (dev o prod in base allo stack attivo)
 make run      # aggiorna repo + restart prod
 make clone    # clone pulito su nuova cartella + copia dati utente
 ```

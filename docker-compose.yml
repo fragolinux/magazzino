@@ -16,6 +16,8 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
+      DB_MIGRATION_USER: root
+      DB_MIGRATION_PASS: ${DB_ROOT_PASSWORD}
     volumes:
       - ./overrides/db_connect.php:/var/www/html/includes/db_connect.php:ro
       - ./overrides/update_index.php:/var/www/html/update/index.php:ro

@@ -3,16 +3,21 @@ $host = getenv('DB_HOST') ?: 'db';
 $name = getenv('DB_NAME') ?: '';
 $user = getenv('DB_USER') ?: '';
 $pass = getenv('DB_PASS') ?: '';
+$migrationUser = getenv('DB_MIGRATION_USER') ?: $user;
+$migrationPass = getenv('DB_MIGRATION_PASS');
+if ($migrationPass === false || $migrationPass === '') {
+    $migrationPass = $pass;
+}
 
-if ($name === '' || $user === '') {
-    fwrite(STDERR, "DB_NAME or DB_USER not set; skipping migration.\n");
+if ($name === '' || $migrationUser === '') {
+    fwrite(STDERR, "DB_NAME or DB_MIGRATION_USER/DB_USER not set; skipping migration.\n");
     exit(0);
 }
 
 $dsn = "mysql:host={$host};dbname={$name};charset=utf8";
 
 try {
-    $pdo = new PDO($dsn, $user, $pass, [
+    $pdo = new PDO($dsn, $migrationUser, $migrationPass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     ]);
 } catch (PDOException $e) {
@@ -26,6 +31,12 @@ $migrationsDir = '/var/www/html/update/migrations';
 function isAdminDbUser(PDO $pdo): bool
 {
     try {
+        $grants = $pdo->query("SHOW GRANTS")->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($grants as $grant) {
+            if (stripos($grant, 'ALL PRIVILEGES') !== false || stripos($grant, 'SUPER') !== false) {
+                return true;
+            }
+        }
         $user = $pdo->query("SELECT USER()")->fetchColumn();
         return $user !== false && stripos((string)$user, 'root') !== false;
     } catch (PDOException $e) {
@@ -89,6 +100,18 @@ if (file_exists($migrationManagerPath) && is_dir($migrationsDir)) {
     require_once $migrationManagerPath;
 
     if (class_exists('MigrationManager')) {
+        if (!$isAdmin && file_exists($migrationsDir . '/1.9.sql')) {
+            $manager = new MigrationManager($pdo, $effectiveMigrationsDir);
+            $currentVersion = $manager->getCurrentVersion();
+            if (version_compare($currentVersion, '1.9', '<')) {
+                fwrite(
+                    STDERR,
+                    "DB migration requires admin privileges for 1.9; set DB_MIGRATION_USER/DB_MIGRATION_PASS.\n"
+                );
+                exit(1);
+            }
+        }
+
         $manager = new MigrationManager($pdo, $effectiveMigrationsDir);
         $result = $manager->runPendingMigrations();
         $applied = $result['applied'] ?? [];
