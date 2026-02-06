@@ -16,6 +16,7 @@ services:
     build: ./docker/php
     volumes:
       - ./magazzino:/var/www/html
+      - ./data/config:/var/www/html/config
       - ./overrides/db_connect.php:/var/www/html/includes/db_connect.php:ro
       - ./overrides/auth_check.php:/var/www/html/includes/auth_check.php:ro
       - ./overrides/update_index.php:/var/www/html/update/index.php:ro

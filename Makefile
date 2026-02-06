@@ -3,25 +3,26 @@
 SHELL := /bin/sh
 UNAME_S := $(shell uname -s)
 
-.PHONY: help up down devup devdown backup restore release logs run clone dbcheck
+.PHONY: help up down devup devdown backup restore release logs run run-safe clone dbcheck
 
 help:
-> @echo "Usage: make <target>"
+> @echo "Uso: make <target>"
 > @echo ""
-> @echo "Targets:"
-> @echo "  up       Start production stack (scripts/start.sh)"
-> @echo "  down     Stop production stack (docker compose down)"
-> @echo "  devup    Start dev stack (scripts/start-dev.sh)"
-> @echo "  devdown  Stop dev stack (docker compose -f docker-compose.dev.yml down)"
-> @echo "  run      Update repo and restart production stack"
-> @echo "  clone    Clone latest tag into a new folder and copy user data"
-> @echo "  backup   Run DB backup (scripts/backup.sh)"
-> @echo "  restore  Restore DB from BACKUP path (scripts/restore.sh BACKUP=...)"
-> @echo "  release  Push main and create/push tag (TAG=...)"
-> @echo "  logs     Tail logs for the active stack (dev or prod)"
-> @echo "  dbcheck  Check pending DB migrations (dev stack)"
+> @echo "Target:"
+> @echo "  up       Avvia stack produzione (scripts/start.sh)"
+> @echo "  down     Ferma stack produzione (docker compose down)"
+> @echo "  devup    Avvia stack sviluppo (scripts/start-dev.sh)"
+> @echo "  devdown  Ferma stack sviluppo (docker compose -f docker-compose.dev.yml down)"
+> @echo "  run      Aggiorna repo e riavvia stack produzione"
+> @echo "  run-safe Backup + aggiorna repo + riavvia stack produzione"
+> @echo "  clone    Clona ultimo tag in nuova cartella e copia dati utente"
+> @echo "  backup   Backup DB (scripts/backup.sh)"
+> @echo "  restore  Ripristina DB da BACKUP (scripts/restore.sh BACKUP=...)"
+> @echo "  release  Push main e crea/pusha tag (TAG=...)"
+> @echo "  logs     Log dello stack attivo (dev o prod)"
+> @echo "  dbcheck  Verifica migrazioni pendenti (dev o prod)"
 > @echo ""
-> @echo "Examples:"
+> @echo "Esempi:"
 > @echo "  make up"
 > @echo "  make devup"
 > @echo "  make restore BACKUP=backup/20250101_120000"
@@ -29,7 +30,7 @@ help:
 
 check-linux:
 > @if [ "$(UNAME_S)" != "Linux" ]; then \
->     echo "This Makefile is intended for Linux only."; \
+>     echo "Questo Makefile è pensato solo per Linux."; \
 >     exit 1; \
 >   fi
 
@@ -47,6 +48,14 @@ devdown: check-linux
 
 run: check-linux
 > git pull --rebase
+> docker compose -f docker-compose.dev.yml down
+> docker compose down
+> ./scripts/start.sh
+
+run-safe: check-linux
+> ./scripts/backup.sh
+> git pull --rebase
+> docker compose -f docker-compose.dev.yml down
 > docker compose down
 > ./scripts/start.sh
 
@@ -68,14 +77,14 @@ backup: check-linux
 
 restore: check-linux
 > if [ -z "$(BACKUP)" ]; then \
->     echo "Missing BACKUP path. Example: make restore BACKUP=backup/20250101_120000"; \
+>     echo "Manca il path BACKUP. Esempio: make restore BACKUP=backup/20250101_120000"; \
 >     exit 1; \
 >   fi
 > ./scripts/restore.sh "$(BACKUP)"
 
 release: check-linux
 > @if [ -z "$(TAG)" ]; then \
->     echo "Missing TAG. Example: make release TAG=v1.4"; \
+>     echo "Manca TAG. Esempio: make release TAG=v1.4"; \
 >     exit 1; \
 >   fi
 > git push origin main

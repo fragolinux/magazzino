@@ -9,6 +9,7 @@ dirs=(
   "$root/data/db"
   "$root/data/nginx-logs"
   "$root/data/php-logs"
+  "$root/data/config"
 )
 
 upload_dirs=(
@@ -52,6 +53,19 @@ for dir in "${dirs[@]}"; do
     : > "$gitkeep"
   fi
 done
+
+config_dir="$root/data/config"
+if [[ -d "$config_dir" ]]; then
+  if [[ ! -f "$config_dir/base_path.php" && -f "$root/magazzino/config/base_path.php" ]]; then
+    cp "$root/magazzino/config/base_path.php" "$config_dir/base_path.php"
+  fi
+  if [[ ! -f "$config_dir/settings.php" && -f "$root/magazzino/config/settings.php.example" ]]; then
+    cp "$root/magazzino/config/settings.php.example" "$config_dir/settings.php"
+  fi
+  if [[ ! -f "$config_dir/database.php" && -f "$root/overrides/database.php" ]]; then
+    cp "$root/overrides/database.php" "$config_dir/database.php"
+  fi
+fi
 
 needs_fix=0
 for dir in "${upload_dirs[@]}"; do

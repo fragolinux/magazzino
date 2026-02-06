@@ -237,6 +237,7 @@ make devdown  # stop dev
 make logs     # log stack attivo
 make dbcheck  # verifica migrazioni pendenti (dev o prod in base allo stack attivo)
 make run      # aggiorna repo + restart prod
+make run-safe # backup + aggiorna repo + restart prod
 make clone    # clone pulito su nuova cartella + copia dati utente
 ```
 

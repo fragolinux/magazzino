@@ -40,3 +40,11 @@
 
 - Do not commit real credentials; keep production secrets outside the repo.
 - The login flow uses SHA-256 hashes; keep any new auth logic consistent with existing behavior.
+
+## Regole Locali (Persistenti)
+
+- Non eseguire mai `git push`. I rilasci li fa l’utente con `make release`.
+- Non modificare mai file sotto `magazzino/` con cambi locali. L’albero upstream deve restare l’esatto contenuto del rilascio dell’autore.
+- Qualsiasi fix locale va messo in `overrides/`, `docker/`, `scripts/` o in altri percorsi non-upstream.
+- Non chiedere conferme su queste regole; vanno sempre applicate.
+- I messaggi di commit devono essere in inglese.
