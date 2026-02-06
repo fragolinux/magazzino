@@ -1,0 +1,10 @@
+<?php
+// Configurazione database
+return [
+    'host' => 'localhost',
+    'db' => 'magazzino_db',
+    'user' => 'root',
+    'pass' => '',
+    'charset' => 'utf8mb4',
+    'port' => 3306
+];

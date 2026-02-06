@@ -118,7 +118,8 @@ ADD CONSTRAINT `components_ibfk_3` FOREIGN KEY (`category_id`) REFERENCES `categ
 -- PARTE 5: Ottimizzazioni indici
 -- =====================================================
 
--- Gli indici verranno aggiunti solo se non esistono già (gestione errori duplicati nel PHP)
+-- Gli indici verranno aggiunti solo se non esistono già
+-- Aggiungi indici (MigrationManager gestirà l'idempotenza)
 ALTER TABLE `components` ADD FULLTEXT INDEX `idx_tags` (`tags`);
 ALTER TABLE `components` ADD INDEX `idx_package` (`package`);
 ALTER TABLE `components` ADD INDEX `idx_unita_misura` (`unita_misura`);

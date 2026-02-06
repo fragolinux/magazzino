@@ -3,9 +3,13 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-05 09:15:19 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-15
+ * @Last Modified time: 2026-02-02 18:06:45
 */
 // 2026-01-15: Aggiunta nota informativa sull'uso del sistema QR Code
+// 2026-02-01: aggiunto locale nella select delle posizioni
+// 2026-02-01: Aggiunti parametri QR Code nei setting
+// 2026-02-02: Aggiunta possibilità di selezionare componenti senza comparto
+
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/db_connect.php';
 
@@ -17,7 +21,7 @@ if (empty($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 }
 
 // carica posizioni
-$locations = $pdo->query("SELECT id, name FROM locations ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+$locations = $pdo->query("SELECT l.id, l.name, loc.name AS locale_name FROM locations l LEFT JOIN locali loc ON l.locale_id = loc.id ORDER BY l.name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 
@@ -26,7 +30,7 @@ $locations = $pdo->query("SELECT id, name FROM locations ORDER BY name ASC")->fe
 <div class="container py-4">
 	<div class="d-flex justify-content-between align-items-center mb-3">
 		<h2><i class="fa-solid fa-qrcode me-2"></i>Genera QR Code</h2>
-		<a href="/magazzino/warehouse/components.php" class="btn btn-secondary">Torna a componenti</a>
+		<a href="<?= BASE_PATH ?>warehouse/components.php" class="btn btn-secondary">Torna a componenti</a>
 	</div>
 
 	<div class="card" style="max-width:900px;">
@@ -38,7 +42,7 @@ $locations = $pdo->query("SELECT id, name FROM locations ORDER BY name ASC")->fe
 						<select id="location_id" name="location_id" class="form-select">
 							<option value="">-- Tutte le posizioni --</option>
 							<?php foreach ($locations as $loc): ?>
-								<option value="<?= $loc['id'] ?>"><?= htmlspecialchars($loc['name']) ?></option>
+							<option value="<?= $loc['id'] ?>"><?= htmlspecialchars($loc['name']) ?> - <?= htmlspecialchars($loc['locale_name'] ?? 'Senza locale') ?></option>
 							<?php endforeach; ?>
 						</select>
 					</div>
@@ -65,7 +69,7 @@ $locations = $pdo->query("SELECT id, name FROM locations ORDER BY name ASC")->fe
 					</div>
 
 					<div class="col-12 text-end">
-						<button id="generateBtn" type="submit" class="btn btn-primary" disabled>Genera PDF QR Code</button>
+						<button id="generateBtn" type="submit" class="btn btn-primary" disabled>Genera QR Code</button>
 					</div>
 				</div>
 			</form>
@@ -93,13 +97,22 @@ $(function(){
 	function loadCompartments(locationId){
 		const container = $('#compartments_container');
 		container.html('<div class="form-text">Caricamento...</div>');
-		$.get('/magazzino/warehouse/get_compartments.php', { location_id: locationId }, function(html){
-			// get_compartments.php restituisce probabilmente HTML o JSON; qui generiamo checkbox dalla risposta JSON se presente
+		$.get('<?= BASE_PATH ?>warehouse/get_compartments.php', { location_id: locationId }, function(html){
+			// get_compartments.php restituisce JSON con compartments e unassigned_count
 			try {
 				const data = JSON.parse(html);
-				if (Array.isArray(data)){
+				if (data.compartments !== undefined){
 					let out = '';
-					data.forEach(function(c){
+					// Aggiungi checkbox per componenti senza comparto se presenti
+					if (parseInt(data.unassigned_count || 0, 10) > 0){
+						var unassignedCount = parseInt(data.unassigned_count, 10);
+						out += '<div class="form-check">'
+							+ '<input class="form-check-input unassigned-checkbox" type="checkbox" name="compartments[]" value="unassigned" id="cmp_unassigned" data-count="'+unassignedCount+'">'
+							+ '<label class="form-check-label" for="cmp_unassigned"><strong>Componenti senza comparto</strong> <span class="text-muted">('+unassignedCount+' componenti)</span></label></div>';
+						out += '<hr class="my-2">';
+					}
+					// Aggiungi checkbox per i comparti
+					data.compartments.forEach(function(c){
 						// get_compartments.php returns {id, code, description, components_count}
 						var code = c.code || ('Compartimento ' + c.id);
 						var desc = c.description ? (' - ' + c.description) : '';
@@ -113,6 +126,8 @@ $(function(){
 					// mostra controlli select-all e totale
 					$('#select_all_container').show();
 					$('#total_container').show();
+					// resetta il conteggio a 0 (nessuna checkbox è selezionata)
+					updateTotal();
 					return;
 				}
 			} catch(e){
@@ -143,23 +158,23 @@ $(function(){
 	});
 
 	// Gestione select all e conteggio
-	$(document).on('change', '.compartment-checkbox', function(){
+	$(document).on('change', '.compartment-checkbox, .unassigned-checkbox', function(){
 		updateTotal();
 		// sincronizza select all
-		var total = $('.compartment-checkbox').length;
-		var checked = $('.compartment-checkbox:checked').length;
+		var total = $('.compartment-checkbox, .unassigned-checkbox').length;
+		var checked = $('.compartment-checkbox:checked, .unassigned-checkbox:checked').length;
 		$('#select_all_compartments').prop('checked', total > 0 && checked === total);
 	});
 
 	$('#select_all_compartments').on('change', function(){
 		var checked = $(this).is(':checked');
-		$('.compartment-checkbox').prop('checked', checked);
+		$('.compartment-checkbox, .unassigned-checkbox').prop('checked', checked);
 		updateTotal();
 	});
 
 	function updateTotal(){
 		var total = 0;
-		$('.compartment-checkbox:checked').each(function(){
+		$('.compartment-checkbox:checked, .unassigned-checkbox:checked').each(function(){
 			total += parseInt($(this).data('count') || 0, 10);
 		});
 		$('#total_components_selected').text(total);

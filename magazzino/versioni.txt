@@ -1,17 +1,17 @@
 1.0 20/10/2025  - Rilascio iniziale
 1.1 03/01/2026  - Aggiunta funzionalità carico/scarico quantità componente e file info con le versioni
-                    \magazzino\warehouse\components.php
-                    \magazzino\warehouse\get_components.php
-                    \magazzino\warehouse\update_component_quantity.php
-                    \magazzino\includes\header.php
-                    \magazzino\info.php
-                    \magazzino\versioni.txt
+                    - warehouse\components.php
+                    - warehouse\get_components.php
+                    - warehouse\update_component_quantity.php
+                    - includes\header.php
+                    - info.php
+                    - versioni.txt
 1.2 04/01/2026  - Aggiunto sistema di aggiornamento automatico
-                    \magazzino\update
-                    \magazzino\update\index.php
-                    \magazzino\includes\header.php
-                    \magazzino\LICENSE.txt
-                    \magazzino\versioni.txt
+                    - update
+                    - update\index.php
+                    - includes\header.php
+                    - LICENSE.txt
+                    - versioni.txt
                 - Aggiunta la tabella setting nel DB
 1.3 07/01/2026  - Aggiunta ricerca tramite equivalente del codice prodotto
                 - Aggiunta pagina setting
@@ -19,25 +19,25 @@
                 - Aggiunto flag "Ricordami" in login
                 - Corretto bug eliminazione Posizione
                 - Aggiunto caricamento files pdf associalo al componente
-                    \magazzino\warehouse\components.php
-                    \magazzino\warehouse\add_component.php
-                    \magazzino\warehouse\edit_component.php
-                    \magazzino\warehouse\get_compartments.php
-                    \magazzino\warehouse\view_component.php
-                    \magazzino\warehouse\mobile_component.php
-                    \magazzino\warehouse\qrcodes.php
-                    \magazzino\warehouse\generate_qrcodes.php
-                    \magazzino\warehouse\delete_location.php
-                    \magazzino\includes\auth_check.php
-                    \magazzino\includes\header.php
-                    \magazzino\info.php
-                    \magazzino\settings.php
-                    \magazzino\.htaccess
-                    \magazzino\logout.php
-                    \magazzino\login.php
-                    \datasheet\
+                    - warehouse\components.php
+                    - warehouse\add_component.php
+                    - warehouse\edit_component.php
+                    - warehouse\get_compartments.php
+                    - warehouse\view_component.php
+                    - warehouse\mobile_component.php
+                    - warehouse\qrcodes.php
+                    - warehouse\generate_qrcodes.php
+                    - warehouse\delete_location.php
+                    - includes\auth_check.php
+                    - includes\header.php
+                    - info.php
+                    - settings.php
+                    - .htaccess
+                    - logout.php
+                    - login.php
+                    - datasheet
 1.4pre 09/01/2026 - Aggiornato file per aggiornamenti automatici
-                    \magazzino\update\index.php
+                    update\index.php
 1.4 09/01/2026  - Corretto testo nella pagina setting
                 - Aggiunta gestione della quantità minima
                 - Aggiunto settaggio tema chiaro/scuro
@@ -51,37 +51,37 @@
                 - Aggiunte immagini associate al componente
                 - Aggiunta pagina per la pulizia dei files orfani
                 - In settaggi aggiunto Backup DB
-                    \magazzino\settings.php
-                    \magazzino\warehouse\add_component.php
-                    \magazzino\warehouse\view_component.php
-                    \magazzino\warehouse\edit_component.php
-                    \magazzino\warehouse\get_components.php
-                    \magazzino\warehouse\components.php
-                    \magazzino\warehouse\get_low_stock.php
-                    \magazzino\warehouse\low_stock.php
-                    \magazzino\index.php
-                    \magazzino\settings.php
-                    \magazzino\includes\header.php
-                    \magazzino\warehouse\quick_add_location.php
-                    \magazzino\warehouse\quick_add_category.php
-                    \magazzino\warehouse\get_locations.php
-                    \magazzino\warehouse\get_categories.php
-                    \magazzino\warehouse\locali.php
-                    \magazzino\warehouse\add_locale.php
-                    \magazzino\warehouse\edit_locale.php
-                    \magazzino\warehouse\delete_locale.php
-                    \magazzino\warehouse\locations.php
-                    \magazzino\warehouse\edit_location.php
-                    \magazzino\warehouse\add_location.php
-                    \magazzino\warehouse\hierarchy.php
-                    \magazzino\warehouse\get_compartment_details.php
-                    \magazzino\warehouse\get_location_details.php
-                    \magazzino\warehouse\get_compartments.php
-                    \magazzino\warehouse\delete_component_image.php
-                    \magazzino\warehouse\delete_component.php
-                    \magazzino\warehouse\upload_component_image.php
-                    \magazzino\warehouse\orphan_files.php
-                    \magazzino\images\components\thumbs
+                    - settings.php
+                    - warehouse\add_component.php
+                    - warehouse\view_component.php
+                    - warehouse\edit_component.php
+                    - warehouse\get_components.php
+                    - warehouse\components.php
+                    - warehouse\get_low_stock.php
+                    - warehouse\low_stock.php
+                    - index.php
+                    - settings.php
+                    - includes\header.php
+                    - warehouse\quick_add_location.php
+                    - warehouse\quick_add_category.php
+                    - warehouse\get_locations.php
+                    - warehouse\get_categories.php
+                    - warehouse\locali.php
+                    - warehouse\add_locale.php
+                    - warehouse\edit_locale.php
+                    - warehouse\delete_locale.php
+                    - warehouse\locations.php
+                    - warehouse\edit_location.php
+                    - warehouse\add_location.php
+                    - warehouse\hierarchy.php
+                    - warehouse\get_compartment_details.php
+                    - warehouse\get_location_details.php
+                    - warehouse\get_compartments.php
+                    - warehouse\delete_component_image.php
+                    - warehouse\delete_component.php
+                    - warehouse\upload_component_image.php
+                    - warehouse\orphan_files.php
+                    - images\components\thumbs
 1.5 09/01/2026  - Aggiornamento DB per associare tutte le posizioni al locale di default
 
 1.6 11/01/2026  - Aggiornato file di configurazione connessione ad DB
@@ -89,17 +89,17 @@
                 - Nuovo sistema di Versioning e Migrazioni Database
                 - Il nuovo sistema di gestione versioni permette agli utenti di *saltare versioni intermedie* 
                 - durante gli aggiornamenti, applicando automaticamente solo le modifiche necessarie al database.
-                    \magazzino\includes\db_connect.php
-                    \magazzino\update\index.php 
-                    \magazzino\update\migration_manager.php
-                    \magazzino\update\run_migrations.php
-                    \magazzino\update\init_versioning.php
-                    \magazzino\update\migrations\1.1.sql
-                    \magazzino\update\migrations\1.2.sql
-                    \magazzino\update\migrations\1.3.sql
-                    \magazzino\update\migrations\1.4.sql
-                    \magazzino\update\migrations\1.5.sql
-                    \magazzino\update\migrations\1.6.sql
+                    - includes\db_connect.php
+                    - update\index.php 
+                    - update\migration_manager.php
+                    - update\run_migrations.php
+                    - update\init_versioning.php
+                    - update\migrations\1.1.sql
+                    - update\migrations\1.2.sql
+                    - update\migrations\1.3.sql
+                    - update\migrations\1.4.sql
+                    - update\migrations\1.5.sql
+                    - update\migrations\1.6.sql
 1.7 12/01/2026  - Aggiunta eliminazione file pdf del datasheet in edita componente
                 - Controllo codici duplicati prima dell'inserimento del componente
                 - Aggiunto link su card Tipi di componenti
@@ -110,19 +110,19 @@
                 - Corretto bug che quando si elimina un componente non eliminava il pdf
                 - Aggiunti nuovi campi al componente: prezzo, link fornitore, unità di misura, 
                   package, tensione, corrente, potenza, hfe e tags
-                    \magazzino\warehouse\edit_component.php
-                    \magazzino\warehouse\delete_component_datasheet.php
-                    \magazzino\warehouse\add_component.php
-                    \magazzino\index.php
-                    \magazzino\settings.php
-                    \magazzino\warehouse\generate_qrcodes.php
-                    \magazzino\profile.php
-                    \magazzino\includes\header.php
-                    \magazzino\admin\edit_user.php
-                    \magazzino\login.php
-                    \magazzino\warehouse\delete_component.php
-                    \magazzino\warehouse\view_component.php
-                    \magazzino\warehouse\get_components.php
+                    - warehouse\edit_component.php
+                    - warehouse\delete_component_datasheet.php
+                    - warehouse\add_component.php
+                    - index.php
+                    - settings.php
+                    - warehouse\generate_qrcodes.php
+                    - profile.php
+                    - includes\header.php
+                    - admin\edit_user.php
+                    - ogin.php
+                    - warehouse\delete_component.php
+                    - warehouse\view_component.php
+                    - warehouse\get_components.php
 1.8 16/01/2026  - Aggiunta in settaggi configurazione errori php (sviluppo/produzione)
                 - Inserito file boms.php per gestione bom in .csv (autore Nelson Rossi Bittencourt)
                 - Aggiunti i tab pagina settaggi
@@ -143,9 +143,9 @@
                   - [Aggiunto] includes/secure_upload.php
                   - [Aggiunto] includes/session_config.php
                   - [Aggiunto] update/cleanup.php
-                  - [Aggiunto] warehouse/barcode_scan.php
-                  - [Aggiunto] warehouse/barcodes.php
-                  - [Aggiunto] warehouse/generate_barcodes.php
+                  - [Aggiunto] - warehouse/barcode_scan.php
+                  - [Aggiunto] - warehouse/barcodes.php
+                  - [Aggiunto] - warehouse/generate_barcodes.php
                   - [Modificato] .htaccess
                   - [Modificato] admin/add_user.php
                   - [Modificato] admin/edit_user.php
@@ -162,18 +162,82 @@
                   - [Modificato] update/migration_manager.php
                   - [Modificato] update/migrations/1.8.sql
                   - [Modificato] update/run_migrations.php
+                  - [Modificato] - warehouse/add_component.php
+                  - [Modificato] - warehouse/boms.php
+                  - [Modificato] - warehouse/edit_component.php
+                  - [Modificato] - warehouse/export_csv.php
+                  - [Modificato] - warehouse/generate_qrcodes.php
+                  - [Modificato] - warehouse/get_compartment_components.php
+                  - [Modificato] - warehouse/get_components.php
+                  - [Modificato] - warehouse/get_low_stock.php
+                  - [Modificato] - warehouse/import_csv.php
+                  - [Modificato] - warehouse/mobile_component.php
+                  - [Modificato] - warehouse/qrcodes.php
+                  - [Modificato] - warehouse/update_component_quantity.php
+                  - [Modificato] - warehouse/upload_component_image.php
+                  - [Modificato] - warehouse/view_component.php
+1.9 03/02/2026    - Import csv: Aggiunta verifica codici duplicati prima dell'inserimento, corretti bug
+                  - Aggiunta nuova pagina in Magazzino > Ultimi Componenti Inseriti
+                  - Pagina Aggiornamento: aggiunto controllo del tema
+                  - Corretto bug che non permetteva di salvare una posizione con nome già esistente in un altro locale
+                  - nelle select di selezione posizione, aggiunto anche il locale
+                  - corretto bug unità di misura negli ultimi componenti inseriti
+                  - aggiunta barra nel footer
+                  - aggiunta possibilità di stampare QR code e barcode anche se non sono stati impostati i comparti
+                  - aggiunta possibilità di usare il sito sia in locale che su dominio
+                  - aggiunto sito personale
+                  - [Aggiunto] assets/css/personal_themes.css
+                  - [Aggiunto] assets/personal_site/
+                  - [Aggiunto] includes/.htaccess
+                  - [Aggiunto] includes/navbar_personal.php
+                  - [Aggiunto] includes/personal_footer.php
+                  - [Aggiunto] includes/personal_header.php
+                  - [Aggiunto] personal_home.php
+                  - [Aggiunto] personal_home_settings.php
+                  - [Aggiunto] update/auto_updater.php
+                  - [Aggiunto] update/init_database.php
+                  - [Aggiunto] update/migrations/.htaccess
+                  - [Aggiunto] update/migrations/1.0.sql
+                  - [Aggiunto] update/migrations/1.9.sql
+                  - [Aggiunto] update/setup_db_wizard.php
+                  - [Aggiunto] warehouse/recent_components.php
+                  - [Eliminato] update/init_versioning.php
+                  - [Modificato] .htaccess
+                  - [Modificato] create_release.php
+                  - [Modificato] includes/auth_check.php
+                  - [Modificato] includes/db_connect.php
+                  - [Modificato] includes/footer.php
+                  - [Modificato] includes/header.php
+                  - [Modificato] includes/navbar.php
+                  - [Modificato] index.php
+                  - [Modificato] login.php
+                  - [Modificato] settings.php
+                  - [Modificato] update/index.php
+                  - [Modificato] update/migration_manager.php
+                  - [Modificato] update/migrations/1.5.sql
+                  - [Modificato] update/migrations/1.7.sql
+                  - [Modificato] update/migrations/1.8.sql
+                  - [Modificato] update/run_migrations.php
                   - [Modificato] warehouse/add_component.php
+                  - [Modificato] warehouse/add_location.php
+                  - [Modificato] warehouse/barcode_scan.php
+                  - [Modificato] warehouse/barcodes.php
                   - [Modificato] warehouse/boms.php
+                  - [Modificato] warehouse/bulk_move_components.php
+                  - [Modificato] warehouse/bulk_swap_components.php
+                  - [Modificato] warehouse/compartments.php
+                  - [Modificato] warehouse/components.php
                   - [Modificato] warehouse/edit_component.php
                   - [Modificato] warehouse/export_csv.php
+                  - [Modificato] warehouse/generate_barcodes.php
                   - [Modificato] warehouse/generate_qrcodes.php
-                  - [Modificato] warehouse/get_compartment_components.php
+                  - [Modificato] warehouse/get_compartments.php
                   - [Modificato] warehouse/get_components.php
-                  - [Modificato] warehouse/get_low_stock.php
+                  - [Modificato] warehouse/get_locations.php
                   - [Modificato] warehouse/import_csv.php
+                  - [Modificato] warehouse/low_stock.php
                   - [Modificato] warehouse/mobile_component.php
+                  - [Modificato] warehouse/orphan_files.php
                   - [Modificato] warehouse/qrcodes.php
-                  - [Modificato] warehouse/update_component_quantity.php
-                  - [Modificato] warehouse/upload_component_image.php
+                  - [Modificato] warehouse/quick_add_location.php
                   - [Modificato] warehouse/view_component.php
-                    

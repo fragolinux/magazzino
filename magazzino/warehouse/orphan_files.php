@@ -12,7 +12,7 @@ require_once '../includes/auth_check.php';
 
 // Solo admin
 if (empty($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    header("Location: /magazzino/index.php");
+    header("Location: <?= BASE_PATH ?>index.php");
     exit;
 }
 
@@ -182,7 +182,7 @@ include '../includes/header.php';
                                     <td><?= htmlspecialchars($file['filename']) ?></td>
                                     <td><?= formatSize($file['size']) ?></td>
                                     <td class="text-end">
-                                        <a href="/magazzino/datasheet/<?= htmlspecialchars($file['filename']) ?>" target="_blank" class="btn btn-sm btn-outline-info me-1" title="Visualizza">
+                                        <a href="<?= BASE_PATH ?>datasheet/<?= htmlspecialchars($file['filename']) ?>" target="_blank" class="btn btn-sm btn-outline-info me-1" title="Visualizza">
                                             <i class="fa-solid fa-eye"></i>
                                         </a>
                                         <form method="post" style="display: inline;" onsubmit="return confirm('Sei sicuro di voler eliminare questo file?');">
@@ -228,10 +228,10 @@ include '../includes/header.php';
                                     <td><?= htmlspecialchars($file['filename']) ?></td>
                                     <td><?= formatSize($file['size']) ?></td>
                                     <td>
-                                        <img src="/magazzino/images/components/thumbs/<?= htmlspecialchars($file['filename']) ?>?<?= time() ?>" alt="Thumb" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                                        <img src="<?= BASE_PATH ?>images/components/thumbs/<?= htmlspecialchars($file['filename']) ?>?<?= time() ?>" alt="Thumb" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
                                     </td>
                                     <td class="text-end">
-                                        <a href="/magazzino/images/components/<?= htmlspecialchars($file['filename']) ?>" target="_blank" class="btn btn-sm btn-outline-info me-1" title="Visualizza">
+                                        <a href="<?= BASE_PATH ?>images/components/<?= htmlspecialchars($file['filename']) ?>" target="_blank" class="btn btn-sm btn-outline-info me-1" title="Visualizza">
                                             <i class="fa-solid fa-eye"></i>
                                         </a>
                                         <form method="post" style="display: inline;" onsubmit="return confirm('Sei sicuro di voler eliminare questa immagine?');">
@@ -277,10 +277,10 @@ include '../includes/header.php';
                                     <td><?= htmlspecialchars($file['filename']) ?></td>
                                     <td><?= formatSize($file['size']) ?></td>
                                     <td>
-                                        <img src="/magazzino/images/components/thumbs/<?= htmlspecialchars($file['filename']) ?>?<?= time() ?>" alt="Thumb" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                                        <img src="<?= BASE_PATH ?>images/components/thumbs/<?= htmlspecialchars($file['filename']) ?>?<?= time() ?>" alt="Thumb" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
                                     </td>
                                     <td class="text-end">
-                                        <a href="/magazzino/images/components/thumbs/<?= htmlspecialchars($file['filename']) ?>" target="_blank" class="btn btn-sm btn-outline-info me-1" title="Visualizza">
+                                        <a href="<?= BASE_PATH ?>images/components/thumbs/<?= htmlspecialchars($file['filename']) ?>" target="_blank" class="btn btn-sm btn-outline-info me-1" title="Visualizza">
                                             <i class="fa-solid fa-eye"></i>
                                         </a>
                                         <form method="post" style="display: inline;" onsubmit="return confirm('Sei sicuro di voler eliminare questa thumbnail?');">

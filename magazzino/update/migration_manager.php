@@ -1,8 +1,12 @@
 <?php
 /*
  * @Author: gabriele.riva 
- * @Date: 2026-01-15
- * 
+ * @Date: 2026-02-03 09:37:33 
+ * @Last Modified by: gabriele.riva
+ * @Last Modified time: 2026-02-03 16:49:55
+*/
+
+/*
  * Migration Manager - Sistema intelligente di gestione aggiornamenti DB
  * Applica solo le migrazioni necessarie in base alla versione corrente
  */
@@ -127,6 +131,7 @@ class MigrationManager {
         $skipped = 0;
         $errors = 0;
         $details = [];
+        $deferredFkStatements = [];
         
         foreach ($statements as $stmt) {
             $s = trim($stmt);
@@ -143,6 +148,41 @@ class MigrationManager {
             // Aggiungi punto e virgola se manca
             if (!str_ends_with($s, ';')) {
                 $s .= ';';
+            }
+
+            // Se è una CREATE TABLE che contiene FOREIGN KEY, estrai i vincoli
+            if (preg_match('/^\s*CREATE\s+TABLE/i', $s) && stripos($s, 'FOREIGN KEY') !== false) {
+                if (preg_match('/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?(\w+)`?/i', $s, $m)) {
+                    $tableName = $m[1];
+
+                    // Trova tutte le clausole CONSTRAINT ... FOREIGN KEY ... in modo robusto
+                        // Regex migliorata: consente azioni multi-token come 'SET NULL' o 'NO ACTION'
+                        if (preg_match_all('/CONSTRAINT\s+`[^`]+`\s+FOREIGN\s+KEY\s*\([^\)]+\)\s*REFERENCES\s*`?\w+`?\s*\([^\)]+\)(?:\s+ON\s+DELETE\s+[^\\n,;()]+(?:\s+[^\\n,;()]+)?)?(?:\s+ON\s+UPDATE\s+[^\\n,;()]+(?:\s+[^\\n,;()]+)?)?/i', $s, $fkMatches)) {
+                        foreach ($fkMatches[0] as $fkClause) {
+                            $fkClause = trim($fkClause);
+                            // Validazione minima della clausola trovata
+                            if ($fkClause === '' || stripos($fkClause, 'FOREIGN KEY') === false || stripos($fkClause, 'REFERENCES') === false) {
+                                continue;
+                            }
+
+                            // Assicuriamoci che la clausola non sia vuota o malformata
+                            $deferredStmt = "ALTER TABLE `{$tableName}` ADD " . $fkClause . ";";
+                            $deferredFkStatements[] = $deferredStmt;
+                        }
+
+                        // Rimuovi le clausole CONSTRAINT dal CREATE TABLE originale in modo sicuro
+                            // Rimuovi le clausole CONSTRAINT dal CREATE TABLE originale in modo sicuro (stessa regex usata sopra)
+                            $s = preg_replace('/,?\s*CONSTRAINT\s+`[^`]+`\s+FOREIGN\s+KEY\s*\([^\)]+\)\s*REFERENCES\s*`?\w+`?\s*\([^\)]+\)(?:\s+ON\s+DELETE\s+[^\\n,;()]+(?:\s+[^\\n,;()]+)?)?(?:\s+ON\s+UPDATE\s+[^\\n,;()]+(?:\s+[^\\n,;()]+)?)?/i', '', $s);
+
+                        // Rimuovi eventuali virgole duplicate prima della chiusura della parentesi
+                        $s = preg_replace('/,\s*,+/', ',', $s);
+                        $s = preg_replace('/,\s*\)/', '\\n)', $s);
+                        $s = trim($s);
+                        if (!str_ends_with($s, ';')) {
+                            $s .= ';';
+                        }
+                    }
+                }
             }
             
             try {
@@ -175,6 +215,24 @@ class MigrationManager {
                     // Rimuovi IF NOT EXISTS perché MySQL non lo supporta in ALTER TABLE
                     $s = preg_replace('/IF\s+NOT\s+EXISTS\s+/i', '', $s);
                 }
+
+                // Gestione idempotente per ALTER TABLE ADD INDEX / FULLTEXT INDEX
+                if (preg_match('/ALTER\s+TABLE\s+`?(\w+)`?\s+ADD\s+(?:FULLTEXT\s+)?INDEX\s+`?(\w+)`?/i', $s, $idxMatches)) {
+                    $tableName = $idxMatches[1];
+                    $indexName = $idxMatches[2];
+
+                    $stmtIdx = $this->pdo->prepare("SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?");
+                    $stmtIdx->execute([$tableName, $indexName]);
+                    $rowIdx = $stmtIdx->fetch(PDO::FETCH_ASSOC);
+                    $stmtIdx->closeCursor();
+
+                    if ($rowIdx && intval($rowIdx['cnt']) > 0) {
+                        $skipped++;
+                        $details[] = "⊘ Indice '{$indexName}' già esistente in '{$tableName}'";
+                        continue;
+                    }
+                    // Altrimenti procediamo normalmente (eseguiamo l'ALTER)
+                }
                 
                 // Esegui lo statement
                 $affectedRows = $this->pdo->exec($s);
@@ -201,12 +259,15 @@ class MigrationManager {
                 // 1060 = Duplicate column name
                 // 1061 = Duplicate key name
                 // 1062 = Duplicate entry
-                if (in_array($errorCode, ['1050', '1060', '1061', '1062']) || 
+                // 1091 = Can't DROP INDEX (indice non presente)
+                if (in_array($errorCode, ['1050', '1060', '1061', '1062', '1091']) || 
                     strpos($errorMsg, 'already exists') !== false ||
-                    strpos($errorMsg, 'Duplicate') !== false) {
+                    strpos($errorMsg, 'Duplicate') !== false ||
+                    strpos($errorMsg, "Can't DROP INDEX") !== false ||
+                    strpos($errorMsg, 'check that it exists') !== false) {
                     $skipped++;
                     $shortStmt = strlen($s) > 60 ? substr($s, 0, 60) . '...' : $s;
-                    $details[] = "⊘ " . $shortStmt . " (già esistente)";
+                    $details[] = "⊘ " . $shortStmt . " (già esistente o non applicabile)";
                 } else {
                     $errors++;
                     $details[] = "✗ ERRORE: " . $e->getMessage();
@@ -214,6 +275,62 @@ class MigrationManager {
             }
         }
         
+        // Esegui eventuali ALTER TABLE per aggiungere foreign key raccolte
+        if (!empty($deferredFkStatements)) {
+            // Evita duplicati
+            $deferredFkStatements = array_values(array_unique($deferredFkStatements));
+
+            foreach ($deferredFkStatements as $fkStmt) {
+                // Estrai nome tabella target e tabella referenziata per controllo esistenza
+                $targetTable = null;
+                $refTable = null;
+                if (preg_match('/ALTER\s+TABLE\s+`?(\w+)`?/i', $fkStmt, $m)) {
+                    $targetTable = $m[1];
+                }
+                if (preg_match('/REFERENCES\s+`?(\w+)`?/i', $fkStmt, $m2)) {
+                    $refTable = $m2[1];
+                }
+
+                // Controlla esistenza tabelle prima di eseguire
+                $canExecute = true;
+                if ($targetTable) {
+                    $r = $this->pdo->query("SHOW TABLES LIKE '" . $targetTable . "'");
+                    $existsT = $r && $r->rowCount() > 0;
+                    if ($r) $r->closeCursor();
+                    if (!$existsT) $canExecute = false;
+                }
+                if ($refTable) {
+                    $r2 = $this->pdo->query("SHOW TABLES LIKE '" . $refTable . "'");
+                    $existsR = $r2 && $r2->rowCount() > 0;
+                    if ($r2) $r2->closeCursor();
+                    if (!$existsR) $canExecute = false;
+                }
+
+                if (!$canExecute) {
+                    $skipped++;
+                    $details[] = "⊘ Deferred skipped: missing table for statement: " . $fkStmt;
+                    continue;
+                }
+
+                try {
+                    $affected = $this->pdo->exec($fkStmt);
+                    $executed++;
+                    $short = strlen($fkStmt) > 120 ? substr($fkStmt, 0, 120) . '...' : $fkStmt;
+                    $details[] = "✓ Deferred: " . $short;
+                } catch (PDOException $e) {
+                    $errCode = $e->getCode();
+                    $errMsg = $e->getMessage();
+                    if (in_array($errCode, ['1050','1060','1061','1062','1091']) || strpos($errMsg,'already exists')!==false) {
+                        $skipped++;
+                        $details[] = "⊘ Deferred: " . $fkStmt . " (già esistente o non applicabile)";
+                    } else {
+                        $errors++;
+                        $details[] = "✗ Deferred ERRORE: " . $e->getMessage();
+                    }
+                }
+            }
+        }
+
         return [
             'success' => $executed,
             'skipped' => $skipped,
@@ -230,10 +347,10 @@ class MigrationManager {
         // Se la tabella db_version non esiste, è la prima volta che usiamo il sistema
         $isFirstRun = !$this->dbVersionTableExists();
         
-        // Se è la prima volta, partiamo da 1.0 e applichiamo TUTTE le migrazioni
+        // Se è la prima volta, partiamo da 0.9 per includere anche 1.0
         // Ogni migrazione deve essere idempotente (con IF NOT EXISTS, ecc.)
         // quindi quelle già applicate verranno saltate automaticamente
-        $currentVersion = $isFirstRun ? '1.0' : $this->getCurrentVersion();
+        $currentVersion = $isFirstRun ? '0.9' : $this->getCurrentVersion();
         
         $pending = $this->getPendingMigrationsFrom($currentVersion);
         $results = [];
@@ -259,6 +376,11 @@ class MigrationManager {
                 // Assicurati che esista prima di registrare
                 if ($this->dbVersionTableExists()) {
                     $this->recordVersion($version, $description);
+                }
+                
+                // Post-hook: se la migrazione è 1.8, aggiorna le credenziali nel file config/database.php
+                if (version_compare($version, '1.8', '=')) {
+                    $this->updateDatabaseConfigAfter18();
                 }
                 
                 $results[] = [
@@ -303,20 +425,38 @@ class MigrationManager {
     }
     
     /**
-     * Inizializza il sistema di versioning su un database esistente
-     * (usato solo da init_versioning.php per inizializzazione manuale)
+     * Aggiorna il file config/database.php dopo la migrazione 1.8
+     * Sostituisce le credenziali da root a magazzino_user
      */
-    public function initializeVersioning($currentVersion = '1.6') {
-        if (!$this->dbVersionTableExists()) {
-            $this->createDbVersionTable();
+    private function updateDatabaseConfigAfter18() {
+        $configFile = dirname($this->migrationsDir) . '/../config/database.php';
+        
+        if (!file_exists($configFile)) {
+            return; // File non esiste, salta silenziosamente
         }
         
-        // Registra la versione corrente come punto di partenza
-        $this->recordVersion($currentVersion, 'Inizializzazione sistema di versioning');
-        
-        return [
-            'success' => true,
-            'message' => "Sistema di versioning inizializzato alla versione $currentVersion"
-        ];
+        try {
+            $content = file_get_contents($configFile);
+            
+            // Controlla se le credenziali sono ancora 'root' prima di sostituire
+            if (preg_match("/'user'\\s*=>\\s*'root'/", $content)) {
+                // Sostituisci le credenziali root con magazzino_user
+                $newContent = preg_replace(
+                    "/('user'\\s*=>\\s*)'root'/",
+                    "$1'magazzino_user'",
+                    $content
+                );
+                $newContent = preg_replace(
+                    "/('pass'\\s*=>\\s*)'[^']*'/",
+                    "$1'SecurePass2024!'",
+                    $newContent
+                );
+                
+                file_put_contents($configFile, $newContent);
+            }
+        } catch (Exception $e) {
+            // Ignora silenziosamente gli errori di scrittura
+            // (il file potrebbe essere read-only o i permessi potrebbero mancare)
+        }
     }
 }

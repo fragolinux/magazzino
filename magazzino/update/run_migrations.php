@@ -3,12 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-11 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-15 23:11:11
- *
- * Script per eseguire manualmente le migrazioni del database
- * Da usare dopo aver aggiornato i file del sistema
+ * @Last Modified time: 2026-02-03 16:50:46
  */
 
+require_once __DIR__ . '/../config/base_path.php';
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/db_connect.php';
 require_once __DIR__ . '/migration_manager.php';
@@ -33,15 +31,18 @@ if (version_compare($currentVersion, '1.8', '>=')) {
     if (is_writable($configFile)) {
         $configContent = file_get_contents($configFile);
         
-        // Sostituisci l'utente e password con quelli dedicati
-        $configContent = preg_replace("/'user'\s*=>\s*'[^']*'/", "'user' => 'magazzino_user'", $configContent);
-        $configContent = preg_replace("/'pass'\s*=>\s*'[^']*'/", "'pass' => 'SecurePass2024!'", $configContent);
-        
-        $result = file_put_contents($configFile, $configContent);
-        if ($result !== false) {
-            $configUpdated = true;
-        } else {
-            error_log("Errore scrittura config: $configFile");
+        // Controlla se le credenziali sono ancora 'root' prima di sostituire
+        if (preg_match("/'user'\s*=>\s*'root'/", $configContent)) {
+            // Sostituisci l'utente e password con quelli dedicati
+            $configContent = preg_replace("/'user'\s*=>\s*'root'/", "'user' => 'magazzino_user'", $configContent);
+            $configContent = preg_replace("/'pass'\s*=>\s*'[^']*'/", "'pass' => 'SecurePass2024!'", $configContent);
+            
+            $result = file_put_contents($configFile, $configContent);
+            if ($result !== false) {
+                $configUpdated = true;
+            } else {
+                error_log("Errore scrittura config: $configFile");
+            }
         }
     } else {
         error_log("File config non scrivibile: $configFile");
@@ -68,6 +69,33 @@ if (file_exists($versionFile)) {
 				break;
 			}
 		}
+	}
+}
+
+// Pulizia delle cartelle temporanee
+function rrmdir($dir) {
+	if (is_dir($dir)) {
+		$files = scandir($dir);
+		foreach ($files as $file) {
+			if ($file != "." && $file != "..") {
+				$path = $dir . DIRECTORY_SEPARATOR . $file;
+				if (is_dir($path)) {
+					rrmdir($path);
+				} else {
+					@unlink($path);
+				}
+			}
+		}
+		@rmdir($dir);
+	}
+}
+
+// Elimina tutte le cartelle temporanee _temp_* nella directory update
+$updateDir = __DIR__;
+$tempDirs = glob($updateDir . DIRECTORY_SEPARATOR . '_temp_*', GLOB_ONLYDIR);
+foreach ($tempDirs as $dir) {
+	if (is_dir($dir)) {
+		rrmdir($dir);
 	}
 }
 
@@ -109,8 +137,8 @@ if (!empty($migrationResult['applied'])) {
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 	<title>Migrazioni Database</title>
-	<link href="/magazzino/assets/css/bootstrap.min.css" rel="stylesheet">
-	<link href="/magazzino/assets/css/all.min.css" rel="stylesheet">
+	<link href="<?= (defined('BASE_PATH') ? BASE_PATH : '/magazzino/') ?>assets/css/bootstrap.min.css" rel="stylesheet">
+	<link href="<?= (defined('BASE_PATH') ? BASE_PATH : '/magazzino/') ?>assets/css/all.min.css" rel="stylesheet">
 </head>
 <body class="p-4">
 	<div class="container">
@@ -167,10 +195,10 @@ if (!empty($migrationResult['applied'])) {
 		<?php endif; ?>
 		
 		<div class="mt-4">
-			<a href="/magazzino/index.php" class="btn btn-primary">
+			<a href="<?= (defined('BASE_PATH') ? BASE_PATH : '/magazzino/') ?>index.php" class="btn btn-primary">
 				<i class="fa-solid fa-home me-1"></i>Torna all'applicazione
 			</a>
-			<a href="/magazzino/update/index.php" class="btn btn-secondary">
+			<a href="<?= (defined('BASE_PATH') ? BASE_PATH : '/magazzino/') ?>update/index.php" class="btn btn-secondary">
 				<i class="fa-solid fa-arrow-left me-1"></i>Torna agli aggiornamenti
 			</a>
 		</div>

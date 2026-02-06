@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-04 12:59:50 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-16 14:30:20
+ * @Last Modified time: 2026-02-03 16:48:57
  *
  * Update script:
  * - apre file .zip nella stessa cartella
@@ -13,9 +13,19 @@
  * - ritorna un report dei file aggiornati / errori
  */
 
+// 2026-02-01: aggiunto controllo per rilevare il tema
+
+require_once __DIR__ . '/../config/base_path.php';
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/db_connect.php';
 require_once __DIR__ . '/migration_manager.php';
+
+// Leggi il tema da file config
+$appTheme = 'light'; // default
+$settingsConfig = @include __DIR__ . '/../config/settings.php';
+if ($settingsConfig && isset($settingsConfig['app_theme'])) {
+    $appTheme = in_array($settingsConfig['app_theme'], ['light', 'dark']) ? $settingsConfig['app_theme'] : 'light';
+}
 
 // solo admin può eseguire l'aggiornamento
 if (empty($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
@@ -131,13 +141,13 @@ if ($zipPath === null) {
 	$currentVersion = getLatestVersion($currentVersionFile);
 	
 	?><!doctype html>
-	<html lang="it">
+	<html lang="it" data-bs-theme="<?= $appTheme ?>">
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width,initial-scale=1">
 		<title>Aggiornamento - Upload</title>
-		<link href="/magazzino/assets/css/bootstrap.min.css" rel="stylesheet">
-		<link href="/magazzino/assets/css/all.min.css" rel="stylesheet">
+		<link href="<?= BASE_PATH ?>assets/css/bootstrap.min.css" rel="stylesheet">
+		<link href="<?= BASE_PATH ?>assets/css/all.min.css" rel="stylesheet">
 	</head>
 	<body class="p-4">
 		<div class="container">
@@ -183,7 +193,7 @@ if ($zipPath === null) {
 						<button type="submit" class="btn btn-primary">
 							<i class="fa-solid fa-upload me-1"></i>Carica e avvia aggiornamento
 						</button>
-						<a href="/magazzino/index.php" class="btn btn-secondary">Annulla</a>
+						<a href="<?= BASE_PATH ?>index.php" class="btn btn-secondary">Annulla</a>
 					</form>
 				</div>
 			</div>
@@ -279,13 +289,13 @@ if (!empty($currentVersion['version']) && !empty($newVersion['version'])) {
 // Se è un downgrade e l'utente non ha confermato, chiedi conferma
 if ($isDowngrade && !isset($_GET['confirm_downgrade'])) {
 	?><!doctype html>
-	<html lang="it">
+	<html lang="it" data-bs-theme="<?= $appTheme ?>">
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width,initial-scale=1">
 		<title>Attenzione - Downgrade versione</title>
-		<link href="/magazzino/assets/css/bootstrap.min.css" rel="stylesheet">
-		<link href="/magazzino/assets/css/all.min.css" rel="stylesheet">
+		<link href="<?= BASE_PATH ?>assets/css/bootstrap.min.css" rel="stylesheet">
+		<link href="<?= BASE_PATH ?>assets/css/all.min.css" rel="stylesheet">
 	</head>
 	<body class="p-4">
 		<div class="container">
@@ -426,13 +436,13 @@ $needsManualMigration = in_array('update/index.php', $filesReport['updated']) ||
 // Se i file di update sono stati modificati E non siamo già in fase 2, mostra il messaggio
 if ($needsManualMigration && !$isPhase2) {
 	?><!doctype html>
-	<html lang="it">
+	<html lang="it" data-bs-theme="<?= $appTheme ?>">
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width,initial-scale=1">
 		<title>Aggiornamento - File aggiornati</title>
-		<link href="/magazzino/assets/css/bootstrap.min.css" rel="stylesheet">
-		<link href="/magazzino/assets/css/all.min.css" rel="stylesheet">
+		<link href="<?= BASE_PATH ?>assets/css/bootstrap.min.css" rel="stylesheet">
+		<link href="<?= BASE_PATH ?>assets/css/all.min.css" rel="stylesheet">
 	</head>
 	<body class="p-4">
 		<div class="container">
@@ -491,11 +501,8 @@ if ($needsManualMigration && !$isPhase2) {
 			<?php endif; ?>
 			
 			<div class="d-grid gap-2 d-md-block">
-				<a href="/magazzino/update/run_migrations.php" class="btn btn-primary btn-lg">
+				<a href="<?= BASE_PATH ?>update/run_migrations.php" class="btn btn-primary btn-lg">
 					<i class="fa-solid fa-database me-2"></i>Completa aggiornamento database
-				</a>
-				<a href="/magazzino/index.php" class="btn btn-secondary btn-lg">
-					<i class="fa-solid fa-home me-2"></i>Torna all'applicazione
 				</a>
 			</div>
 		</div>
@@ -519,14 +526,17 @@ if (!$isPhase2) {
 	if (file_exists($configFile) && is_writable($configFile)) {
 		$configContent = file_get_contents($configFile);
 		
-		// Sostituisci l'utente e password con quelli dedicati
-		$configContent = preg_replace("/'user'\s*=>\s*'[^']*'/", "'user' => 'magazzino_user'", $configContent);
-		$configContent = preg_replace("/'pass'\s*=>\s*'[^']*'/", "'pass' => 'SecurePass2024!'", $configContent);
-		
-		if (file_put_contents($configFile, $configContent) !== false) {
-			$configUpdated = true;
-		} else {
-			error_log("Errore scrittura config: $configFile");
+		// Controlla se le credenziali sono ancora 'root' prima di sostituire
+		if (preg_match("/'user'\s*=>\s*'root'/", $configContent)) {
+			// Sostituisci l'utente e password con quelli dedicati
+			$configContent = preg_replace("/'user'\s*=>\s*'root'/", "'user' => 'magazzino_user'", $configContent);
+			$configContent = preg_replace("/'pass'\s*=>\s*'[^']*'/", "'pass' => 'SecurePass2024!'", $configContent);
+			
+			if (file_put_contents($configFile, $configContent) !== false) {
+				$configUpdated = true;
+			} else {
+				error_log("Errore scrittura config: $configFile");
+			}
 		}
 	}
 	
@@ -595,13 +605,13 @@ foreach ($zipFiles as $zf) {
 include __DIR__ . '/cleanup.php';
 ?>
 <!doctype html>
-<html lang="it">
+<html lang="it" data-bs-theme="<?= $appTheme ?>">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 	<title>Aggiornamento</title>
-	<link href="/magazzino/assets/css/bootstrap.min.css" rel="stylesheet">
-	<link href="/magazzino/assets/css/all.min.css" rel="stylesheet">
+	<link href="<?= BASE_PATH ?>assets/css/bootstrap.min.css" rel="stylesheet">
+	<link href="<?= BASE_PATH ?>assets/css/all.min.css" rel="stylesheet">
 </head>
 <body class="p-4">
 	<div class="container">
@@ -707,8 +717,7 @@ include __DIR__ . '/cleanup.php';
 				<div class="alert alert-danger">Errore DB: <?= htmlspecialchars($dbReport['message']) ?></div>
 			<?php endif; ?>
 		<?php endif; ?>
-
-		<a href="/magazzino/index.php" class="btn btn-primary mt-3">Torna all'applicazione</a>
+		<a href="<?= BASE_PATH ?>index.php" class="btn btn-primary mt-3">Torna all'applicazione</a>
 	</div>
 </body>
 </html>

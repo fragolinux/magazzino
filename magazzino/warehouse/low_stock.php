@@ -18,7 +18,7 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
 
 <div id="header-print-section">
     <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
-        <img src="/magazzino/assets/img/logo.jpg" alt="logo" style="height:40px;" class="me-3">
+        <img src="<?= BASE_PATH ?>assets/img/logo.jpg" alt="logo" style="height:40px;" class="me-3">
         <span class="ms-auto text-muted">Utente: <strong><?= htmlspecialchars($_SESSION['username']) ?></strong></span>
     </div>
 </div>

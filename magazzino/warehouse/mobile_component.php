@@ -42,8 +42,8 @@ if (!$component) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title><?= htmlspecialchars($component['codice_prodotto']) ?></title>
-    <link href="/magazzino/assets/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/magazzino/assets/css/all.min.css" rel="stylesheet">
+    <link href="<?= BASE_PATH ?>assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?= BASE_PATH ?>assets/css/all.min.css" rel="stylesheet">
     <style>
         body { margin: 0; padding: 0; background-color: #f8f9fa; }
         .container-fluid { padding: 0; }
@@ -128,7 +128,7 @@ if (!$component) {
     </div>
 </div>
 
-<script src="/magazzino/assets/js/jquery-3.6.0.min.js"></script>
+<script src="<?= BASE_PATH ?>assets/js/jquery-3.6.0.min.js"></script>
 <script>
 function submitOperation() {
     const quantity = $('#quantity-input').val();

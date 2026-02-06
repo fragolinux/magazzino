@@ -1,0 +1,643 @@
+/*
+ * @Author: gabriele.riva 
+ * @Date: 2026-02-02
+ * 
+ * Temi Predefiniti per Sito Personale
+ * 5 temi completamente personalizzabili e responsive
+ */
+
+/* ========================================
+   TEMA 1: MODERN MINIMAL
+   ======================================== */
+.theme-modern-minimal {
+    --primary-color: #2d3748;
+    --secondary-color: #4a5568;
+    --accent-color: #3182ce;
+    --text-color: #1a202c;
+    --bg-color: #ffffff;
+    --section-bg: #f7fafc;
+    --border-color: #e2e8f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-color) !important;
+    color: var(--text-color) !important;
+}
+
+.theme-modern-minimal .personal-header {
+    background: linear-gradient(135deg, var(--bg-color) 0%, var(--section-bg) 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 2rem 0;
+}
+
+.theme-modern-minimal .personal-section {
+    padding: 5rem 0;
+    background: var(--section-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.theme-modern-minimal .personal-section:nth-child(even) {
+    background: var(--bg-color);
+}
+
+.theme-modern-minimal h1 {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.theme-modern-minimal h2 {
+    color: var(--secondary-color);
+    font-weight: 600;
+    margin-bottom: 2rem;
+}
+
+.theme-modern-minimal p {
+    color: var(--text-color);
+    line-height: 1.8;
+    font-size: 1.1rem;
+}
+
+.theme-modern-minimal .btn-primary {
+    background: var(--accent-color);
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.theme-modern-minimal .btn-primary:hover {
+    background: #2c5282;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(49, 130, 206, 0.3);
+}
+
+/* ========================================
+   TEMA 2: DARK PROFESSIONAL
+   ======================================== */
+.theme-dark-professional {
+    --primary-color: #f7fafc;
+    --secondary-color: #e2e8f0;
+    --accent-color: #4fd1c5;
+    --text-color: #cbd5e0;
+    --bg-color: #1a202c;
+    --section-bg: #2d3748;
+    --border-color: #4a5568;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-color) !important;
+    color: var(--text-color) !important;
+}
+
+.theme-dark-professional .personal-header {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+    border-bottom: 2px solid var(--accent-color);
+    padding: 2rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.theme-dark-professional .personal-section {
+    padding: 5rem 0;
+    background: var(--section-bg);
+    position: relative;
+    overflow: hidden;
+}
+
+.theme-dark-professional .personal-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-color), transparent);
+}
+
+.theme-dark-professional .personal-section:nth-child(even) {
+    background: var(--bg-color);
+}
+
+.theme-dark-professional h1 {
+    color: var(--primary-color);
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 2px 10px rgba(79, 209, 197, 0.3);
+}
+
+.theme-dark-professional h2 {
+    color: var(--accent-color);
+    font-weight: 700;
+    margin-bottom: 2rem;
+}
+
+.theme-dark-professional p {
+    color: var(--text-color);
+    line-height: 1.8;
+    font-size: 1.1rem;
+}
+
+.theme-dark-professional .btn-primary {
+    background: var(--accent-color);
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 700;
+    color: #1a202c;
+    transition: all 0.3s ease;
+}
+
+.theme-dark-professional .btn-primary:hover {
+    background: #38b2ac;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(79, 209, 197, 0.4);
+}
+
+/* ========================================
+   TEMA 3: CREATIVE PORTFOLIO
+   ======================================== */
+.theme-creative-portfolio {
+    --primary-color: #f56565;
+    --secondary-color: #ed8936;
+    --accent-color: #f6ad55;
+    --text-color: #2d3748;
+    --bg-color: #fffaf0;
+    --section-bg: #ffffff;
+    --border-color: #fed7d7;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-color) !important;
+    color: var(--text-color) !important;
+}
+
+.theme-creative-portfolio .personal-header {
+    background: linear-gradient(135deg, #f56565 0%, #ed8936 50%, #f6ad55 100%);
+    color: white;
+    padding: 3rem 0;
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+}
+
+.theme-creative-portfolio .personal-section {
+    padding: 6rem 0;
+    background: var(--section-bg);
+    position: relative;
+}
+
+.theme-creative-portfolio .personal-section:nth-child(odd) {
+    background: var(--bg-color);
+}
+
+.theme-creative-portfolio .personal-section::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+}
+
+.theme-creative-portfolio h1 {
+    color: white;
+    font-weight: 900;
+    margin-bottom: 1.5rem;
+    font-size: 3rem;
+}
+
+.theme-creative-portfolio h2 {
+    color: var(--primary-color);
+    font-weight: 800;
+    margin-bottom: 2rem;
+    position: relative;
+    display: inline-block;
+}
+
+.theme-creative-portfolio h2::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 50%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+}
+
+.theme-creative-portfolio p {
+    color: var(--text-color);
+    line-height: 1.9;
+    font-size: 1.15rem;
+}
+
+.theme-creative-portfolio .btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border: none;
+    padding: 1rem 2.5rem;
+    border-radius: 50px;
+    font-weight: 700;
+    color: white;
+    transition: all 0.4s ease;
+    box-shadow: 0 5px 15px rgba(245, 101, 101, 0.3);
+}
+
+.theme-creative-portfolio .btn-primary:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 15px 35px rgba(245, 101, 101, 0.4);
+}
+
+/* ========================================
+   TEMA 4: BUSINESS CLASSIC
+   ======================================== */
+.theme-business-classic {
+    --primary-color: #1e40af;
+    --secondary-color: #3b82f6;
+    --accent-color: #60a5fa;
+    --text-color: #1f2937;
+    --bg-color: #f9fafb;
+    --section-bg: #ffffff;
+    --border-color: #d1d5db;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    background: var(--bg-color) !important;
+    color: var(--text-color) !important;
+}
+
+.theme-business-classic .personal-header {
+    background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    padding: 2.5rem 0;
+    border-bottom: 4px solid var(--accent-color);
+}
+
+.theme-business-classic .personal-section {
+    padding: 5rem 0;
+    background: var(--section-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.theme-business-classic .personal-section:nth-child(even) {
+    background: var(--bg-color);
+}
+
+.theme-business-classic h1 {
+    color: white;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    font-size: 2.5rem;
+    letter-spacing: 1px;
+}
+
+.theme-business-classic h2 {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    border-left: 5px solid var(--accent-color);
+    padding-left: 1rem;
+}
+
+.theme-business-classic p {
+    color: var(--text-color);
+    line-height: 1.8;
+    font-size: 1.1rem;
+    text-align: justify;
+}
+
+.theme-business-classic .btn-primary {
+    background: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    padding: 0.75rem 2rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.theme-business-classic .btn-primary:hover {
+    background: transparent;
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* ========================================
+   TEMA 5: TECH GRADIENT
+   ======================================== */
+.theme-tech-gradient {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --accent-color: #f093fb;
+    --text-color: #2d3748;
+    --bg-color: #ffffff;
+    --section-bg: #f7fafc;
+    --border-color: #e2e8f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-color) !important;
+    color: var(--text-color) !important;
+}
+
+.theme-tech-gradient .personal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.theme-tech-gradient .personal-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 40%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(15deg);
+}
+
+.theme-tech-gradient .personal-section {
+    padding: 5rem 0;
+    background: var(--bg-color);
+    position: relative;
+}
+
+.theme-tech-gradient .personal-section:nth-child(odd) {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+}
+
+.theme-tech-gradient h1 {
+    color: white;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    font-size: 3rem;
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.theme-tech-gradient h2 {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    font-size: 2.5rem;
+}
+
+.theme-tech-gradient p {
+    color: var(--text-color);
+    line-height: 1.8;
+    font-size: 1.1rem;
+}
+
+.theme-tech-gradient .btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border: none;
+    padding: 0.875rem 2.5rem;
+    border-radius: 50px;
+    font-weight: 700;
+    color: white;
+    transition: all 0.4s ease;
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.theme-tech-gradient .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.theme-tech-gradient .btn-primary:hover::before {
+    left: 100%;
+}
+
+.theme-tech-gradient .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+}
+
+/* ========================================
+   STILI COMUNI PER TUTTI I TEMI
+   ======================================== */
+.personal-site-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.personal-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 1rem 0;
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.personal-navbar .navbar-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.personal-navbar .nav-link {
+    margin: 0 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.personal-navbar .nav-link:hover {
+    opacity: 0.8;
+}
+
+.theme-modern-minimal .personal-navbar {
+    background: rgba(45, 55, 72, 0.95) !important;
+}
+
+.theme-modern-minimal .personal-navbar .nav-link,
+.theme-modern-minimal .personal-navbar .navbar-brand {
+    color: #ffffff !important;
+}
+
+.theme-modern-minimal .personal-navbar .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.theme-modern-minimal .personal-navbar .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255,255,255,0.55)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.theme-dark-professional .personal-navbar {
+    background: rgba(26, 32, 44, 0.98) !important;
+}
+
+.theme-dark-professional .personal-navbar .nav-link,
+.theme-dark-professional .personal-navbar .navbar-brand {
+    color: #f7fafc !important;
+}
+
+.theme-dark-professional .personal-navbar .nav-link:hover {
+    color: #4fd1c5 !important;
+}
+
+.theme-dark-professional .personal-navbar .navbar-toggler {
+    border-color: rgba(247, 250, 252, 0.5);
+}
+
+.theme-dark-professional .personal-navbar .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(247,250,252,0.55)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.theme-creative-portfolio .personal-navbar {
+    background: rgba(245, 101, 101, 0.95) !important;
+}
+
+.theme-creative-portfolio .personal-navbar .nav-link,
+.theme-creative-portfolio .personal-navbar .navbar-brand {
+    color: #ffffff !important;
+}
+
+.theme-creative-portfolio .personal-navbar .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.theme-creative-portfolio .personal-navbar .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255,255,255,0.55)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.theme-business-classic .personal-navbar {
+    background: rgba(30, 64, 175, 0.95) !important;
+}
+
+.theme-business-classic .personal-navbar .nav-link,
+.theme-business-classic .personal-navbar .navbar-brand {
+    color: #ffffff !important;
+}
+
+.theme-business-classic .personal-navbar .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.theme-business-classic .personal-navbar .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255,255,255,0.55)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.theme-tech-gradient .personal-navbar {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%) !important;
+}
+
+.theme-tech-gradient .personal-navbar .nav-link,
+.theme-tech-gradient .personal-navbar .navbar-brand {
+    color: #ffffff !important;
+}
+
+.theme-tech-gradient .personal-navbar .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.theme-tech-gradient .personal-navbar .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255,255,255,0.55)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.personal-navbar.dark {
+    background: rgba(26, 32, 44, 0.95);
+}
+
+.personal-section {
+    scroll-margin-top: 80px;
+    padding: 5rem 0 !important;
+}
+
+.theme-creative-portfolio .personal-section {
+    padding: 6rem 0 !important;
+}
+
+.personal-section.with-bg {
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    position: relative;
+}
+
+.personal-section.with-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.personal-section.with-bg.dark::before {
+    background: rgba(26, 32, 44, 0.9);
+}
+
+.personal-section.with-bg > * {
+    position: relative;
+    z-index: 1;
+}
+
+.personal-footer {
+    margin-top: auto;
+    padding: 3rem 0;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Animazioni */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.8s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .personal-section {
+        padding: 3rem 0 !important;
+    }
+    
+    h1 {
+        font-size: 2rem !important;
+    }
+    
+    h2 {
+        font-size: 1.5rem !important;
+    }
+    
+    p {
+        font-size: 1rem !important;
+    }
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Utility classes */
+.text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.box-shadow {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.hover-lift {
+    transition: transform 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+}

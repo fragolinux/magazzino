@@ -3,10 +3,12 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-05 09:58:58 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-15 19:57:59
+ * @Last Modified time: 2026-02-02 20:02:38
 */
 // 2026-01-11: Aggiunto URL in alternativa all'IP del PC
 // 2026-01-15: utilizzata libreria locale per generare QR qrcode.min.js
+// 2026-02-01: Aggiunti parametri QR Code nei setting
+// 2026-02-02: Aggiunta possibilità di selezionare componenti senza comparto
 
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/db_connect.php';
@@ -24,9 +26,24 @@ if (!is_array($compartments) || count($compartments) === 0) {
     exit;
 }
 
-// sanitize compartment ids
-$ids = array_values(array_filter(array_map('intval', $compartments), function($v){ return $v>0; }));
-if (count($ids) === 0){
+$location_id = isset($_POST['location_id']) && is_numeric($_POST['location_id']) ? intval($_POST['location_id']) : null;
+
+// Separa i compartimenti dai componenti senza comparto
+$ids = [];
+$includeUnassigned = false;
+foreach ($compartments as $val) {
+    if ($val === 'unassigned') {
+        $includeUnassigned = true;
+    } else {
+        $intVal = intval($val);
+        if ($intVal > 0) {
+            $ids[] = $intVal;
+        }
+    }
+}
+
+// Controlla se abbiamo almeno un comparto oppure unassigned
+if (count($ids) === 0 && !$includeUnassigned) {
     echo "<p>Errore: nessun comparto valido.</p>";
     exit;
 }
@@ -40,18 +57,64 @@ if ($ip === ''){
     $ip = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
 }
 
+// Leggi impostazioni QR dal database
+$qrPerRiga = 10;  // valore default
+$qrSize = 100;   // valore default in pixel
+try {
+    // Leggi qr_per_riga dal database
+    $stmtQR1 = $pdo->prepare("SELECT setting_value FROM setting WHERE setting_name = ? LIMIT 1");
+    $stmtQR1->execute(['qr_per_riga']);
+    $resultQR1 = $stmtQR1->fetch(PDO::FETCH_ASSOC);
+    if ($resultQR1) {
+        $qrPerRiga = intval($resultQR1['setting_value']);
+    }
+    
+    // Leggi qr_size dal database
+    $stmtQR2 = $pdo->prepare("SELECT setting_value FROM setting WHERE setting_name = ? LIMIT 1");
+    $stmtQR2->execute(['qr_size']);
+    $resultQR2 = $stmtQR2->fetch(PDO::FETCH_ASSOC);
+    if ($resultQR2) {
+        $qrSize = intval($resultQR2['setting_value']);
+    }
+} catch (Exception $dbErr) {
+    // Se il database non è raggiungibile, usa i default
+}
+
 $include_code = isset($_POST['include_code_under_qr']) ? true : false;
 
 try {
-	// recupera componenti nei comparti
-	$placeholders = implode(',', array_fill(0, count($ids), '?'));
-	$sql = "SELECT id, codice_prodotto FROM components WHERE compartment_id IN ($placeholders) ORDER BY codice_prodotto ASC";
+	// Costruisci la query in base a cosa è stato selezionato
+	$whereConditions = [];
+	$params = [];
+	
+	if (count($ids) > 0) {
+		// Aggiungi condizione per i compartimenti
+		$placeholders = implode(',', array_fill(0, count($ids), '?'));
+		$whereConditions[] = "compartment_id IN ($placeholders)";
+		$params = array_merge($params, $ids);
+	}
+	
+	if ($includeUnassigned) {
+		// Aggiungi condizione per componenti senza comparto
+		$unassignedCondition = "(compartment_id IS NULL OR compartment_id = 0)";
+		// Se è stata selezionata una location specifica, filtriamo anche per location_id
+		if ($location_id) {
+			$unassignedCondition .= " AND location_id = ?";
+			$whereConditions[] = $unassignedCondition;
+			$params[] = $location_id;
+		} else {
+			$whereConditions[] = $unassignedCondition;
+		}
+	}
+	
+	$whereClause = implode(' OR ', $whereConditions);
+	$sql = "SELECT id, codice_prodotto FROM components WHERE $whereClause ORDER BY codice_prodotto ASC";
 	$stmt = $pdo->prepare($sql);
-	$stmt->execute($ids);
+	$stmt->execute($params);
 	$components = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if (!$components){
-    echo "<p>Nessun componente trovato nei comparti selezionati.</p>";
+    echo "<p>Nessun componente trovato nei comparti o tra quelli senza comparto selezionati.</p>";
     exit;
 }
 
@@ -61,9 +124,9 @@ $html = '<!doctype html><html><head><meta charset="utf-8"><title>QR Codes</title
 $html .= '<meta name="viewport" content="width=device-width, initial-scale=1">';
 $html .= '<script src="../assets/js/qrcode.min.js"></script>';
 $html .= '<style>@media print{@page{size:A4;margin:5mm}}body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:5mm}';
-$html .= '.labels{display:grid;grid-template-columns:repeat(7, 1fr);gap:2mm}';
+$html .= '.labels{display:grid;grid-template-columns:repeat(' . intval($qrPerRiga) . ', 1fr);gap:2mm}';
 $html .= '.label{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:1mm;box-sizing:border-box;text-align:center;}';
-$html .= '.label canvas{width:15mm;height:15mm;display:block;margin-bottom:1mm;}';
+$html .= '.label canvas{width:' . intval($qrSize) . 'px;height:' . intval($qrSize) . 'px;display:block;margin-bottom:1mm;}';
 $html .= '.code{font-size:9pt;word-break:break-word;overflow:hidden;max-height:2.5em;line-height:1.2}';
 $html .= '.print-note{margin-bottom:3mm}';
 $html .= '</style></head><body>';
@@ -91,7 +154,7 @@ foreach ($components as $c){
     
     if (is_local_ip($ip)) {
         $clean_ip = preg_replace('#^https?://#', '', $ip);
-        $payload = 'http://' . $clean_ip . '/magazzino/warehouse/mobile_component.php?id=' . $comp_id;
+        $payload = 'http://' . $clean_ip . BASE_PATH . 'warehouse/mobile_component.php?id=' . $comp_id;
     } else {
         // URL esterno
         $base_url = rtrim($ip, '/');
@@ -120,8 +183,8 @@ $html .= '    qrElements.forEach(function(element) {';
 $html .= '        var qrData = element.getAttribute("data-qr");';
 $html .= '        new QRCode(element, {';
 $html .= '            text: qrData,';
-$html .= '            width: 100,';
-$html .= '            height: 100,';
+$html .= '            width: ' . intval($qrSize) . ',';
+$html .= '            height: ' . intval($qrSize) . ',';
 $html .= '            colorDark: "#000000",';
 $html .= '            colorLight: "#ffffff",';
 $html .= '            correctLevel: QRCode.CorrectLevel.M';

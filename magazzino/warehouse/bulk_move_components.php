@@ -3,9 +3,11 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-21 15:51:37 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2025-10-21 16:19:45
+ * @Last Modified time: 2026-02-02 17:58:32
 */
+// 2026-02-01: aggiunto locale nella select delle posizioni
 
+require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
 
@@ -16,7 +18,7 @@ if ($_SESSION['role'] !== 'admin') {
 }
 
 // Recupera posizioni e comparti
-$locations = $pdo->query("SELECT id, name FROM locations ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+$locations = $pdo->query("SELECT l.id, l.name, loc.name AS locale_name FROM locations l LEFT JOIN locali loc ON l.locale_id = loc.id ORDER BY l.name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $source_location = intval($_POST['source_location']);
@@ -96,7 +98,7 @@ include '../includes/header.php';
           <select name="source_location" id="source_location" class="form-select" required>
             <option value="">-- Seleziona posizione --</option>
             <?php foreach ($locations as $loc): ?>
-              <option value="<?= $loc['id'] ?>"><?= htmlspecialchars($loc['name']) ?></option>
+              <option value="<?= $loc['id'] ?>"><?= htmlspecialchars($loc['name']) ?> - <?= htmlspecialchars($loc['locale_name'] ?? 'Senza locale') ?></option>
             <?php endforeach; ?>
           </select>
         </div>
@@ -115,7 +117,7 @@ include '../includes/header.php';
           <select name="target_location" id="target_location" class="form-select" required>
             <option value="">-- Seleziona posizione --</option>
             <?php foreach ($locations as $loc): ?>
-              <option value="<?= $loc['id'] ?>"><?= htmlspecialchars($loc['name']) ?></option>
+              <option value="<?= $loc['id'] ?>"><?= htmlspecialchars($loc['name']) ?> - <?= htmlspecialchars($loc['locale_name'] ?? 'Senza locale') ?></option>
             <?php endforeach; ?>
           </select>
         </div>
@@ -142,9 +144,9 @@ $(document).ready(function(){
     let select = $('#' + selectId);
     select.html('<option>Caricamento...</option>');
     if(locationId){
-      $.getJSON('get_compartments.php', {location_id: locationId}, function(data){
+      $.getJSON('<?= BASE_PATH ?>warehouse/get_compartments.php', {location_id: locationId}, function(data){
         let options = '<option value="">-- Seleziona comparto --</option>';
-        $.each(data, function(i, item){
+        $.each(data.compartments, function(i, item){
           options += '<option value="'+item.id+'">'+item.code+'</option>';
         });
         select.html(options);

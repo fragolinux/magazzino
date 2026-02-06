@@ -3,8 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:28:47 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2025-10-21 11:32:55
+ * @Last Modified time: 2026-02-01 21:14:26
 */
+
+// 2026-02-01: aggliunto locale nella select delle posizioni
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -15,7 +17,7 @@ $error = $_SESSION['error'] ?? '';
 unset($_SESSION['success'], $_SESSION['error']);
 
 // Recupero posizioni
-$locations = $pdo->query("SELECT id, name FROM locations ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+$locations = $pdo->query("SELECT l.id, l.name, loc.name AS locale_name FROM locations l LEFT JOIN locali loc ON l.locale_id = loc.id ORDER BY l.name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 // Parametri GET
 $location_id = isset($_GET['location_id']) && is_numeric($_GET['location_id']) ? intval($_GET['location_id']) : null;
@@ -61,7 +63,7 @@ include '../includes/header.php';
         <option value="">-- Seleziona una posizione --</option>
         <?php foreach ($locations as $loc): ?>
           <option value="<?= $loc['id'] ?>" <?= ($location_id == $loc['id']) ? 'selected' : '' ?>>
-            <?= htmlspecialchars($loc['name']) ?>
+            <?= htmlspecialchars($loc['name']) ?> - <?= htmlspecialchars($loc['locale_name'] ?? 'Senza locale') ?>
           </option>
         <?php endforeach; ?>
       </select>

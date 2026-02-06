@@ -3,9 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-21 09:15:47 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-08 14:06:39
+ * @Last Modified time: 2026-02-01 20:39:15
 */
 // 2026-01-08: Aggiunto assegnazione di una posizione a un locale
+// 2026-02-01: corretto bug che non permetteva di salvare una posizione con nome già esistente in un altro locale
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -27,18 +28,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($locale_id === null) {
         $error = "Il locale è obbligatorio.";
     } else {
-        // Controllo duplicati (nome unico)
-        $stmt = $pdo->prepare("SELECT id FROM locations WHERE name = ?");
-        $stmt->execute([$name]);
+        // Controllo duplicati (nome unico per locale)
+        $stmt = $pdo->prepare("SELECT id FROM locations WHERE name = ? AND locale_id = ?");
+        $stmt->execute([$name, $locale_id]);
         if ($stmt->fetch()) {
-            $error = "Esiste già una posizione con questo nome.";
+            $error = "Esiste già una posizione con questo nome in questo locale.";
         } else {
-            $stmt = $pdo->prepare("INSERT INTO locations (name, description, locale_id) VALUES (?, ?, ?)");
-            $stmt->execute([$name, $description, $locale_id]);
+            try {
+                $stmt = $pdo->prepare("INSERT INTO locations (name, description, locale_id) VALUES (?, ?, ?)");
+                $stmt->execute([$name, $description, $locale_id]);
 
-            $_SESSION['success'] = "Posizione \"" . htmlspecialchars($name) . "\" aggiunta con successo.";
-            header("Location: locations.php");
-            exit;
+                $_SESSION['success'] = "Posizione \"" . htmlspecialchars($name) . "\" aggiunta con successo.";
+                header("Location: locations.php");
+                exit;
+            } catch (PDOException $e) {
+                if ($e->getCode() == '23000') {
+                    $error = "Esiste già una posizione con questo nome.";
+                } else {
+                    $error = "Errore durante l'inserimento della posizione.";
+                }
+            }
         }
     }
 }

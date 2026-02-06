@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-13
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-15
+ * @Last Modified time: 2026-02-02 16:37:17
  * 
  * Menu di navigazione principale
  */
@@ -12,8 +12,8 @@
 ?>
 <nav class="navbar navbar-expand-lg navbar-<?= $appTheme === 'dark' ? 'dark bg-dark' : 'light bg-light' ?> shadow-sm">
   <div class="container-fluid">
-    <a class="navbar-brand" href="/magazzino/index.php">
-      <img src="/magazzino/assets/img/logo.jpg" alt="logo" class="me-2" style="height:40px;">
+    <a class="navbar-brand" href="<?= BASE_PATH ?>index.php">
+      <img src="<?= BASE_PATH ?>assets/img/logo.jpg" alt="logo" class="me-2" style="height:40px;">
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
       data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
@@ -25,12 +25,12 @@
       <ul class="navbar-nav me-auto">
         <?php if (isset($_SESSION['user_id'])): ?>
           <li class="nav-item">
-            <a class="nav-link" href="/magazzino/warehouse/components.php">
+            <a class="nav-link" href="<?= BASE_PATH ?>warehouse/components.php">
               <i class="fa-solid fa-microchip me-1"></i>Componenti
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="/magazzino/warehouse/barcode_scan.php">
+            <a class="nav-link" href="<?= BASE_PATH ?>warehouse/barcode_scan.php">
               <i class="fa-solid fa-barcode me-1"></i>Barcode
             </a>
           </li>
@@ -42,72 +42,77 @@
             </a>
             <ul class="dropdown-menu" aria-labelledby="magazzinoDropdown">
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/locali.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/locali.php">
                   <i class="fa-solid fa-building me-2 text-secondary"></i>Locali
                 </a>
               </li>
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/locations.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/locations.php">
                   <i class="fa-solid fa-location-dot me-2 text-secondary"></i>Posizioni
                 </a>
               </li>
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/compartments.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/compartments.php">
                   <i class="fa-solid fa-boxes-stacked me-2 text-secondary"></i>Comparti
                 </a>
               </li>
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/categories.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/categories.php">
                   <i class="fa-solid fa-tags me-2 text-secondary"></i>Categorie
                 </a>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/hierarchy.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/hierarchy.php">
                   <i class="fa-solid fa-sitemap me-2 text-primary"></i>Gerarchia completa
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/recent_components.php">
+                  <i class="fa-solid fa-clock me-2 text-info"></i>Ultimi componenti inseriti
                 </a>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/bulk_move_components.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/bulk_move_components.php">
                   <i class="fa-solid fa-right-left me-2 text-secondary"></i>Sposta componenti
                 </a>
               </li>
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/bulk_swap_components.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/bulk_swap_components.php">
                   <i class="fa-solid fa-retweet me-2 text-secondary"></i>Scambia componenti
                 </a>
               </li>
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/low_stock.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/low_stock.php">
                   <i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Sotto scorta
                 </a>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/orphan_files.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/orphan_files.php">
                   <i class="fa-solid fa-file-circle-question me-2 text-warning"></i>File orfani
                 </a>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/import_csv.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/import_csv.php">
                   <i class="fa-solid fa-file-import me-2 text-success"></i>Import CSV
                 </a>
               </li>
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/export_csv.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/export_csv.php">
                   <i class="fa-solid fa-file-export me-2 text-info"></i>Export CSV
                 </a>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/qrcodes.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/qrcodes.php">
                   <i class="fa-solid fa-qrcode me-2 text-secondary"></i>Stampa QR Code
                 </a>
               </li>
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/barcodes.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/barcodes.php">
                   <i class="fa-solid fa-barcode me-2 text-secondary"></i>Stampa Barcode
                 </a>
               </li>
@@ -122,7 +127,7 @@
             </a>
             <ul class="dropdown-menu" aria-labelledby="progettiDropdown">
               <li>
-                <a class="dropdown-item" href="/magazzino/warehouse/boms.php">
+                <a class="dropdown-item" href="<?= BASE_PATH ?>warehouse/boms.php">
                   <i class="fa-solid fa-list-check me-2 text-primary"></i>BOM Analyzer
                 </a>
               </li>
@@ -135,38 +140,40 @@
       <ul class="navbar-nav ms-auto">
         <?php if (isset($_SESSION['user_id'])): ?>
           <li class="nav-item">
-            <a class="nav-link" href="/magazzino/info.php">
+            <a class="nav-link" href="<?= BASE_PATH ?>info.php">
               <i class="fa-solid fa-circle-info me-1"></i>Info
             </a>
           </li>
           <?php if (!empty($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
             <li class="nav-item">
-              <a class="nav-link" href="/magazzino/settings.php">
+              <a class="nav-link" href="<?= BASE_PATH ?>settings.php">
                 <i class="fa-solid fa-gears me-1"></i>Settaggi
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="/magazzino/update/index.php">
+              <a class="nav-link" href="<?= BASE_PATH ?>update/index.php">
                 <i class="fa-solid fa-download me-1"></i>Aggiornamento
               </a>
             </li>
             <?php endif; ?>
             <li class="nav-item">
-              <a class="nav-link" href="/magazzino/profile.php" title="Profilo">
+              <a class="nav-link" href="<?= BASE_PATH ?>profile.php" title="Profilo">
                 <i class="fa-solid fa-user"></i>
               </a>
             </li>
           <li class="nav-item">
-            <a class="nav-link" href="/magazzino/logout.php">
+            <a class="nav-link" href="<?= BASE_PATH ?>logout.php">
               <i class="fa-solid fa-right-from-bracket me-1"></i>Logout (<?= htmlspecialchars($_SESSION['username']) ?>)
             </a>
           </li>
         <?php else: ?>
+          <?php if (basename($_SERVER['PHP_SELF']) !== 'login.php'): ?>
           <li class="nav-item">
-            <a class="nav-link" href="/magazzino/login.php">
+            <a class="nav-link" href="<?= BASE_PATH ?>login.php">
               <i class="fa-solid fa-right-to-bracket me-1"></i>Login
             </a>
           </li>
+          <?php endif; ?>
         <?php endif; ?>
       </ul>
     </div>

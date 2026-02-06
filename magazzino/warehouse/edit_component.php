@@ -3,13 +3,15 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:53:16 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-15 20:36:12
+ * @Last Modified time: 2026-02-02 17:51:18
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-09: Aggiunta gestione immagine componente
 // 2026-01-11: aggiunto tasto per eliminare datasheet PDF esistente
 // 2026-01-12: Aggiunti campi per prezzo, link fornitore, unità di misura, package, tensione, corrente, potenza, hfe e tags; migliorata gestione equivalenti
+// 2026-02-01: Aggiunto redirect a return_url se presente dopo aggiornamento
 
+require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
 require_once '../includes/secure_upload.php';
@@ -33,7 +35,7 @@ if (!$component) {
 }
 
 // Recupero posizioni, compartimenti e categorie
-$locations = $pdo->query("SELECT * FROM locations ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+$locations = $pdo->query("SELECT l.*, loc.name AS locale_name FROM locations l LEFT JOIN locali loc ON l.locale_id = loc.id ORDER BY l.name ASC")->fetchAll(PDO::FETCH_ASSOC);
 $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 $compartments = [];
@@ -127,7 +129,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute([$codice_prodotto, $category_id, $costruttore, $fornitore, $codice_fornitore, $quantity, $quantity_min, $location_id, $compartment_id, $datasheet_url, $datasheet_file, $equivalents, $notes, $prezzo, $link_fornitore, $unita_misura, $package, $tensione, $corrente, $potenza, $hfe, $tags, $id]);
     // Messaggio di conferma e redirect per evitare reinvio del form
     $_SESSION['success'] = "Componente aggiornato con successo.";
-    header("Location: " . $_SERVER['REQUEST_URI']); // Ricarica la stessa pagina
+    // Se c'è un return_url valido, torna a quella pagina, altrimenti ricarica questa
+    $return_url = $_GET['return_url'] ?? null;
+    if ($return_url && (strpos($return_url, BASE_PATH) !== false || strpos($return_url, '/warehouse/') !== false)) {
+      header("Location: " . $return_url);
+    } else {
+      header("Location: " . $_SERVER['REQUEST_URI']);
+    }
     exit;
   }
 }
@@ -210,10 +218,10 @@ if (isset($_SESSION['success'])) {
     <div class="row">
       <div class="col-md-6 mb-3">
         <label class="form-label">Posizione</label>
-        <select name="location_id" class="form-select" onchange="this.form.submit()">
+        <select name="location_id" class="form-select">
           <option value="">-- Seleziona posizione --</option>
           <?php foreach ($locations as $loc): ?>
-            <option value="<?= $loc['id'] ?>" <?= $component['location_id'] == $loc['id'] ? 'selected' : '' ?>><?= htmlspecialchars($loc['name']) ?></option>
+            <option value="<?= $loc['id'] ?>" <?= $component['location_id'] == $loc['id'] ? 'selected' : '' ?>><?= htmlspecialchars($loc['name']) ?> - <?= htmlspecialchars($loc['locale_name'] ?? 'Senza locale') ?></option>
           <?php endforeach; ?>
         </select>
       </div>
@@ -286,7 +294,7 @@ if (isset($_SESSION['success'])) {
       <label class="form-label">Datasheet PDF</label>
       <?php if ($component['datasheet_file']): ?>
         <div class="mb-2" id="current-datasheet-container">
-          <a href="/magazzino/datasheet/<?= htmlspecialchars($component['datasheet_file']) ?>" target="_blank" class="btn btn-sm btn-info">
+          <a href="<?= BASE_PATH ?>datasheet/<?= htmlspecialchars($component['datasheet_file']) ?>" target="_blank" class="btn btn-sm btn-info">
             <i class="fa-solid fa-file-pdf me-1"></i>Visualizza PDF attuale
           </a>
           <button type="button" id="delete-current-datasheet" class="btn btn-sm btn-outline-danger ms-2" title="Elimina datasheet">
@@ -312,7 +320,7 @@ if (isset($_SESSION['success'])) {
       ?>
       <?php if ($hasImage): ?>
         <div class="mb-2" id="current-image-container">
-          <img src="<?= '/magazzino/images/components/thumbs/' . $id . '.jpg?' . time() ?>" alt="Immagine componente" style="max-width: 100px; border: 1px solid #ddd; border-radius: 4px;">
+          <img src="<?= BASE_PATH ?>images/components/thumbs/<?= $id ?>.jpg?<?= time() ?>" alt="Immagine componente" style="max-width: 100px; border: 1px solid #ddd; border-radius: 4px;">
           <button type="button" id="delete-current-image" class="btn btn-sm btn-outline-danger ms-2" title="Elimina immagine">
             <i class="fa-solid fa-trash"></i> Elimina
           </button>
@@ -548,11 +556,11 @@ if (isset($_SESSION['success'])) {
       compartmentSelect.html('<option>Caricamento...</option>');
 
       if (location_id) {
-        $.getJSON('get_compartments.php', {
+        $.getJSON('<?= BASE_PATH ?>warehouse/get_compartments.php', {
           location_id: location_id
         }, function(data) {
           let options = '<option value="">-- Seleziona comparto --</option>';
-          $.each(data, function(i, item) {
+          $.each(data.compartments, function(i, item) {
             let selected = (item.id == currentCompartment) ? ' selected' : '';
             options += '<option value="' + item.id + '"' + selected + '>' + item.code + '</option>';
           });

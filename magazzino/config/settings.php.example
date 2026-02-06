@@ -1,0 +1,7 @@
+<?php
+// Impostazioni applicazione
+return [
+    'ip_address' => '',
+    'app_theme' => 'light',
+    'environment_mode' => 'production'
+];

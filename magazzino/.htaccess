@@ -2,6 +2,15 @@
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
+
+    RewriteEngine On
+
+    # Se il file/cartella non esiste, non fare rewrite
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Se la richiesta non è già un file reale, reindirizza alla pagina principale
+    RewriteRule ^(.*)$ index.php [L]
 </IfModule>
 
 # Sicurezza base

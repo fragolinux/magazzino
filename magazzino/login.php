@@ -3,11 +3,12 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:44:57 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-15 18:07:58
+ * @Last Modified time: 2026-02-02 20:16:48
 */
 // 2026-01-04: Aggiunta opzione "Ricordami" nel login
 // 2026-01-12: Aggiunto pulsante per mostrare/nascondere la password
 // 2026-01-15: Implementata protezione CSRF, migrazione password_hash, rate limiting contro brute force
+// 2026-02-02: Implementazione login sito personale
 
 require 'includes/session_config.php';
 session_start();
@@ -28,7 +29,7 @@ $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty(
 
 // Se già connesso, reindirizza a index.php
 if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
-    header('Location: /magazzino/index.php');
+    header('Location: ' . BASE_PATH . 'index.php');
     exit;
 }
 
@@ -50,7 +51,7 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
         $expires = date('Y-m-d H:i:s', strtotime('+1 year'));
         $stmt = $pdo->prepare("UPDATE remember_tokens SET token = ?, expires = ? WHERE id = ?");
         $stmt->execute([$new_token, $expires, $row['token_id']]);
-        setcookie('remember_token', $new_token, strtotime('+1 year'), '/', '', $secure, true);
+        setcookie('remember_token', $new_token, strtotime('+1 year'), BASE_PATH, '', $secure, true);
     }
 }
 
@@ -82,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               $expires = date('Y-m-d H:i:s', strtotime('+1 year'));
               $stmt = $pdo->prepare("INSERT INTO remember_tokens (user_id, token, expires, created_at) VALUES (?, ?, ?, NOW())");
               $stmt->execute([$user['id'], $token, $expires]);
-              setcookie('remember_token', $token, strtotime('+1 year'), '/', '', $secure, true);
+              setcookie('remember_token', $token, strtotime('+1 year'), BASE_PATH, '', $secure, true);
             }
             
             // Rigenera token CSRF dopo login per sicurezza
@@ -111,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               $expires = date('Y-m-d H:i:s', strtotime('+1 year'));
               $stmt = $pdo->prepare("INSERT INTO remember_tokens (user_id, token, expires, created_at) VALUES (?, ?, ?, NOW())");
               $stmt->execute([$user['id'], $token, $expires]);
-              setcookie('remember_token', $token, strtotime('+1 year'), '/', '', $secure, true);
+              setcookie('remember_token', $token, strtotime('+1 year'), BASE_PATH, '', $secure, true);
             }
             
             // Rigenera token CSRF dopo login per sicurezza
@@ -137,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <?php include 'includes/header.php'; ?>
 <div class="container mt-5" style="max-width:400px;">
-  <h3 class="text-center mb-4">Accesso Magazzino</h3>
+  <h3 class="text-center mb-4">Accesso</h3>
   <?php if (!empty($error)): ?>
     <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
   <?php endif; ?>

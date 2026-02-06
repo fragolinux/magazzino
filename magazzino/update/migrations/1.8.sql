@@ -50,7 +50,7 @@ REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'magazzino_user'@'localhost';
 
 -- Concedi solo i privilegi necessari per l'applicazione
 -- Questo comando fallisce silenziosamente se l'utente non è amministratore
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, CREATE TEMPORARY TABLES ON magazzino_db.* TO 'magazzino_user'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES ON magazzino_db.* TO 'magazzino_user'@'localhost';
 
 -- Privilegi specifici per tabelle di sistema
 -- Questi comandi falliscono silenziosamente se l'utente non è amministratore

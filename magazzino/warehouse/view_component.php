@@ -127,7 +127,7 @@ $hasImage = $imagePath && file_exists($imagePath);
             <tr>
                 <th>Datasheet</th>
                 <td>
-                    <a href="/magazzino/datasheet/<?= htmlspecialchars($component['datasheet_file']) ?>" target="_blank" class="btn btn-sm btn-outline-success mb-2">
+                    <a href="<?= BASE_PATH ?>datasheet/<?= htmlspecialchars($component['datasheet_file']) ?>" target="_blank" class="btn btn-sm btn-outline-success mb-2">
                         <i class="fa-solid fa-file-pdf me-1"></i> Visualizza PDF
                     </a>
                 </td>
@@ -138,6 +138,6 @@ $hasImage = $imagePath && file_exists($imagePath);
 
 <?php if ($hasImage): ?>
 <div class="text-center mt-3">
-    <img src="/magazzino/images/components/<?= $id ?>.jpg?<?= time() ?>" alt="Immagine componente" style="max-width: 100%; max-height: 500px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <img src="<?= BASE_PATH ?>images/components/<?= $id ?>.jpg?<?= time() ?>" alt="Immagine componente" style="max-width: 100%; max-height: 500px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
 </div>
 <?php endif; ?>

@@ -3,12 +3,14 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:43:45 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-15 18:32:37
+ * @Last Modified time: 2026-02-03 11:26:04
 */
+
 // 2026-01-11: Aggiunta gestione della porta MySQL
 // 2026-01-12: Aggiunta gestione modalità errori PHP da impostazioni
 // 2026-01-13: Configurazione database spostata in file separato, gestione errori da file
 // 2026-01-15: Aggiunte configurazioni di sicurezza per sessioni (cookie_secure, httponly, samesite, rigenerazione)
+// 2026-02-03: implementato aggiornamento automatico del database all'avvio
 
 // Carica configurazione database da file esterno
 require __DIR__ . '/env_loader.php';
@@ -33,6 +35,34 @@ try {
     
     // Seleziona il database dopo la connessione (per compatibilità con GRANT specifici)
     $pdo->exec("USE `$db`");
+    
+    // Controlla se le tabelle esistono (verifica se il database è inizializzato)
+    try {
+        $checkTables = $pdo->query("SHOW TABLES LIKE 'users'");
+        $usersTableExists = $checkTables && $checkTables->rowCount() > 0;
+        
+        if (!$usersTableExists) {
+            // Database esiste ma è vuoto, reindirizza a inizializzazione
+            if (strpos($_SERVER['PHP_SELF'], 'init_database.php') === false) {
+                if (!defined('BASE_PATH')) {
+                    $base = (strpos($_SERVER['SCRIPT_NAME'], '/magazzino') !== false) ? '/magazzino/' : '/';
+                    define('BASE_PATH', $base);
+                }
+                
+                $initUrl = BASE_PATH . 'update/init_database.php';
+                
+                if (!headers_sent()) {
+                    header("Location: " . $initUrl);
+                    exit;
+                } else {
+                    echo "<script>window.location.href='" . $initUrl . "';</script>";
+                    exit;
+                }
+            }
+        }
+    } catch (PDOException $e) {
+        // Ignora errori di verifica tabelle, procedi normalmente
+    }
     
     // Rigenera ID sessione periodicamente per sicurezza (solo se sessione attiva)
     if (session_status() === PHP_SESSION_ACTIVE && (!isset($_SESSION['last_regeneration']) || time() - $_SESSION['last_regeneration'] > 1800)) {
@@ -82,6 +112,24 @@ try {
     }
     
 } catch (\PDOException $e) {
+    // Avvia procedura di configurazione guidata in caso di errore connessione
+    if (strpos($_SERVER['PHP_SELF'], 'setup_db_wizard.php') === false) {
+        // Definisci BASE_PATH se non definito (per sicurezza)
+        if (!defined('BASE_PATH')) {
+            $base = (strpos($_SERVER['SCRIPT_NAME'], '/magazzino') !== false) ? '/magazzino/' : '/';
+            define('BASE_PATH', $base); // Fallback locale
+        }
+        
+        $setupUrl = BASE_PATH . 'update/setup_db_wizard.php';
+        
+        if (!headers_sent()) {
+            header("Location: " . $setupUrl);
+            exit;
+        } else {
+            echo "<script>window.location.href='" . $setupUrl . "';</script>";
+            exit;
+        }
+    }
     exit('Connessione al database fallita: ' . $e->getMessage());
 }
 ?>

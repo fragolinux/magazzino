@@ -2,8 +2,8 @@
 /*
  * @Author: Nelson Rossi Bittencourt (nbittencourt@hotmail.com)
  * @Date: 2026-01-11 17:28:47 
- * @Last Modified by: Nelson Rossi Bittencourt
- * @Last Modified time: 2026-01-15 12:10:30
+ * @Last Modified by: RG4tech
+ * @Last Modified time: 2026-02-02
  * @Description: Distinta Materiali/Bill of Materials (BOM) for RG4 Gestionale Magazzino Project 
  * @Version: 0.0.4
  * 
@@ -25,13 +25,16 @@
  * Inclusa selectione automatica tipi di file BOM
  * Nuova "identation"
  * Piccole correzioni alle posizioni delle istruzioni "if".
+ *
+ * RG4Tech: Version: 0.0.5
+ * aggiunto url dinamico a file inclusi
  */
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
 
 // CSS per stampa
-echo '<link rel="stylesheet" href="/magazzino/assets/css/boms_print.css">';
+echo '<link rel="stylesheet" href="<?= BASE_PATH ?>assets/css/boms_print.css">';
 
 // Messaggi da sessione
 $success = $_SESSION['success'] ?? '';

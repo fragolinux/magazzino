@@ -149,7 +149,7 @@ include __DIR__ . '/../includes/header.php';
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="fas fa-file-export me-2 text-info"></i>Export Componenti in CSV</h2>
-        <a href="/magazzino/warehouse/components.php" class="btn btn-outline-secondary">
+        <a href="<?= BASE_PATH ?>warehouse/components.php" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-1"></i>Torna ai Componenti
         </a>
     </div>
@@ -223,7 +223,7 @@ include __DIR__ . '/../includes/header.php';
                 </div>
 
                 <div class="d-flex justify-content-between mt-4">
-                    <a href="/magazzino/warehouse/components.php" class="btn btn-secondary">
+                    <a href="<?= BASE_PATH ?>warehouse/components.php" class="btn btn-secondary">
                         <i class="fas fa-times me-1"></i>Annulla
                     </a>
                     <button type="submit" name="export" class="btn btn-info btn-lg">

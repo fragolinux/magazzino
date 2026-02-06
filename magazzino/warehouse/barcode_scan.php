@@ -3,8 +3,10 @@
  * @Author: gabriele.riva
  * @Date: 2026-01-15
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-15
+ * @Last Modified time: 2026-02-02 16:53:34
 */
+// 2026-02-01: Aggiunto locale
+
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
 
@@ -14,10 +16,11 @@ $component = null;
 
 if ($component_id > 0) {
     // Recupera dettagli componente
-    $stmt = $pdo->prepare("SELECT c.id, c.codice_prodotto, c.quantity, c.unita_misura, cat.name AS category_name, l.name AS location_name, cmp.code AS compartment_code
+    $stmt = $pdo->prepare("SELECT c.id, c.codice_prodotto, c.quantity, c.unita_misura, cat.name AS category_name, l.name AS location_name, loc.name AS locale_name, cmp.code AS compartment_code
       FROM components c
       LEFT JOIN categories cat ON c.category_id = cat.id
       LEFT JOIN locations l ON c.location_id = l.id
+      LEFT JOIN locali loc ON l.locale_id = loc.id
       LEFT JOIN compartments cmp ON c.compartment_id = cmp.id
       WHERE c.id = ?");
     $stmt->execute([$component_id]);
@@ -31,7 +34,7 @@ if ($component_id > 0) {
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="fa-solid fa-barcode me-2"></i>Carico/Scarico via Barcode</h2>
-        <a href="/magazzino/warehouse/components.php" class="btn btn-secondary">Torna a componenti</a>
+        <a href="<?= BASE_PATH ?>warehouse/components.php" class="btn btn-secondary">Torna a componenti</a>
     </div>
 
     <?php if ($component): ?>
@@ -55,7 +58,9 @@ if ($component_id > 0) {
                             </div>
                             <div class="col-md-6">
                                 <div class="border rounded p-3">
-                                    <div class="text-muted small">Posizione</div>
+                                    <div class="text-muted small">Locale:</div>
+                                    <div class="fw-bold"><?= htmlspecialchars($component['locale_name'] ?? '-') ?></div>
+                                    <div class="text-muted small">Posizione:</div>
                                     <div class="fw-bold"><?= htmlspecialchars($component['location_name'] ?? '-') ?></div>
                                 </div>
                             </div>
@@ -106,7 +111,7 @@ if ($component_id > 0) {
                                     <button type="button" class="btn btn-success btn-lg" id="executeBtn">
                                         <i class="fa-solid fa-check me-2"></i>Esegui Operazione
                                     </button>
-                                    <a href="/magazzino/warehouse/barcode_scan.php" class="btn btn-outline-secondary">
+                                    <a href="<?= BASE_PATH ?>warehouse/barcode_scan.php" class="btn btn-outline-secondary">
                                         <i class="fa-solid fa-arrow-left me-2"></i>Nuovo Scan
                                     </a>
                                 </div>
@@ -200,7 +205,7 @@ $(function(){
             $('#spinner').show();
             $('#executeBtn').prop('disabled', true);
 
-            $.post('/magazzino/warehouse/update_component_quantity.php', {
+            $.post('<?= BASE_PATH ?>warehouse/update_component_quantity.php', {
                 id: componentId,
                 quantity: quantity,
                 operation: operation

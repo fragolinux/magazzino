@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:52:20 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-15 20:31:29
+ * @Last Modified time: 2026-02-02 17:41:13
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-08: aggiunti quick add per posizioni e categorie
@@ -11,7 +11,10 @@
 // 2026-01-11: Aggiunto controllo duplicati
 // 2026-01-12: Aggiunti campi per prezzo, link fornitore, unità di misura, package, tensione, corrente, potenza, hfe e tags; migliorata gestione equivalenti
 // 2026-01-14: Sistemati conteggi quantità per unità di misura
+// 2026-02-01: aggiunto locale nella select delle posizioni
+// 2026-02-01: corretto bug unità di misura negli ultimi componenti inseriti
 
+require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
 require_once '../includes/secure_upload.php';
@@ -22,7 +25,8 @@ $component = [];
 
 // Recupero posizioni, categorie e ultimi componenti
 // 2026-01-14: Aggiunta unità di misura
-$locations = $pdo->query("SELECT * FROM locations ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+$locali = $pdo->query("SELECT * FROM locali ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+$locations = $pdo->query("SELECT l.*, loc.name AS locale_name FROM locations l LEFT JOIN locali loc ON l.locale_id = loc.id ORDER BY l.name ASC")->fetchAll(PDO::FETCH_ASSOC);
 $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 $lastComponents = $pdo->query("
@@ -235,7 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['codice_prodotto']) &&
             }
 
             $lastComponents = $pdo->query("
-                SELECT c.id, c.codice_prodotto, c.quantity, cat.name AS category_name, l.name AS location_name, cmp.code AS compartment_code
+                SELECT c.id, c.codice_prodotto, c.quantity, c.unita_misura, cat.name AS category_name, l.name AS location_name, cmp.code AS compartment_code
                 FROM components c
                 LEFT JOIN categories cat ON c.category_id = cat.id
                 LEFT JOIN locations l ON c.location_id = l.id
@@ -289,7 +293,7 @@ include '../includes/header.php';
             <option value="">-- Seleziona posizione --</option>
             <?php foreach ($locations as $loc): ?>
               <option value="<?= $loc['id'] ?>" <?= (isset($component['location_id']) && $component['location_id'] == $loc['id']) || (isset($_POST['location_id']) && $_POST['location_id'] == $loc['id']) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($loc['name']) ?>
+                <?= htmlspecialchars($loc['name']) ?> - <?= htmlspecialchars($loc['locale_name'] ?? 'Senza locale') ?>
                 </option>
             <?php endforeach; ?>
           </select>
@@ -518,7 +522,6 @@ include '../includes/header.php';
     </div>
   </form>
 
-  <!-- Ultimi componenti in basso -->
   <div class="card shadow-sm mt-2">
     <div class="card-header bg-light fw-bold"><i class="fa-solid fa-clock-rotate-left me-2"></i>Ultimi 10 componenti inseriti</div>
     <div class="table-responsive">
@@ -569,7 +572,16 @@ include '../includes/header.php';
         </div>
         <div class="modal-body">
           <div class="mb-2">
-            <label class="form-label">Nome posizione</label>
+            <label class="form-label">Locale *</label>
+            <select name="locale_id" id="quickLocationLocaleId" class="form-select form-select-sm" required>
+              <option value="">-- Seleziona locale --</option>
+              <?php foreach ($locali as $loc): ?>
+                <option value="<?= $loc['id'] ?>"><?= htmlspecialchars($loc['name']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Nome posizione *</label>
             <input type="text" name="name" id="quickLocationName" class="form-control form-control-sm" required>
           </div>
         </div>
@@ -786,7 +798,7 @@ $(function() {
           let opts = '<option value="">-- Seleziona posizione --</option>';
           data.forEach(function(it) {
             const selected = (it.id == resp.new_id) ? ' selected' : '';
-            opts += `<option value="${it.id}"${selected}>${it.name}</option>`;
+            opts += `<option value="${it.id}"${selected}>${it.name} - ${it.locale_name || 'Senza locale'}</option>`;
           });
           $('#locationSelect').html(opts).trigger('change');
         });
@@ -850,9 +862,9 @@ $(function() {
       $sel.html('<option value="">-- Seleziona comparto --</option>');
       return;
     }
-    $.getJSON('get_compartments.php', { location_id: locId }, function(data) {
+    $.getJSON('<?= BASE_PATH ?>warehouse/get_compartments.php', { location_id: locId }, function(data) {
       let opts = '<option value="">-- Seleziona comparto --</option>';
-      data.forEach(function(it) {
+      data.compartments.forEach(function(it) {
         opts += `<option value="${it.id}">${it.code}</option>`;
       });
       $sel.html(opts);
@@ -884,9 +896,9 @@ $(function() {
     $.post('quick_add_compartment.php', $(this).serialize(), function(resp) {
       $btn.prop('disabled', false);
       if (resp.success) {
-        $.getJSON('get_compartments.php', { location_id: resp.location_id }, function(data) {
+        $.getJSON('<?= BASE_PATH ?>warehouse/get_compartments.php', { location_id: resp.location_id }, function(data) {
           let opts = '<option value="">-- Seleziona comparto --</option>';
-          data.forEach(function(it) {
+          data.compartments.forEach(function(it) {
             const selected = (it.id == resp.new_id) ? ' selected' : '';
             opts += `<option value="${it.id}"${selected}>${it.code}</option>`;
           });

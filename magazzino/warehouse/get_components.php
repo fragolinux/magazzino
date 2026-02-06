@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 18:00:51 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-14 15:28:159
+ * @Last Modified time: 2026-02-02 18:32:06
 */
 // 2026-01-03: Aggiunta funzionalità carico/scarico quantità componente
 // 2026-01-08: Aggiunta quantità minima
@@ -11,7 +11,9 @@
 // 2026-01-09: Aggiunta gestione immagine componente
 // 2026-01-12: Aggiunti ricerca anche per tags
 // 2026-01-14: Sistemati conteggi quantità per unità di misura
+// 2026-02-01: Aggiunto return_url al link di modifica componente
 
+require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
 
@@ -120,7 +122,7 @@ if (!$components) {
         $hasImage = $thumbPath && file_exists($thumbPath);
         $imageCell = '';
         if ($hasImage) {
-            $imageCell = '<img src="/magazzino/images/components/thumbs/'.$c['id'].'.jpg?'.time().'" alt="Thumb" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">';
+            $imageCell = '<img src="'.BASE_PATH.'images/components/thumbs/'.$c['id'].'.jpg?'.time().'" alt="Thumb" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">';
         } else {
             $imageCell = '<span class="text-muted" style="font-size: 0.75rem;">—</span>';
         }
@@ -139,7 +141,7 @@ if (!$components) {
                         <button class="btn btn-sm btn-outline-success btn-unload me-1" data-id="'.$c['id'].'" data-product="'.htmlspecialchars($c['codice_prodotto']).'" data-quantity="'.$c['quantity'].'" title="Carico/Scarico">
                             <i class="fa-solid fa-arrows-up-down"></i>
                         </button>
-                        <a href="edit_component.php?id='.$c['id'].'" class="btn btn-sm btn-outline-secondary me-1" title="Modifica" target="_blank">
+                        <a href="edit_component.php?id='.$c['id'].'&return_url='.urlencode(BASE_PATH . 'warehouse/components.php?search_code=' . urlencode($search_code)).'" class="btn btn-sm btn-outline-secondary me-1" title="Modifica">
                             <i class="fa-solid fa-pen"></i>
                         </a>
                         <button class="btn btn-sm btn-outline-danger btn-delete" data-id="'.$c['id'].'" data-product="'.htmlspecialchars($c['codice_prodotto'], ENT_QUOTES).'" title="Elimina">

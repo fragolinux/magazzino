@@ -29,4 +29,15 @@ usort($compartments, function($a, $b) {
     return strnatcmp($a['code'], $b['code']);
 });
 
-echo json_encode($compartments);
+// Conteggio componenti senza comparto
+$stmtUnassigned = $pdo->prepare("SELECT COUNT(*) AS count FROM components WHERE location_id = ? AND (compartment_id IS NULL OR compartment_id = 0)");
+$stmtUnassigned->execute([$location_id]);
+$unassigned_result = $stmtUnassigned->fetch(PDO::FETCH_ASSOC);
+$unassigned_count = $unassigned_result['count'] ?? 0;
+
+$response = [
+    'compartments' => $compartments,
+    'unassigned_count' => $unassigned_count
+];
+
+echo json_encode($response);

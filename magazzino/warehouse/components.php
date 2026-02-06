@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:50:58 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-12 15:23:22
+ * @Last Modified time: 2026-02-02 18:30:40
 */
 // 2026-01-03: Aggiunta funzionalità carico/scarico quantità componente
 // 2026-01-05: Aggiunta ricerca tramite equivalente del codice prodotto
@@ -14,6 +14,7 @@
 // 2026-01-09: Aggiunta gestione immagine componente
 // 2026-01-12: Aggiunti filtri per package, tensione, corrente, potenza, hfe e tags
 
+require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
 
@@ -216,7 +217,6 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
   </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(function(){
     function loadLocations(locale_id) {
@@ -225,7 +225,7 @@ $(function(){
         $('#filter-compartment').html('<option value="">-- Filtra per comparto --</option>');
         
         if(locale_id){
-            $.getJSON('get_locations.php', {locale_id: locale_id}, function(data){
+            $.getJSON('<?= BASE_PATH ?>warehouse/get_locations.php', {locale_id: locale_id}, function(data){
                 let options = '<option value="">-- Filtra per posizione --</option>';
                 $.each(data, function(i, item){
                     options += '<option value="'+item.id+'">'+item.name+'</option>';
@@ -241,9 +241,9 @@ $(function(){
         let compSelect = $('#filter-compartment');
         compSelect.html('<option>Caricamento...</option>');
         if(location_id){
-            $.getJSON('get_compartments.php', {location_id: location_id}, function(data){
+            $.getJSON('<?= BASE_PATH ?>warehouse/get_compartments.php', {location_id: location_id}, function(data){
                 let options = '<option value="">-- Filtra per comparto --</option>';
-                $.each(data, function(i, item){
+                $.each(data.compartments, function(i, item){
                     options += '<option value="'+item.id+'">'+item.code+'</option>';
                 });
                 compSelect.html(options);
@@ -268,7 +268,7 @@ $(function(){
         let notes = $('#filter-notes').val();
 
         $('#components-body').html('<tr><td colspan="7" class="text-center text-muted">Caricamento...</td></tr>');
-        $.get('get_components.php', {
+        $.get('<?= BASE_PATH ?>warehouse/get_components.php', {
             locale_id: locale_id,
             location_id: loc_id,
             compartment_id: cmp_id,
@@ -316,10 +316,10 @@ $(function(){
         // Se c'è compartment_id, devo risalire a location_id e locale_id
         if (urlCompartmentId) {
             promise = new Promise(function(resolve) {
-                $.getJSON('get_compartment_details.php', {id: urlCompartmentId}, function(comp) {
+                $.getJSON('<?= BASE_PATH ?>warehouse/get_compartment_details.php', {id: urlCompartmentId}, function(comp) {
                     if (comp && comp.location_id) {
                         // Carica dettagli della location
-                        $.getJSON('get_location_details.php', {id: comp.location_id}, function(loc) {
+                        $.getJSON('<?= BASE_PATH ?>warehouse/get_location_details.php', {id: comp.location_id}, function(loc) {
                             if (loc && loc.locale_id) {
                                 // Ha un locale, carica la cascata completa
                                 $('#filter-locale').val(loc.locale_id);
@@ -347,7 +347,7 @@ $(function(){
         } else if (urlLocationId) {
             // Se c'è solo location_id, risali al locale
             promise = new Promise(function(resolve) {
-                $.getJSON('get_location_details.php', {id: urlLocationId}, function(loc) {
+                $.getJSON('<?= BASE_PATH ?>warehouse/get_location_details.php', {id: urlLocationId}, function(loc) {
                     if (loc && loc.locale_id) {
                         $('#filter-locale').val(loc.locale_id);
                         loadLocationsSync(loc.locale_id).then(function() {
@@ -390,7 +390,7 @@ $(function(){
     function loadLocationsSync(locale_id) {
         return new Promise(function(resolve) {
             if (locale_id) {
-                $.getJSON('get_locations.php', {locale_id: locale_id}, function(data) {
+                $.getJSON('<?= BASE_PATH ?>warehouse/get_locations.php', {locale_id: locale_id}, function(data) {
                     let options = '<option value="">-- Filtra per posizione --</option>';
                     $.each(data, function(i, item) {
                         options += '<option value="'+item.id+'">'+item.name+'</option>';
@@ -408,9 +408,9 @@ $(function(){
     function loadCompartmentsSync(location_id) {
         return new Promise(function(resolve) {
             if (location_id) {
-                $.getJSON('get_compartments.php', {location_id: location_id}, function(data) {
+                $.getJSON('<?= BASE_PATH ?>warehouse/get_compartments.php', {location_id: location_id}, function(data) {
                     let options = '<option value="">-- Filtra per comparto --</option>';
-                    $.each(data, function(i, item) {
+                    $.each(data.compartments, function(i, item) {
                         options += '<option value="'+item.id+'">'+item.code+'</option>';
                     });
                     $('#filter-compartment').html(options);
@@ -457,7 +457,7 @@ $(function(){
         const id = $(this).data('id');
         $('#component-details').html('Caricamento...');
         $('#componentModal').modal('show');
-        $.get('view_component.php', {id: id}, function(data){
+        $.get('<?= BASE_PATH ?>warehouse/view_component.php', {id: id}, function(data){
             $('#component-details').html(data);
         });
     });
@@ -494,7 +494,7 @@ $(function(){
         
         // Invia la richiesta di aggiornamento
         $.ajax({
-            url: 'update_component_quantity.php',
+            url: '<?= BASE_PATH ?>warehouse/update_component_quantity.php',
             type: 'POST',
             dataType: 'json',
             data: {
@@ -531,7 +531,7 @@ $(function(){
         }
         
         $.ajax({
-            url: 'delete_component.php?id=' + id,
+            url: '<?= BASE_PATH ?>warehouse/delete_component.php?id=' + id,
             type: 'GET',
             dataType: 'json',
             headers: {'X-Requested-With': 'XMLHttpRequest'},
