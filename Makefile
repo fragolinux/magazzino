@@ -61,11 +61,7 @@ logs: check-linux
 > fi
 
 dbcheck: check-linux
-> if docker compose -f docker-compose.dev.yml ps >/dev/null 2>&1; then \
->   docker compose -f docker-compose.dev.yml exec -T php php /var/www/html/update/check_migrations.php; \
-> else \
->   docker compose exec -T php php /var/www/html/update/check_migrations.php; \
-> fi
+> ./scripts/dbcheck.sh
 
 backup: check-linux
 > ./scripts/backup.sh

@@ -240,6 +240,9 @@ make run      # aggiorna repo + restart prod
 make clone    # clone pulito su nuova cartella + copia dati utente
 ```
 
+Nota: `make dbcheck` usa `scripts/dbcheck.sh` e legge `DB_ROOT_PASSWORD` da `.env`.
+Non modifica la cartella `magazzino/`.
+
 ## Restore (DB)
 
 Ripristina da un backup specifico:
