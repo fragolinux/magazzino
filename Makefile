@@ -3,28 +3,31 @@
 SHELL := /bin/sh
 UNAME_S := $(shell uname -s)
 
-.PHONY: help up down devup devdown backup backup-db backup-file restore restore-db restore-file release logs run run-safe clone dbcheck
+.PHONY: help up down devup devdown backup backup-db backup-file restore restore-db restore-file release logs run run-safe clone dbcheck menu
 
 help:
 > @echo "Uso: make <target>"
 > @echo ""
-> @echo "Target:"
-> @echo "  up       Avvia stack produzione (scripts/start.sh)"
-> @echo "  down     Ferma stack produzione (docker compose down)"
-> @echo "  devup    Avvia stack sviluppo (scripts/start-dev.sh)"
-> @echo "  devdown  Ferma stack sviluppo (docker compose -f docker-compose.dev.yml down)"
-> @echo "  run      Aggiorna repo e riavvia stack produzione"
-> @echo "  run-safe Backup + aggiorna repo + riavvia stack produzione"
-> @echo "  clone    Clona ultimo tag in nuova cartella e copia dati utente"
-> @echo "  backup-db   Backup DB (scripts/backup_db.sh)"
-> @echo "  backup-file Backup file dati (data/uploads, data/config)"
-> @echo "  backup      Backup completo (DB + file)"
-> @echo "  restore-db   Ripristina DB da BACKUP (scripts/restore_db.sh BACKUP=...)"
-> @echo "  restore-file Ripristina file dati da BACKUP"
-> @echo "  restore      Ripristino completo (DB + file)"
-> @echo "  release  Push main e crea/pusha tag (TAG=...)"
-> @echo "  logs     Log dello stack attivo (dev o prod)"
-> @echo "  dbcheck  Verifica migrazioni pendenti (dev o prod)"
+> @echo "Target per utenti finali:"
+> @printf "  %-12s %s\n" "menu" "Menu interattivo"
+> @printf "  %-12s %s\n" "up" "Avvia stack produzione"
+> @printf "  %-12s %s\n" "down" "Ferma stack produzione"
+> @printf "  %-12s %s\n" "run" "Aggiorna repo e riavvia stack produzione"
+> @printf "  %-12s %s\n" "run-safe" "Backup + aggiorna repo + riavvia stack produzione"
+> @printf "  %-12s %s\n" "clone" "Clona ultimo tag in nuova cartella e copia dati utente"
+> @printf "  %-12s %s\n" "dbcheck" "Verifica migrazioni pendenti (dev o prod)"
+> @printf "  %-12s %s\n" "backup" "Backup completo (DB + file)"
+> @printf "  %-12s %s\n" "backup-db" "Backup DB"
+> @printf "  %-12s %s\n" "backup-file" "Backup file dati (data/uploads, data/config)"
+> @printf "  %-12s %s\n" "restore" "Ripristino completo (DB + file)"
+> @printf "  %-12s %s\n" "restore-db" "Ripristina DB da BACKUP"
+> @printf "  %-12s %s\n" "restore-file" "Ripristina file dati da BACKUP"
+> @printf "  %-12s %s\n" "logs" "Log dello stack attivo (dev o prod)"
+> @echo ""
+> @echo "Target per sviluppo:"
+> @printf "  %-12s %s\n" "devup" "Avvia stack sviluppo"
+> @printf "  %-12s %s\n" "devdown" "Ferma stack sviluppo"
+> @printf "  %-12s %s\n" "release" "Push main e crea/pusha tag"
 > @echo ""
 > @echo "Esempi:"
 > @echo "  make up"
@@ -75,6 +78,9 @@ logs: check-linux
 
 dbcheck: check-linux
 > ./scripts/dbcheck.sh
+
+menu: check-linux
+> ./scripts/menu.sh
 
 backup-db: check-linux
 > ./scripts/backup_db.sh "$(BACKUP)"

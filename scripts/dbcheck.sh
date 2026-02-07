@@ -16,10 +16,23 @@ if [ -z "$db_name" ] || [ -z "$db_root_password" ]; then
   exit 1
 fi
 
-if docker compose -f "$root/docker-compose.dev.yml" ps >/dev/null 2>&1; then
-  compose_args=(-f "$root/docker-compose.dev.yml")
+dev_db_id="$(docker compose -f "$root/docker-compose.dev.yml" --project-directory "$root" ps -q db 2>/dev/null || true)"
+prod_db_id="$(docker compose --project-directory "$root" ps -q db 2>/dev/null || true)"
+
+if [[ -z "$dev_db_id" && -z "$prod_db_id" ]]; then
+  echo "DB non attivo. Avvia dev o prod e riprova." >&2
+  exit 1
+fi
+
+if [[ -n "$dev_db_id" && -n "$prod_db_id" && "$dev_db_id" != "$prod_db_id" ]]; then
+  echo "Trovati DB attivi sia in dev che in prod. Scegli quale stack usare e riprova." >&2
+  exit 1
+fi
+
+if [[ -n "$dev_db_id" ]]; then
+  compose_args=(-f "$root/docker-compose.dev.yml" --project-directory "$root")
 else
-  compose_args=()
+  compose_args=(--project-directory "$root")
 fi
 
 migrations_dir="$root/magazzino/update/migrations"
@@ -43,7 +56,8 @@ current_version="$(
 )"
 
 if [ -z "$current_version" ]; then
-  current_version="0.9"
+  echo "Impossibile leggere la versione DB (db_version). Controlla credenziali/permessi." >&2
+  exit 1
 fi
 
 echo "DB version: ${current_version}"
