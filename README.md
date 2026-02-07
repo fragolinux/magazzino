@@ -207,11 +207,12 @@ Script dedicati (eseguibili anche manualmente):
 - `scripts/ensure-dirs.sh`
 - `scripts/ensure-dirs.ps1`
 
-## Backup (export DB)
+## Backup (DB + file)
 
 I backup finiscono in `backup/<timestamp>/` e contengono:
 
 - `db.sql` (dump completo)
+- `files.tar.gz` (archivio di `data/uploads` + `data/config`)
 
 Esegui backup:
 
@@ -225,6 +226,12 @@ Linux/WSL (bash):
 ./scripts/backup.sh
 ```
 
+Backup separati (Linux/WSL):
+```bash
+./scripts/backup_db.sh     # solo DB
+./scripts/backup_files.sh  # solo file (uploads + config)
+```
+
 ## Comandi Make (Linux)
 
 Da root del repo (Linux):
@@ -236,6 +243,12 @@ make devup    # avvio dev (build locale)
 make devdown  # stop dev
 make logs     # log stack attivo
 make dbcheck  # verifica migrazioni pendenti (dev o prod in base allo stack attivo)
+make backup-db   # backup solo DB
+make backup-file # backup solo file (uploads + config)
+make backup      # backup completo (DB + file)
+make restore-db   # restore solo DB
+make restore-file # restore solo file (uploads + config)
+make restore      # restore completo (DB + file)
 make run      # aggiorna repo + restart prod
 make run-safe # backup + aggiorna repo + restart prod
 make clone    # clone pulito su nuova cartella + copia dati utente
@@ -244,7 +257,7 @@ make clone    # clone pulito su nuova cartella + copia dati utente
 Nota: `make dbcheck` usa `scripts/dbcheck.sh` e legge `DB_ROOT_PASSWORD` da `.env`.
 Non modifica la cartella `magazzino/`.
 
-## Restore (DB)
+## Restore (DB + file)
 
 Ripristina da un backup specifico:
 
@@ -259,6 +272,16 @@ Linux/WSL (bash):
 ```
 
 Se non specifichi il path, gli script usano l'ultimo backup disponibile.
+
+Restore separati (Linux/WSL):
+```bash
+./scripts/restore_db.sh     # solo DB
+./scripts/restore_files.sh  # solo file (uploads + config)
+```
+
+Nota operativa:
+- Backup file: se i servizi sono attivi, viene mostrato un avviso ma il backup prosegue.
+- Restore file: se i servizi sono attivi, vengono fermati e riavviati automaticamente.
 
 ## Note
 

@@ -3,7 +3,7 @@
 SHELL := /bin/sh
 UNAME_S := $(shell uname -s)
 
-.PHONY: help up down devup devdown backup restore release logs run run-safe clone dbcheck
+.PHONY: help up down devup devdown backup backup-db backup-file restore restore-db restore-file release logs run run-safe clone dbcheck
 
 help:
 > @echo "Uso: make <target>"
@@ -16,8 +16,12 @@ help:
 > @echo "  run      Aggiorna repo e riavvia stack produzione"
 > @echo "  run-safe Backup + aggiorna repo + riavvia stack produzione"
 > @echo "  clone    Clona ultimo tag in nuova cartella e copia dati utente"
-> @echo "  backup   Backup DB (scripts/backup.sh)"
-> @echo "  restore  Ripristina DB da BACKUP (scripts/restore.sh BACKUP=...)"
+> @echo "  backup-db   Backup DB (scripts/backup_db.sh)"
+> @echo "  backup-file Backup file dati (data/uploads, data/config)"
+> @echo "  backup      Backup completo (DB + file)"
+> @echo "  restore-db   Ripristina DB da BACKUP (scripts/restore_db.sh BACKUP=...)"
+> @echo "  restore-file Ripristina file dati da BACKUP"
+> @echo "  restore      Ripristino completo (DB + file)"
 > @echo "  release  Push main e crea/pusha tag (TAG=...)"
 > @echo "  logs     Log dello stack attivo (dev o prod)"
 > @echo "  dbcheck  Verifica migrazioni pendenti (dev o prod)"
@@ -72,14 +76,22 @@ logs: check-linux
 dbcheck: check-linux
 > ./scripts/dbcheck.sh
 
+backup-db: check-linux
+> ./scripts/backup_db.sh "$(BACKUP)"
+
+backup-file: check-linux
+> ./scripts/backup_files.sh "$(BACKUP)"
+
 backup: check-linux
-> ./scripts/backup.sh
+> ./scripts/backup.sh "$(BACKUP)"
+
+restore-db: check-linux
+> ./scripts/restore_db.sh "$(BACKUP)"
+
+restore-file: check-linux
+> ./scripts/restore_files.sh "$(BACKUP)"
 
 restore: check-linux
-> if [ -z "$(BACKUP)" ]; then \
->     echo "Manca il path BACKUP. Esempio: make restore BACKUP=backup/20250101_120000"; \
->     exit 1; \
->   fi
 > ./scripts/restore.sh "$(BACKUP)"
 
 release: check-linux
