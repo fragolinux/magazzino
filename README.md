@@ -135,7 +135,7 @@ MAGAZZINO_TAG=v1.1 docker compose up -d
 ## Note WSL
 
 - Per prestazioni migliori, tieni il repo dentro il filesystem WSL e lancia `docker compose` da WSL.
-- Assicurati che Docker Desktop abbia l'integrazione WSL attiva.
+- Se usi Docker Desktop, assicurati che l'integrazione WSL sia attiva (altrimenti non serve).
 - Se usi WSL su Windows e vuoi accedere dall'esterno (LAN), serve esporre la porta 80 con un portproxy di Windows (punta all'IP WSL, che può cambiare dopo reboot).
   Apri PowerShell come amministratore (tasto destro sul menu Start → Terminale (Amministratore)) e lancia:
 ```powershell
@@ -147,6 +147,20 @@ powershell -ExecutionPolicy Bypass -File .\scripts\win-expose-80.ps1
   Questa procedura vale per WSL su Windows.
   Se usi una distro Linux non-WSL, apri la porta 80 nel firewall del sistema (es. `ufw`, `firewalld`) se necessario.
   Se usi Docker Desktop su Windows, la porta 80 viene pubblicata direttamente sull'host, ma potresti comunque dover aprire il firewall di Windows per l'accesso dalla LAN.
+
+Avvio pulito (Windows + WSL Ubuntu 24.04, usando lo script di setup):
+```powershell
+wsl --install -d Ubuntu-24.04
+wsl -d Ubuntu-24.04
+```
+Nota importante: al primo `wsl -d Ubuntu-24.04` ti verrà chiesto di creare utente e password.
+Completa quel passo, poi continua con i comandi successivi (non copiare tutto in un unico blocco).
+```powershell
+wsl --terminate Ubuntu-24.04
+wsl -d Ubuntu-24.04 -u root -- bash -lc "curl -fsSL https://raw.githubusercontent.com/fragolinux/magazzino/refs/heads/main/setup_wsl_ubuntu.sh -o /tmp/setup_wsl_ubuntu.sh && bash /tmp/setup_wsl_ubuntu.sh --with-zsh"
+wsl --terminate Ubuntu-24.04
+wsl -d Ubuntu-24.04
+```
 
 ## Inizializzazione database
 
@@ -172,6 +186,8 @@ docker compose up -d
 ## Credenziali DB: creare e recuperare
 
 Setup consigliato: imposta le credenziali in `.env` prima del primo `up`.
+Se al primo `make run` vedi warning del tipo "The DB_* variable is not set", significa che manca `.env`:
+copia `.env.example` in `.env` e personalizza i valori.
 Login app di default: `RG4Tech / 12345678`.
 
 Esempio `.env`:
