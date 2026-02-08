@@ -2,7 +2,7 @@ services:
   nginx:
     image: ghcr.io/fragolinux/magazzino-nginx:${MAGAZZINO_TAG:-latest}
     ports:
-      - "80:80"
+      - "${HTTP_PORT:-80}:80"
     volumes:
       - ./data/uploads/datasheet:/var/www/html/datasheet
       - ./data/uploads/images:/var/www/html/images
