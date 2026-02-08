@@ -1,4 +1,10 @@
 FROM nginx:1.25-alpine
 
+ENV TZ=Europe/Rome
+
+RUN apk add --no-cache tzdata \
+    && cp "/usr/share/zoneinfo/$TZ" /etc/localtime \
+    && echo "$TZ" > /etc/timezone
+
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY magazzino/ /var/www/html/

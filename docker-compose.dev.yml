@@ -3,6 +3,8 @@ services:
     image: nginx:1.25-alpine
     ports:
       - "${HTTP_PORT:-80}:80"
+    environment:
+      TZ: ${TZ:-Europe/Rome}
     volumes:
       - ./magazzino:/var/www/html:ro
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
@@ -32,6 +34,7 @@ services:
       DB_PASS: ${DB_PASS}
       DB_MIGRATION_USER: root
       DB_MIGRATION_PASS: ${DB_ROOT_PASSWORD}
+      TZ: ${TZ:-Europe/Rome}
     depends_on:
       - db
 
@@ -42,6 +45,7 @@ services:
       MARIADB_DATABASE: ${DB_NAME}
       MARIADB_USER: ${DB_USER}
       MARIADB_PASSWORD: ${DB_PASS}
+      TZ: ${TZ:-Europe/Rome}
     volumes:
       - ./data/db:/var/lib/mysql
       - ./magazzino_db.sql:/docker-entrypoint-initdb.d/01-magazzino_db.sql:ro

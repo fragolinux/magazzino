@@ -2,8 +2,12 @@ FROM php:8.0-fpm
 
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
+ENV TZ=Europe/Rome
+
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git unzip libzip-dev \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git unzip libzip-dev tzdata \
+    && ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime \
+    && echo "$TZ" > /etc/timezone \
     && docker-php-ext-install pdo_mysql zip \
     && rm -rf /var/lib/apt/lists/*
 

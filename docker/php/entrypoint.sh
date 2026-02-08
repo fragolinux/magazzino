@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 
+if [ -n "${TZ:-}" ]; then
+    echo "date.timezone=${TZ}" > /usr/local/etc/php/conf.d/99-timezone.ini
+fi
+
 uploads_dir="/var/www/html"
 datasheet_dir="${uploads_dir}/datasheet"
 images_dir="${uploads_dir}/images"
