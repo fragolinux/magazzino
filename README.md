@@ -30,7 +30,7 @@ Grazie per lo sviluppo e per aver condiviso il progetto con la community.
 
 - Autore: RG4Tech (Gabriele Riva)
 - Sito web del progetto: https://rg4tech.altervista.org/forum/thread-463-post-576.html
-- Video di presentazione: https://www.youtube.com/watch?v=vZVBEfRnHZI
+- Playlist Video del progetto: https://www.youtube.com/playlist?list=PLNZXUv5jKUn4FmaiDwSzNop_WA8vuwMkV
 
 ## TL;DR (avvio rapido, Linux/WSL)
 
