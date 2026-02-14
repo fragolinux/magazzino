@@ -48,3 +48,16 @@
 - Qualsiasi fix locale va messo in `overrides/`, `docker/`, `scripts/` o in altri percorsi non-upstream.
 - Non chiedere conferme su queste regole; vanno sempre applicate.
 - I messaggi di commit devono essere in inglese.
+
+## Regole Operative Docker/Override (Persistenti)
+
+- In documentazione e istruzioni operative, preferire sempre i target `make` rispetto a script diretti o comandi `docker compose` quando il target equivalente esiste (salvo casi tecnici particolari da spiegare).
+- Gli override devono essere minimali: sovrascrivere solo i file realmente necessari al runtime Docker.
+- Evitare override di file upstream sensibili (`includes/db_connect.php`, `includes/auth_check.php`, `settings.php`) salvo richiesta esplicita dell'utente.
+- Mantenere il comportamento attuale dei compose: override attivi solo per `config/database.php` e `update/index.php`.
+- Le migrazioni DB devono usare i file SQL dell'autore in `update/migrations/`, ordinate con `version_compare` (semver-like), in modo idempotente.
+- Le migrazioni devono usare credenziali admin dedicate (`DB_MIGRATION_USER`/`DB_MIGRATION_PASS`, tipicamente root) senza elevare i privilegi di `DB_USER`.
+- In caso di utente non-admin, filtrare automaticamente statement privilegiati (`CREATE USER`, `GRANT`, `REVOKE`, `FLUSH PRIVILEGES`) invece di modificare i file upstream.
+- Nginx deve mostrare una pagina di attesa "umana" durante bootstrap (errori 502/503/504) con refresh automatico ogni 5 secondi.
+- Per lint PHP usare preferibilmente il PHP nel container (`docker compose exec -T php php -l ...`) invece di richiedere PHP installato sull'host.
+- Se l'utente dichiara che sta ripulendo/azzerando l'ambiente, non avviare `make up/devup` o `docker compose up` senza conferma esplicita.

@@ -31,7 +31,7 @@ docker compose up -d
 Linux/WSL (bash):
 ```bash
 rm -rf ./data/db
-docker compose up -d
+make up
 ```
 
 ## Credenziali DB: creare e recuperare
@@ -64,11 +64,17 @@ Linux/WSL (bash):
 docker compose exec db printenv MARIADB_USER MARIADB_PASSWORD MARIADB_DATABASE
 ```
 
-## Override DB per Docker
+## Override in Docker
 
-Il file originale `magazzino/includes/db_connect.php` resta quello dell'autore.
-Per Docker usiamo l'override `overrides/db_connect.php`, montato dal compose.
-Così puoi aggiornare `magazzino/` sovrascrivendo tutto senza perdere la modifica.
+I file sotto `magazzino/` devono restare identici al rilascio autore.
+Gli override locali vanno usati solo dove strettamente necessario.
+
+Attualmente:
+- `overrides/database.php` (config DB da env + `BASE_PATH`)
+- `overrides/update_index.php` (pagina update custom per ambiente Docker)
+
+Non vengono più sovrascritti in runtime `includes/db_connect.php`, `includes/auth_check.php` o `settings.php`,
+così le novità upstream restano effettive dopo ogni upgrade.
 
 ## Cartella dati locale
 
@@ -106,5 +112,77 @@ Oppure:
 
 Facoltativo: fissa una versione specifica delle immagini (esempio `v1.1`):
 ```bash
-MAGAZZINO_TAG=v1.1 docker compose up -d
+MAGAZZINO_TAG=v1.1 make up
+```
+
+## Startup clean ambiente dev (simula repo appena clonato)
+
+Obiettivo: ripartire da zero mantenendo solo la cartella `backup/`.
+
+Metodo consigliato (automatico):
+
+```bash
+make cleanstart
+```
+
+Il target chiede conferma esplicita (`YES`), crea backup preventivo (DB + file, incluso `.env` se presente),
+ferma gli stack, pulisce `data/`, rimuove `.env` e l'immagine locale `magazzino-php:latest`.
+
+### 1) Backup preventivo (file + database)
+
+Usa i target Make (raccomandato):
+
+```bash
+make backup
+```
+
+In alternativa puoi usare:
+
+```bash
+make menu
+```
+
+### 2) Spegni stack
+
+```bash
+make devdown
+```
+
+### 3) Rimuovi configurazione locale
+
+```bash
+rm -f .env
+```
+
+### 4) Pulisci i dati generati runtime
+
+Attenzione: mantiene la struttura cartelle, elimina contenuti runtime.
+
+```bash
+sudo rm -rf data/db/* data/config/* data/nginx-logs/* data/php-logs/* data/uploads/datasheet/* data/uploads/images/*
+sudo chown -R "$(id -u)":"$(id -g)" data
+mkdir -p data/db data/config data/nginx-logs data/php-logs data/uploads data/uploads/datasheet data/uploads/images data/uploads/images/components data/uploads/images/components/thumbs
+touch data/.gitkeep data/db/.gitkeep data/config/.gitkeep data/nginx-logs/.gitkeep data/php-logs/.gitkeep data/uploads/.gitkeep data/uploads/datasheet/.gitkeep data/uploads/images/.gitkeep data/uploads/images/components/.gitkeep data/uploads/images/components/thumbs/.gitkeep
+```
+
+### 5) Rimuovi immagine locale buildata in dev
+
+```bash
+docker image rm magazzino-php:latest || true
+```
+
+### 6) Ricrea `.env` e riavvia
+
+```bash
+make devup
+```
+
+Nota: `make devup` crea automaticamente `.env` da `.env.example` se non esiste.
+Se devi personalizzare `DB_*` o `HTTP_PORT`, modifica `.env` dopo la creazione.
+
+### 7) Verifica rapida
+
+```bash
+docker compose -f docker-compose.dev.yml ps
+curl -I http://localhost/magazzino/login.php
 ```
