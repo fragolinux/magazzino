@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:52:20 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-02 17:41:13
+ * @Last Modified time: 2026-02-09 19:06:09
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-08: aggiunti quick add per posizioni e categorie
@@ -11,8 +11,16 @@
 // 2026-01-11: Aggiunto controllo duplicati
 // 2026-01-12: Aggiunti campi per prezzo, link fornitore, unità di misura, package, tensione, corrente, potenza, hfe e tags; migliorata gestione equivalenti
 // 2026-01-14: Sistemati conteggi quantità per unità di misura
+// 2026-01-14: Aggiunta unità di misura
 // 2026-02-01: aggiunto locale nella select delle posizioni
 // 2026-02-01: corretto bug unità di misura negli ultimi componenti inseriti
+// 2026-02-06: Modifica di Andrea Gonzo - Aggiunta funzionalità di importazione dati da Mouser tramite codice prodotto (richiede popup_mouser.php e relativa logica JS)
+// 2026-02-08: corretto bug che impediva di ricordare alcuni valori nei campi avanzati quando veniva rilevato un duplicato in altre posizioni o un errore di validazione
+// 2026-02-08: aggiunto $_GET['codice'] per precompilare il campo codice prodotto da script progetti
+// 2026-02-08: aggiunti altri campi GET per precompilare da script progetti importazione csv (prezzo, note, link_fornitore)
+// 2026-02-09: aggiunto flag "Ricorda valori" per mantenere o resettare i campi dopo l'inserimento
+// 2026-02-09: aggiunto bottone per la visualizzazione rapida del componente appena inserito
+// 2026-02-09: aggiunto bottone "Clona componente"
 
 require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
@@ -23,8 +31,12 @@ $error = '';
 $success = '';
 $component = [];
 
-// Recupero posizioni, categorie e ultimi componenti
-// 2026-01-14: Aggiunta unità di misura
+// Gestione flag "Ricorda valori"
+// Se è un POST, usa il valore inviato; altrimenti default a true (ON)
+$ricorda_valori = true; // Default sempre ON
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ricorda_valori'])) {
+    $ricorda_valori = $_POST['ricorda_valori'] === '1';
+}
 $locali = $pdo->query("SELECT * FROM locali ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 $locations = $pdo->query("SELECT l.*, loc.name AS locale_name FROM locations l LEFT JOIN locali loc ON l.locale_id = loc.id ORDER BY l.name ASC")->fetchAll(PDO::FETCH_ASSOC);
 $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -51,7 +63,7 @@ if (isset($selectedLocationId) && is_numeric($selectedLocationId) && $selectedLo
 }
 
 // Gestione form
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['codice_prodotto']) && !isset($_POST['quick_add_compartment'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['codice_prodotto']) && !isset($_POST['quick_add_compartment'])) {   
     $codice_prodotto = trim($_POST['codice_prodotto'] ?? '');
     $category_id     = isset($_POST['category_id']) && is_numeric($_POST['category_id']) ? intval($_POST['category_id']) : null;
     $costruttore     = trim($_POST['costruttore'] ?? '');
@@ -133,6 +145,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['codice_prodotto']) &&
             if ($sameLocation && $sameCompartment) {
                 $duplicateInSameLocation = true;
                 $error = "ERRORE: Il componente '{$codice_prodotto}' esiste già nella stessa posizione e comparto!";
+                // Popola l'array component per mantenere i valori nel form
+                $component = [
+                    'codice_prodotto' => $codice_prodotto,
+                    'category_id' => $category_id,
+                    'costruttore' => $costruttore,
+                    'fornitore' => $fornitore,
+                    'codice_fornitore' => $codice_fornitore,
+                    'quantity' => $quantity,
+                    'quantity_min' => $quantity_min,
+                    'location_id' => $location_id,
+                    'compartment_id' => $compartment_id,
+                    'datasheet_url' => $datasheet_url,
+                    'equivalents' => $equivalents ? implode(', ', json_decode($equivalents)) : '',
+                    'notes' => $notes,
+                    'tags' => $tags ? implode(', ', json_decode($tags)) : '',
+                    'prezzo' => $prezzo,
+                    'link_fornitore' => $link_fornitore,
+                    'unita_misura' => $unita_misura,
+                    'package' => $package,
+                    'tensione' => $tensione,
+                    'corrente' => $corrente,
+                    'potenza' => $potenza,
+                    'hfe' => $hfe
+                ];
                 break;
             } else {
                 // Duplicato in posizione/comparto diverso
@@ -158,6 +194,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['codice_prodotto']) &&
                 'equivalents' => $equivalents ? implode(', ', json_decode($equivalents)) : '',
                 'notes' => $notes,
                 'tags' => $tags ? implode(', ', json_decode($tags)) : '',
+                'prezzo' => $prezzo,
+                'link_fornitore' => $link_fornitore,
+                'unita_misura' => $unita_misura,
+                'package' => $package,
+                'tensione' => $tensione,
+                'corrente' => $corrente,
+                'potenza' => $potenza,
+                'hfe' => $hfe,
                 'duplicate_warning' => true,
                 'duplicate_locations' => $duplicatesInOtherLocations
             ];
@@ -236,6 +280,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['codice_prodotto']) &&
             
             if (empty($error)) {
                 $success = "Componente aggiunto con successo.";
+                // Se il flag "Ricorda valori" è disattivato, svuota $_POST per resettare il form
+                // ma mantieni sempre posizione, comparto e categoria
+                if (!$ricorda_valori) {
+                    $posizione_salvata = $_POST['location_id'] ?? '';
+                    $comparto_salvato = $_POST['compartment_id'] ?? '';
+                    $categoria_salvata = $_POST['category_id'] ?? '';
+                    $_POST = [];
+                    $_POST['location_id'] = $posizione_salvata;
+                    $_POST['compartment_id'] = $comparto_salvato;
+                    $_POST['category_id'] = $categoria_salvata;
+                }
             }
 
             $lastComponents = $pdo->query("
@@ -257,13 +312,15 @@ include '../includes/header.php';
 <div class="container pb-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0"><i class="fa-solid fa-plus me-2"></i>Aggiungi componente</h4>
-    <a href="components.php" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i> Torna alla lista</a>
+      <div class="d-flex align-items-center gap-3">
+        <a href="components.php" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i> Torna alla lista</a>
+      </div>
   </div>
 
   <?php if ($error): ?>
     <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
   <?php elseif (isset($component['duplicate_warning']) && $component['duplicate_warning']): ?>
-    <div class="alert alert-warning">
+    <div class="alert alert-warning" id="duplicateWarning">
       <h5 class="alert-heading"><i class="fa-solid fa-triangle-exclamation me-2"></i>Attenzione: Componente già esistente!</h5>
       <p><strong>Il componente "<?= htmlspecialchars($component['codice_prodotto']) ?>"</strong> esiste già nelle seguenti posizioni:</p>
       <ul class="mb-3">
@@ -274,12 +331,23 @@ include '../includes/header.php';
       <p class="mb-0"><strong>Vuoi comunque inserire questo componente nella posizione/comparto selezionato?</strong></p>
     </div>
   <?php elseif ($success): ?>
-    <div class="alert alert-success py-0"><?= htmlspecialchars($success) ?></div>
+    <div class="alert alert-success py-0" id="successAlert"><?= htmlspecialchars($success) ?></div>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
       const input = document.querySelector('input[name="codice_prodotto"]');
       input.focus();
       input.select();
+      // Nascondi il messaggio dopo 2 secondi
+      setTimeout(function() {
+        const alert = document.getElementById('successAlert');
+        if (alert) {
+          alert.style.transition = 'opacity 0.5s';
+          alert.style.opacity = '0';
+          setTimeout(function() {
+            alert.remove();
+          }, 500);
+        }
+      }, 2000);
     });
     </script>
   <?php endif; ?>
@@ -335,40 +403,47 @@ include '../includes/header.php';
 
       <div class="col-md-4">
         <label class="form-label mb-1">Codice prodotto *</label>
-        <input type="text" name="codice_prodotto" class="form-control form-control-sm" value="<?= htmlspecialchars($component['codice_prodotto'] ?? $_POST['codice_prodotto'] ?? '') ?>" required>
+        <div class="input-group">
+          <input type="text" name="codice_prodotto" id="codice_prodotto" class="form-control form-control-sm" value="<?= htmlspecialchars($component['codice_prodotto'] ?? ($ricorda_valori ? ($_POST['codice_prodotto'] ?? $_GET['codice'] ?? '') : ($_GET['codice'] ?? ''))) ?>" required>
+          <div id="btnMouserWrapper" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Inserisci codice prodotto" style="display: flex;">
+            <button type="button" class="btn btn-outline-success btn-sm" id="btnMouserImport" disabled>
+              <i class="fa-solid fa-download"></i>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="col-md-2">
         <label class="form-label mb-1">Quantità *</label>
-        <input type="number" name="quantity" class="form-control form-control-sm" value="<?= htmlspecialchars($component['quantity'] ?? $_POST['quantity'] ?? 0) ?>">
+        <input type="number" name="quantity" class="form-control form-control-sm" value="<?= htmlspecialchars($component['quantity'] ?? ($ricorda_valori ? ($_POST['quantity'] ?? 0) : 0)) ?>">
       </div>
 
       <div class="col-md-2">
         <label class="form-label mb-1">Q.tà minima</label>
-        <input type="number" name="quantity_min" class="form-control form-control-sm" value="<?= htmlspecialchars($component['quantity_min'] ?? $_POST['quantity_min'] ?? 0) ?>">
+        <input type="number" name="quantity_min" class="form-control form-control-sm" value="<?= htmlspecialchars($component['quantity_min'] ?? ($ricorda_valori ? ($_POST['quantity_min'] ?? 0) : 0)) ?>">
       </div>
 
       <div class="col-md-2">
         <label class="form-label mb-1">Unità misura</label>
         <select name="unita_misura" class="form-select form-select-sm">
-          <option value="pz" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'pz') || (isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'pz') || (!isset($component['unita_misura']) && !isset($_POST['unita_misura'])) ? 'selected' : '' ?>>pz</option>
-          <option value="m" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'm') || (isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'm') ? 'selected' : '' ?>>m</option>
-          <option value="cm" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'cm') || (isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'cm') ? 'selected' : '' ?>>cm</option>
-          <option value="kg" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'kg') || (isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'kg') ? 'selected' : '' ?>>kg</option>
-          <option value="g" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'g') || (isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'g') ? 'selected' : '' ?>>g</option>
-          <option value="l" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'l') || (isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'l') ? 'selected' : '' ?>>l</option>
-          <option value="ml" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'ml') || (isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'ml') ? 'selected' : '' ?>>ml</option>
+          <option value="pz" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'pz') || ($ricorda_valori && isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'pz') || (!isset($component['unita_misura']) && !($ricorda_valori && isset($_POST['unita_misura']))) ? 'selected' : '' ?>>pz</option>
+          <option value="m" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'm') || ($ricorda_valori && isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'm') ? 'selected' : '' ?>>m</option>
+          <option value="cm" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'cm') || ($ricorda_valori && isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'cm') ? 'selected' : '' ?>>cm</option>
+          <option value="kg" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'kg') || ($ricorda_valori && isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'kg') ? 'selected' : '' ?>>kg</option>
+          <option value="g" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'g') || ($ricorda_valori && isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'g') ? 'selected' : '' ?>>g</option>
+          <option value="l" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'l') || ($ricorda_valori && isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'l') ? 'selected' : '' ?>>l</option>
+          <option value="ml" <?= (isset($component['unita_misura']) && $component['unita_misura'] == 'ml') || ($ricorda_valori && isset($_POST['unita_misura']) && $_POST['unita_misura'] == 'ml') ? 'selected' : '' ?>>ml</option>
         </select>
       </div>
 
       <div class="col-12">
         <label class="form-label mb-1">Equivalenti (separati da virgola)</label>
-        <input type="text" name="equivalents" id="equivalents" class="form-control form-control-sm" placeholder="Es. UA78M05, LM340T5" value="<?= htmlspecialchars($component['equivalents'] ?? $_POST['equivalents'] ?? '') ?>">
+        <input type="text" name="equivalents" id="equivalents" class="form-control form-control-sm" placeholder="Es. UA78M05, LM340T5" value="<?= htmlspecialchars($component['equivalents'] ?? ($ricorda_valori ? ($_POST['equivalents'] ?? '') : '')) ?>">
       </div>
 
       <div class="col-12">
         <label class="form-label mb-1">Note</label>
-        <textarea name="notes" class="form-control form-control-sm" rows="2"><?= htmlspecialchars($component['notes'] ?? $_POST['notes'] ?? '') ?></textarea>
+        <textarea name="notes" class="form-control form-control-sm" rows="2"><?= htmlspecialchars($component['notes'] ?? ($ricorda_valori ? ($_POST['notes'] ?? $_GET['note'] ?? '') : ($_GET['note'] ?? ''))) ?></textarea>
       </div>
 
       <!-- Sezione campi avanzati/facoltativi -->
@@ -387,34 +462,34 @@ include '../includes/header.php';
                   <!-- Campi fornitori e produttore -->
                   <div class="col-md-4">
                     <label class="form-label mb-1">Costruttore</label>
-                    <input type="text" name="costruttore" id="costruttore" class="form-control form-control-sm" value="<?= htmlspecialchars($component['costruttore'] ?? '') ?>">
+                    <input type="text" name="costruttore" id="costruttore" class="form-control form-control-sm" value="<?= htmlspecialchars($component['costruttore'] ?? ($ricorda_valori ? ($_POST['costruttore'] ?? '') : '')) ?>">
                   </div>
 
                   <div class="col-md-4">
                     <label class="form-label mb-1">Fornitore</label>
-                    <input type="text" name="fornitore" id="fornitore" class="form-control form-control-sm" value="<?= htmlspecialchars($component['fornitore'] ?? '') ?>">
+                    <input type="text" name="fornitore" id="fornitore" class="form-control form-control-sm" value="<?= htmlspecialchars($component['fornitore'] ?? ($ricorda_valori ? ($_POST['fornitore'] ?? $_GET['fornitore'] ?? '') : ($_GET['fornitore'] ?? ''))) ?>">
                   </div>
 
                   <div class="col-md-4">
                     <label class="form-label mb-1">Codice fornitore</label>
-                    <input type="text" name="codice_fornitore" class="form-control form-control-sm" value="<?= htmlspecialchars($component['codice_fornitore'] ?? '') ?>">
+                    <input type="text" name="codice_fornitore" class="form-control form-control-sm" value="<?= htmlspecialchars($component['codice_fornitore'] ?? ($ricorda_valori ? ($_POST['codice_fornitore'] ?? '') : '')) ?>">
                   </div>
 
                   <!-- Prezzo e link fornitore -->
                   <div class="col-md-3">
                     <label class="form-label mb-1">Prezzo (€)</label>
-                    <input type="number" step="0.01" name="prezzo" class="form-control form-control-sm" value="<?= htmlspecialchars($component['prezzo'] ?? '') ?>" placeholder="0.00">
+                    <input type="number" step="0.01" name="prezzo" class="form-control form-control-sm" value="<?= htmlspecialchars($component['prezzo'] ?? ($ricorda_valori ? ($_POST['prezzo'] ?? $_GET['prezzo'] ?? '') : ($_GET['prezzo'] ?? ''))) ?>" placeholder="0.00">
                   </div>
 
                   <div class="col-md-9">
                     <label class="form-label mb-1">Link fornitore</label>
-                    <input type="url" name="link_fornitore" class="form-control form-control-sm" value="<?= htmlspecialchars($component['link_fornitore'] ?? '') ?>" placeholder="https://">
+                    <input type="url" name="link_fornitore" class="form-control form-control-sm" value="<?= htmlspecialchars($component['link_fornitore'] ?? ($ricorda_valori ? ($_POST['link_fornitore'] ?? $_GET['link_fornitore'] ?? '') : ($_GET['link_fornitore'] ?? ''))) ?>" placeholder="https://">
                   </div>
 
                   <!-- Caratteristiche fisiche -->
                   <div class="col-md-4">
                     <label class="form-label mb-1">Package</label>
-                    <input type="text" name="package" class="form-control form-control-sm" value="<?= htmlspecialchars($component['package'] ?? '') ?>" placeholder="Es. TO-220, SO-8, DIP-8" list="packageList">
+                    <input type="text" name="package" class="form-control form-control-sm" value="<?= htmlspecialchars($component['package'] ?? ($ricorda_valori ? ($_POST['package'] ?? '') : '')) ?>" placeholder="Es. TO-220, SO-8, DIP-8" list="packageList">
                     <datalist id="packageList">
                       <option value="TO-220">
                       <option value="TO-92">
@@ -435,28 +510,28 @@ include '../includes/header.php';
                   <!-- Caratteristiche elettriche -->
                   <div class="col-md-2">
                     <label class="form-label mb-1">Tensione V</label>
-                    <input type="text" name="tensione" class="form-control form-control-sm" value="<?= htmlspecialchars($component['tensione'] ?? '') ?>" placeholder="Es. 5, 12">
+                    <input type="text" name="tensione" class="form-control form-control-sm" value="<?= htmlspecialchars($component['tensione'] ?? ($ricorda_valori ? ($_POST['tensione'] ?? '') : '')) ?>" placeholder="Es. 5, 12">
                   </div>
 
                   <div class="col-md-2">
                     <label class="form-label mb-1">Corrente A</label>
-                    <input type="text" name="corrente" class="form-control form-control-sm" value="<?= htmlspecialchars($component['corrente'] ?? '') ?>" placeholder="Es. 1, 0.5">
+                    <input type="text" name="corrente" class="form-control form-control-sm" value="<?= htmlspecialchars($component['corrente'] ?? ($ricorda_valori ? ($_POST['corrente'] ?? '') : '')) ?>" placeholder="Es. 1, 0.5">
                   </div>
 
                   <div class="col-md-2">
                     <label class="form-label mb-1">Potenza W</label>
-                    <input type="text" name="potenza" class="form-control form-control-sm" value="<?= htmlspecialchars($component['potenza'] ?? '') ?>" placeholder="Es. 1, 0.25">
+                    <input type="text" name="potenza" class="form-control form-control-sm" value="<?= htmlspecialchars($component['potenza'] ?? ($ricorda_valori ? ($_POST['potenza'] ?? '') : '')) ?>" placeholder="Es. 1, 0.25">
                   </div>
 
                   <div class="col-md-2">
                     <label class="form-label mb-1">hFE (Guadagno)</label>
-                    <input type="text" name="hfe" class="form-control form-control-sm" value="<?= htmlspecialchars($component['hfe'] ?? '') ?>" placeholder="Es. 100-300">
+                    <input type="text" name="hfe" class="form-control form-control-sm" value="<?= htmlspecialchars($component['hfe'] ?? ($ricorda_valori ? ($_POST['hfe'] ?? '') : '')) ?>" placeholder="Es. 100-300">
                   </div>
 
                   <!-- Datasheet e immagine -->
                   <div class="col-md-8">
                     <label class="form-label mb-1">Link datasheet Web</label>
-                    <input type="url" name="datasheet_url" class="form-control form-control-sm" value="<?= htmlspecialchars($component['datasheet_url'] ?? '') ?>" placeholder="https://">
+                    <input type="url" name="datasheet_url" class="form-control form-control-sm" value="<?= htmlspecialchars($component['datasheet_url'] ?? ($ricorda_valori ? ($_POST['datasheet_url'] ?? '') : '')) ?>" placeholder="https://">
                   </div>
 
                   <div class="col-md-4">
@@ -493,7 +568,7 @@ include '../includes/header.php';
                   <!-- Tags -->
                   <div class="col-12">
                     <label class="form-label mb-1">Tags (separati da virgola)</label>
-                    <input type="text" name="tags" class="form-control form-control-sm" value="<?= htmlspecialchars($component['tags'] ?? '') ?>" placeholder="Es. amplificatore, vintage, audio">
+                    <input type="text" name="tags" class="form-control form-control-sm" value="<?= htmlspecialchars($component['tags'] ?? ($ricorda_valori ? ($_POST['tags'] ?? '') : '')) ?>" placeholder="Es. amplificatore, vintage, audio">
                     <small class="text-muted">Usa le virgole per separare i tag</small>
                   </div>
 
@@ -508,17 +583,28 @@ include '../includes/header.php';
 
     <input type="hidden" name="confirm_duplicate" id="confirm_duplicate" value="0">
 
-    <div class="d-flex justify-content-end mt-3">
-      <?php if (isset($component['duplicate_warning']) && $component['duplicate_warning']): ?>
-        <button type="button" class="btn btn-secondary btn-sm me-2" onclick="window.location.reload()">
-          <i class="fa-solid fa-times me-1"></i> Annulla
-        </button>
-        <button type="submit" class="btn btn-warning btn-sm" onclick="document.getElementById('confirm_duplicate').value='1'">
-          <i class="fa-solid fa-check me-1"></i> Sì, inserisci comunque
-        </button>
-      <?php else: ?>
-        <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-save me-1"></i> Salva</button>
-      <?php endif; ?>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <!-- Toggle switch "Ricorda valori" -->
+      <div class="d-flex align-items-center gap-2">
+        <input type="hidden" name="ricorda_valori" value="0">
+        <div class="form-check form-switch m-0">
+          <input class="form-check-input" type="checkbox" role="switch" name="ricorda_valori" id="ricorda_valori" value="1" <?= $ricorda_valori ? 'checked' : '' ?> style="cursor: pointer;">
+          <label class="form-check-label" for="ricorda_valori" style="cursor: pointer; user-select: none;">Ricorda valori</label>
+        </div>
+      </div>
+      
+      <div>
+        <?php if (isset($component['duplicate_warning']) && $component['duplicate_warning']): ?>
+          <button type="button" class="btn btn-secondary btn-sm me-2" onclick="cancelDuplicateWarning()">
+            <i class="fa-solid fa-times me-1"></i> Annulla
+          </button>
+          <button type="submit" class="btn btn-warning btn-sm" onclick="document.getElementById('confirm_duplicate').value='1'">
+            <i class="fa-solid fa-check me-1"></i> Sì, inserisci comunque
+          </button>
+        <?php else: ?>
+          <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-save me-1"></i> Salva</button>
+        <?php endif; ?>
+      </div>
     </div>
   </form>
 
@@ -533,7 +619,7 @@ include '../includes/header.php';
             <th>Posizione</th>
             <th>Comparto</th>
             <th class="text-end">Q.tà</th>
-            <th class="text-center" style="width:50px;">Azioni</th>
+            <th class="text-center" style="width:120px;">Azioni</th>
           </tr>
         </thead>
         <tbody>
@@ -548,6 +634,12 @@ include '../includes/header.php';
                 <td><?= htmlspecialchars($c['compartment_code'] ?? '—') ?></td>
                 <td class="text-end"><?= htmlspecialchars($c['quantity']) . ' ' . htmlspecialchars($c['unita_misura'] ?? 'pz') ?></td>
                 <td class="text-center">
+                  <button type="button" class="btn btn-sm btn-outline-secondary btn-clone me-1" data-id="<?= $c['id'] ?>" title="Clona componente">
+                    <i class="fa-solid fa-copy"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-primary btn-view me-1" data-id="<?= $c['id'] ?>" title="Visualizza dettagli">
+                    <i class="fa-solid fa-eye"></i>
+                  </button>
                   <button type="button" class="btn btn-sm btn-outline-danger btn-delete-component" data-id="<?= $c['id'] ?>" data-name="<?= htmlspecialchars($c['codice_prodotto']) ?>" title="Elimina componente">
                     <i class="fa-solid fa-trash"></i>
                   </button>
@@ -645,6 +737,80 @@ include '../includes/header.php';
 
 <script>
 $(function() {
+  // Controlla se ci sono dati di clonazione da localStorage (da components.php)
+  const cloneData = localStorage.getItem('clone_component_data');
+  if (cloneData) {
+    const data = JSON.parse(cloneData);
+    
+    // Salva i valori attuali di posizione, comparto e categoria
+    const currentLocationId = $('#locationSelect').val();
+    const currentCompartmentId = $('#compartmentSelect').val();
+    const currentCategoryId = $('#categorySelect').val();
+    
+    // Popola i campi del form con i dati del componente clonato
+    $('#codice_prodotto').val(data.codice_prodotto ? data.codice_prodotto + '-COPY' : '');
+    $('input[name="quantity"]').val(data.quantity || 0);
+    $('input[name="quantity_min"]').val(data.quantity_min || 0);
+    $('select[name="unita_misura"]').val(data.unita_misura || 'pz');
+    $('#equivalents').val(data.equivalents ? data.equivalents.join(', ') : '');
+    $('textarea[name="notes"]').val(data.notes || '');
+    $('#costruttore').val(data.costruttore || '');
+    $('#fornitore').val(data.fornitore || '');
+    $('input[name="codice_fornitore"]').val(data.codice_fornitore || '');
+    $('input[name="prezzo"]').val(data.prezzo || '');
+    $('input[name="link_fornitore"]').val(data.link_fornitore || '');
+    $('input[name="package"]').val(data.package || '');
+    $('input[name="tensione"]').val(data.tensione || '');
+    $('input[name="corrente"]').val(data.corrente || '');
+    $('input[name="potenza"]').val(data.potenza || '');
+    $('input[name="hfe"]').val(data.hfe || '');
+    $('input[name="datasheet_url"]').val(data.datasheet_url || '');
+    $('input[name="tags"]').val(data.tags ? data.tags.join(', ') : '');
+    
+    // Ripristina posizione, comparto e categoria (non vengono sovrascritti)
+    $('#locationSelect').val(currentLocationId).trigger('change');
+    setTimeout(function() {
+      $('#compartmentSelect').val(currentCompartmentId);
+    }, 300);
+    $('#categorySelect').val(currentCategoryId);
+    
+    // Rimuovi i dati da localStorage
+    localStorage.removeItem('clone_component_data');
+    
+    // Focus sul campo codice prodotto
+    $('#codice_prodotto').focus();
+  }
+
+  // Tooltip per pulsante Mouser
+  const $input = $('#codice_prodotto');
+  const $btn = $('#btnMouserImport');
+  const $wrapper = $('#btnMouserWrapper');
+
+  // Crea il tooltip una volta al caricamento della pagina
+  let tooltip = new bootstrap.Tooltip($wrapper[0]);
+
+  $input.on('input', function() {
+    const codice = $(this).val().trim();
+
+    if (codice === '') {
+      $btn.prop('disabled', true);
+      $wrapper.attr('data-bs-title', 'Inserisci codice prodotto');
+    } else {
+      $btn.prop('disabled', false);
+      $wrapper.attr('data-bs-title', 'Scarica dati da Mouser');
+    }
+
+    // Aggiorna il testo del tooltip
+    tooltip._config.title = $wrapper.attr('data-bs-title');
+    tooltip.update();
+  });
+
+  // Nascondi il tooltip quando si clicca sul bottone
+  $btn.on('click', function() {
+    tooltip.hide();
+  });
+  // Tooltip per pulsante Mouser
+
   // Variabili per memorizzare le immagini ridimensionate
   let resizedImageData = null;
   let resizedThumbData = null;
@@ -773,6 +939,20 @@ $(function() {
     // Procedi con il submit normale
     return true;
   });
+
+  // Funzione per annullare il warning duplicato e mantenere i dati del form
+  window.cancelDuplicateWarning = function() {
+    // Nascondi il warning
+    $('#duplicateWarning').fadeOut(300, function() {
+      $(this).remove();
+    });
+    // Reset del campo confirm_duplicate
+    $('#confirm_duplicate').val('0');
+    // Ripristina il bottone Salva normale
+    $('.d-flex.justify-content-end.mt-3').html(
+      '<button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-save me-1"></i> Salva</button>'
+    );
+  };
 
   // Gestione modal aggiunta posizione
   $('#quickAddLocationBtn').on('click', function(e) {
@@ -916,8 +1096,89 @@ $(function() {
     });
   });
 
+  // Gestione flag "Ricorda valori" - svuota campi quando deselezionato
+  $('#ricorda_valori').on('change', function() {
+    if (!$(this).is(':checked')) {
+      // Svuota manualmente tutti i campi del form (tranne posizione, comparto, categoria che sono sempre ricordati)
+      $('#componentForm').find('input[type="text"], input[type="number"], input[type="url"], textarea').not('#ricorda_valori').val('');
+      // Resetta solo le select che NON sono posizione/comparto/categoria
+      $('select[name="unita_misura"]').val('pz');
+      // Azzera le quantità
+      $('input[name="quantity"]').val('0');
+      $('input[name="quantity_min"]').val('0');
+      // Ripristina il valore del checkbox (deve rimanere off)
+      $(this).prop('checked', false);
+      // Pulisci anche le anteprime immagine/datasheet
+      $('#image-preview-container').hide();
+      $('#remove-image').hide();
+      $('#remove-datasheet').hide();
+      $('#resized_image_data').val('');
+      $('#resized_thumb_data').val('');
+      // Imposta focus sul codice prodotto
+      $('#codice_prodotto').focus();
+    }
+  });
+
+  // Gestione clonazione componente
+  $(document).on('click', '.btn-clone', function() {
+    const componentId = $(this).data('id');
+    
+    // Salva i valori attuali di posizione, comparto e categoria
+    const currentLocationId = $('#locationSelect').val();
+    const currentCompartmentId = $('#compartmentSelect').val();
+    const currentCategoryId = $('#categorySelect').val();
+    
+    $.getJSON('<?= BASE_PATH ?>warehouse/get_component_json.php', { id: componentId }, function(data) {
+      if (data.error) {
+        alert('Errore: ' + data.error);
+        return;
+      }
+      
+      // Ripristina i valori di posizione, comparto e categoria (non vengono sovrascritti)
+      $('#locationSelect').val(currentLocationId).trigger('change');
+      
+      // Aspetta che i compartimenti siano caricati prima di selezionare
+      setTimeout(function() {
+        $('#compartmentSelect').val(currentCompartmentId);
+      }, 300);
+      
+      $('#categorySelect').val(currentCategoryId);
+      
+      // Popola gli altri campi del form con i dati del componente
+      $('#codice_prodotto').val(data.codice_prodotto ? data.codice_prodotto + '-COPY' : '');
+      $('input[name="quantity"]').val(data.quantity || 0);
+      $('input[name="quantity_min"]').val(data.quantity_min || 0);
+      $('select[name="unita_misura"]').val(data.unita_misura || 'pz');
+      $('#equivalents').val(data.equivalents ? data.equivalents.join(', ') : '');
+      $('textarea[name="notes"]').val(data.notes || '');
+      $('#costruttore').val(data.costruttore || '');
+      $('#fornitore').val(data.fornitore || '');
+      $('input[name="codice_fornitore"]').val(data.codice_fornitore || '');
+      $('input[name="prezzo"]').val(data.prezzo || '');
+      $('input[name="link_fornitore"]').val(data.link_fornitore || '');
+      $('input[name="package"]').val(data.package || '');
+      $('input[name="tensione"]').val(data.tensione || '');
+      $('input[name="corrente"]').val(data.corrente || '');
+      $('input[name="potenza"]').val(data.potenza || '');
+      $('input[name="hfe"]').val(data.hfe || '');
+      $('input[name="datasheet_url"]').val(data.datasheet_url || '');
+      $('input[name="tags"]').val(data.tags ? data.tags.join(', ') : '');
+      
+      // Focus sul campo codice prodotto
+      $('#codice_prodotto').focus();
+      
+      // Scroll al form
+      $('html, body').animate({
+        scrollTop: $('#componentForm').offset().top - 20
+      }, 500);
+    }).fail(function() {
+      alert('Errore durante il caricamento dei dati del componente.');
+    });
+  });
+
   // Gestione cancellazione componente dalla tabella ultimi inseriti
   $(document).on('click', '.btn-delete-component', function() {
+
     const componentId = $(this).data('id');
     const componentName = $(this).data('name');
     
@@ -950,5 +1211,8 @@ $(function() {
   });
 });
 </script>
+ <script src="js/mouser_import.js"></script>
+
+<?php include 'component_modal.php'; ?>
 
 <?php include '../includes/footer.php'; ?>

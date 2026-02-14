@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-03 10:15:23 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-13 23:20:15
+ * @Last Modified time: 2026-02-09 23:43:03
 */
 // 2026-01-13: Invertito ordine visualizzazione delle versioni
 
@@ -80,7 +80,7 @@ $versioni = implode("\n", $blocks);
 
 <div class="container py-5">
     <div class="row">
-        <div class="col-md-10 mx-auto">
+        <div class="col-md-11 mx-auto">
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <h3 class="mb-0"><i class="fa-solid fa-circle-info me-2"></i>Informazioni</h3>

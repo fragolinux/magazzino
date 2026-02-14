@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:53:16 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-02 17:51:18
+ * @Last Modified time: 2026-02-09 19:50:15
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-09: Aggiunta gestione immagine componente
@@ -363,7 +363,6 @@ if (isset($_SESSION['success'])) {
   <a href="components.php" class="btn btn-secondary mt-3"><i class="fa-solid fa-arrow-left"></i> Torna alla lista componenti</a>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
   $(document).ready(function() {
     // Variabili per memorizzare le immagini ridimensionate

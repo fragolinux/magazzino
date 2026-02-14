@@ -3,12 +3,14 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-21 08:47:13 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-14
+ * @Last Modified time: 2026-02-09 23:31:14
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-08: Aggiunto locale
 // 2026-01-09: Aggiunta gestione immagine componente
 // 2026-01-14: Sistemati conteggi quantità per unità di misura
+// 2026-02-08: Tolti campi vuoti e unità di misura
+// 2026-02-09: Aggiunta gestione prezzo/fornitore da progetti_componenti
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -39,8 +41,56 @@ if (!$component) {
     exit;
 }
 
+// Se viene richiesto da un progetto, cerca prima i dati in progetti_componenti
+$progetto_prezzo = null;
+$progetto_fornitore = null;
+$progetto_fornitore_nome = null;
+$progetto_link_fornitore = null;
+
+if (isset($_GET['progetto_componente_id']) && is_numeric($_GET['progetto_componente_id'])) {
+    $progetto_componente_id = intval($_GET['progetto_componente_id']);
+    
+    $stmt = $pdo->prepare("SELECT pc.*, f.nome as fornitore_nome 
+                           FROM progetti_componenti pc 
+                           LEFT JOIN fornitori f ON pc.ks_fornitore = f.id 
+                           WHERE pc.id = ? AND pc.ks_componente = ?");
+    $stmt->execute([$progetto_componente_id, $id]);
+    $progetto_componente = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($progetto_componente) {
+        // Usa prezzo, fornitore, link e note da progetti_componenti se presenti
+        if (!empty($progetto_componente['prezzo'])) {
+            $progetto_prezzo = $progetto_componente['prezzo'];
+        }
+        if (!empty($progetto_componente['ks_fornitore'])) {
+            $progetto_fornitore = $progetto_componente['ks_fornitore'];
+            $progetto_fornitore_nome = $progetto_componente['fornitore_nome'];
+        }
+        if (!empty($progetto_componente['link_fornitore'])) {
+            $progetto_link_fornitore = $progetto_componente['link_fornitore'];
+        }
+        if (!empty($progetto_componente['note'])) {
+            $progetto_note = $progetto_componente['note'];
+        }
+        if (!empty($progetto_componente['quantita'])) {
+            $progetto_quantita = $progetto_componente['quantita'];
+        }
+    }
+}
+
+// Determina i valori finali da mostrare (da progetto se disponibili, altrimenti da component)
+$prezzo_finale = $progetto_prezzo ?? $component['prezzo'] ?? null;
+$fornitore_finale = $progetto_fornitore_nome ?? $component['fornitore'] ?? null;
+$link_fornitore_finale = $progetto_link_fornitore ?? $component['link_fornitore'] ?? null;
+$note_finale = $progetto_note ?? $component['notes'] ?? null;
+$quantita_finale = $progetto_quantita ?? $component['quantity'] ?? 0;
+
 function field($label, $value) {
-    return '<tr><th style="width:30%;white-space:nowrap;">'.$label.'</th><td>'.($value !== '' ? $value : '<span class="text-muted">-</span>').'</td></tr>';
+    // Non mostrare il campo se il valore è vuoto
+    if ($value === '' || $value === null) {
+        return '';
+    }
+    return '<tr><th style="width:30%;white-space:nowrap;">'.$label.'</th><td>'.$value.'</td></tr>';
 }
 
 $equivalents = '';
@@ -59,7 +109,7 @@ if (!empty($component['tags'])) {
     }
 }
 
-$notes = !empty($component['notes']) ? nl2br(htmlspecialchars($component['notes'])) : '';
+$notes = !empty($note_finale) ? nl2br(htmlspecialchars($note_finale)) : '';
 $datasheet_url = trim($component['datasheet_url']);
 $is_pdf = $datasheet_url && preg_match('/\.pdf(\?|$)/i', $datasheet_url);
 
@@ -74,32 +124,28 @@ $hasImage = $imagePath && file_exists($imagePath);
         <?= field('Categoria', htmlspecialchars($component['category_name'] ?? '')) ?>
         <?php 
         $unit = $component['unita_misura'] ?? 'pz';
-        $qty = intval($component['quantity']);
+        $qty = intval($quantita_finale);
         $qty_min = $component['quantity_min'];
         ?>
         <?= field('Quantità', $qty . ' ' . htmlspecialchars($unit)) ?>
-        <?php 
-        $rowClass = '';
-        if ($qty_min !== null && $qty_min != 0 && $qty_min > $qty) {
-            $rowClass = ' class="table-danger"';
-        }
-        ?>
-        <tr<?= $rowClass ?>><th style="width:30%;white-space:nowrap;">Q.tà minima</th><td><?= ($qty_min !== null && $qty_min != 0 ? $qty_min . ' ' . htmlspecialchars($unit) : '<span class="text-muted">-</span>') ?></td></tr>
-        <?= field('Unità misura', htmlspecialchars($unit)) ?>
+        <?php if ($qty_min !== null && $qty_min != 0): ?>
+            <?php $rowClass = ($qty_min > $qty) ? ' class="table-danger"' : ''; ?>
+            <tr<?= $rowClass ?>><th style="width:30%;white-space:nowrap;">Q.tà minima</th><td><?= $qty_min . ' ' . htmlspecialchars($unit) ?></td></tr>
+        <?php endif; ?>
         <?= field('Locale', htmlspecialchars($component['locale_name'] ?? '')) ?>
         <?= field('Posizione', htmlspecialchars($component['location_name'] ?? '')) ?>
         <?= field('Comparto', htmlspecialchars($component['compartment_code'] ?? '')) ?>
         <?= field('Costruttore', htmlspecialchars($component['costruttore'] ?? '')) ?>
-        <?= field('Fornitore', htmlspecialchars($component['fornitore'] ?? '')) ?>
+        <?= field('Fornitore', htmlspecialchars($fornitore_finale ?? '')) ?>
         <?= field('Codice fornitore', htmlspecialchars($component['codice_fornitore'] ?? '')) ?>
-        <?php if (!empty($component['prezzo'])): ?>
-        <?= field('Prezzo', '€ ' . number_format($component['prezzo'], 2, ',', '.')) ?>
+        <?php if (!empty($prezzo_finale)): ?>
+        <?= field('Prezzo', '€ ' . number_format($prezzo_finale, 2, ',', '.')) ?>
         <?php endif; ?>
-        <?php if (!empty($component['link_fornitore'])): ?>
+        <?php if (!empty($link_fornitore_finale)): ?>
             <tr>
                 <th>Link fornitore</th>
                 <td>
-                    <a href="<?= htmlspecialchars($component['link_fornitore']) ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <a href="<?= htmlspecialchars($link_fornitore_finale) ?>" target="_blank" class="btn btn-sm btn-outline-primary">
                         <i class="fa-solid fa-link me-1"></i> Vai al sito
                     </a>
                 </td>

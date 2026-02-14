@@ -1,0 +1,184 @@
+/*
+ * @Author: gabriele.riva
+ * @Date: 2026-02-09
+ *
+ * Stili custom per Magazzino Componenti
+ * Include: navbar, footer, utilità
+ */
+
+/* ========================================
+   LAYOUT BASE - Footer Sticky
+   ======================================== */
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.container.mt-2 {
+  flex: 1 0 auto;
+}
+
+/* ========================================
+   NAVBAR
+   ======================================== */
+.navbar {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.navbar-brand img {
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.navbar-brand:hover img {
+  transform: scale(1.08);
+  filter: brightness(1.1);
+}
+
+.nav-link {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.nav-link.active {
+  font-weight: 600;
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 0.5rem;
+  right: 0.5rem;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+.dropdown-item.active {
+  background: rgba(var(--bs-primary-rgb), 0.1);
+  font-weight: 500;
+}
+
+/* Toggle tema */
+.theme-toggle {
+  cursor: pointer;
+  padding: 0.375rem 0.75rem;
+  border-radius: 2rem;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  background: transparent;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.theme-toggle:hover {
+  background: rgba(128, 128, 128, 0.1);
+}
+
+[data-bs-theme="dark"] .theme-toggle .fa-moon {
+  display: none;
+}
+
+[data-bs-theme="light"] .theme-toggle .fa-sun {
+  display: none;
+}
+
+/* ========================================
+   FOOTER
+   ======================================== */
+.app-footer {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+  border-top: 1px solid #dee2e6;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.footer-badge {
+  font-size: 0.8rem;
+  color: #6c757d;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  white-space: nowrap;
+}
+
+.footer-author {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.footer-link {
+  color: #667eea;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+  color: #764ba2;
+}
+
+.footer-version {
+  font-size: 0.8rem;
+  color: #6c757d;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-weight: 500;
+}
+
+/* ========================================
+   DARK THEME SUPPORT
+   ======================================== */
+[data-bs-theme="dark"] .app-footer {
+  background: linear-gradient(135deg, #212529 0%, #2d333b 100%);
+  border-top-color: #373b3e;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+}
+
+[data-bs-theme="dark"] .footer-badge {
+  background: rgba(255, 255, 255, 0.1);
+  color: #adb5bd;
+}
+
+[data-bs-theme="dark"] .footer-author {
+  color: #adb5bd;
+}
+
+[data-bs-theme="dark"] .footer-version {
+  background: rgba(102, 126, 234, 0.2);
+  color: #adb5bd;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 767px) {
+  .app-footer .row {
+    gap: 0.75rem !important;
+  }
+
+  .footer-badge,
+  .footer-author,
+  .footer-version {
+    font-size: 0.75rem;
+  }
+}
+
+/* ========================================
+   UTILITY
+   ======================================== */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.transition-all {
+  transition: all 0.3s ease;
+}

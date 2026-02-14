@@ -81,7 +81,7 @@ try {
         } else {
             // Fallback: leggi da file config
             $settingsConfig = @include __DIR__ . '/../config/settings.php';
-            $envMode = $settingsConfig['environment_mode'] ?? 'production';
+            $envMode = isset($settingsConfig['environment_mode']) ? $settingsConfig['environment_mode'] : 'production';
         }
         
         if ($envMode === 'development') {
@@ -98,7 +98,7 @@ try {
     } catch (Exception $e) {
         // Se la tabella setting non esiste, leggi da file o usa default produzione
         $settingsConfig = @include __DIR__ . '/../config/settings.php';
-        $envMode = $settingsConfig['environment_mode'] ?? 'production';
+        $envMode = isset($settingsConfig['environment_mode']) ? $settingsConfig['environment_mode'] : 'production';
         
         if ($envMode === 'development') {
             ini_set('display_errors', 1);

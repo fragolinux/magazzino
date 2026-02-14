@@ -29,4 +29,4 @@ if (!defined('BASE_PATH')) {
 
 // Variabile globale per i template (retrocompatibilità)
 $basePath = BASE_PATH;
-?>
+// NOTA: Intenzionalmente omesso il tag di chiusura PHP per prevenire output accidentali

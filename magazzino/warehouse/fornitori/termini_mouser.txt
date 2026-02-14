@@ -1,0 +1,128 @@
+L'API Ricerca di Mouser va richiesta qui: https://www.mouser.it/api-search/#signup
+
+================================================
+          TERMINI DI SERVIZIO - UTILIZZO API KEY FORNITORI
+================================================
+
+https://www.mouser.it/apiterms/
+
+Search API Terms of Service
+Last modified March 11, 2013
+
+These Terms of Service (the “Terms”) apply to your access and use the application programming interface that is made available on this website (the "API"), and any and all data, images, text, or other information or content transmitted through the API (the "Mouser Electronics Data"). “We” “us” and “our” means Mouser Electronics, Inc. or any of its subsidiary companies (“Mouser Electronics”), as the case may be. “You” or “your” means the applicant. The API may allow you to access Mouser Electronics Data on one or more Mouser Electronics sites. If you use the API to access or use such Mouser Electronics Data, you agree to comply and be bound by the Terms of Service and Privacy Policy of each applicable Mouser Electronics site.
+
+BY CHECKING THE BOX INDICATING THAT YOU AGREE TO THE TERMS, OR BY ACCESSING OR USING THE API OR MOUSER ELECTRONICS DATA, YOU (A) AGREE TO BE BOUND BY THE TERMS; AND (B) HEREBY REPRESENT AND WARRANT THAT YOU ARE LAWFULLY ABLE TO ENTER INTO CONTRACTS (E.G., YOU ARE NOT A MINOR). IN ADDITION, IF THE TERMS ARE BEING AGREED TO BY A COMPANY OR OTHER LEGAL ENTITY, THEN THE PERSON AGREEING TO THE TERMS ON BEHALF OF THAT COMPANY OR ENTITY HEREBY REPRESENTS AND WARRANTS THAT HE OR SHE IS AUTHORIZED AND LAWFULLY ABLE TO BIND THAT COMPANY OR ENTITY TO THE TERMS.
+
+1. Purpose
+
+The API is made available by Mouser Electronics to enable others to access commercially valuable Mouser Electronics Data and present it to their end users within their web sites and software applications (“Application”) in ways that compliment and enhance Mouser Electronics’s own products and services (“Permitted Purposes”). Any use of the API that is competitive to or inconsistent with Mouser Electronics’ own products and services, aggregates, in any way, any Mouser Electronics Content with third party content (without distinction) or fails to attribute the Mouser Electronics Data appropriately to Mouser Electronics is expressly not permitted. Mouser Electronics reserves the right to continually review and evaluate all uses of the API, and will determine whether specific uses of the API are Permitted Purposes or not permitted in its sole discretion. Mouser Electronics' failure to immediately terminate any user of the Mouser Electronics API for a non-permitted purpose shall in no way be construed as a waiver of its ability to terminate such user later or any other user. Mouser Electronics reserves the right to request information related to your use of any Mouser Electronics API and your compliance with these Terms. Failure to timely and completely respond to such request may result in termination.
+
+2. Enrollment and Suitability
+
+To begin the enrollment process, you must submit a complete and accurate access request form. In your access request form, you must describe the Application you intend to develop and use with the API or on which you intend to display Mouser Electronics Data. We will evaluate your access request form and notify you by email of its acceptance or rejection. We reserve the right to reject your enrollment form for any reason, in our sole discretion, in the event we determine that your Application is unsuitable. Unsuitable applications include, but are not limited to those applications that:
+
+do not have as their principal purpose advertising and marketing the Mouser Electronics Content and driving sales of Mouser Electronics products and services ;
+promote or contain sexually explicit materials;
+contain hate/violent/offensive content or any other material deemed unsuitable or harmful to the reputation of Mouser Electronics;
+promote discrimination, or employ discriminatory practices, based on race, sex, religion, nationality, disability, sexual orientation, or age;
+promote or undertake illegal activities or otherwise violate applicable laws, ordinances, rules, regulations, orders, and other requirements of any governmental authority that has jurisdiction over you, including, but not limited to, laws that govern marketing email;
+include "Mouser", “Mouser Electronics,” or any other trademark of Mouser Electronics or its affiliates, or variations or misspellings of any of them, in their URLs to the left of the top-level domain name (e.g., ".com," ".net," ".org"); or
+infringe on our or any other person’s or entity’s intellectual property, privacy, data protection or other rights.
+If we reject your enrollment form, you are welcome to reapply at any time. However, if we accept your access request form and we later determine that your Application is unsuitable, we may terminate the Terms.
+
+You will ensure that the information included in your access request form, including your contact information and the description of your Application, is at all times complete, accurate, and up-to-date.
+
+By enrolling, you will be issued one or more unique security keys, secrets, tokens, passwords and/or other credentials (collectively, "Key(s)") for accessing the API and managing your account. You may only access your account with the Key(s) issued to you by Mouser Electronics. Access may not always be available. You may not sell, transfer, sublicense or otherwise disclose your Key(s) to any other party or use them with any application other than that for which you initially applied for . You are responsible for maintaining the secrecy and security of your Key(s). You are fully responsible for all activities that occur using your Key(s), regardless of whether such activities are undertaken by you or a third party. You should contact us immediately if you believe that someone other than you may be using your Key(s) or if your Key(s) is otherwise lost or stolen.
+
+3. Inaccessibility of the API
+
+You understand and agree that from time to time the API may be inaccessible, unavailable or inoperable for any reason, including, without limitation: (i) equipment malfunctions; (ii) periodic updates, maintenance procedures or repairs; or (iii) causes beyond the control of Mouser Electronics or which are not reasonably foreseeable by Mouser Electronics, including, without limitation, interruption or failure of telecommunication or digital transmission links, hostile network attacks, the unavailability, operation, or inaccessibility of websites or interfaces, network congestion or other failures. You acknowledge and agree that Mouser Electronics has no control over the availability of the services on a continuous or uninterrupted basis.
+
+4. API Restrictions
+
+By making calls to the API or accessing Mouser Electronics Data, you agree that you will not, and will not assist or enable others to:
+
+cache, record, pre-fetch, or otherwise store any portion of the Mouser Electronics Content, or attempt or provide a means to execute any “bulk download” operations;
+modify the Mouser Electronics Content (except modifications to the Mouser Electronics landing page URL as required to facilitate tracking by third parties authorized by Mouser Electronics), or use it to update or create your own database of business listing information;
+display Mouser Electronics Data in a manner that could reasonably imply an endorsement, relationship or affiliation with or sponsorship between you or a third party and Mouser Electronics, other than your permitted use of the API under the Terms;
+copy, rent, lease, sell, transfer, assign, sublicense, dissemble, reverse engineer or decompile (except to the limited extent expressly authorized under applicable statutory law), modify or alter any part of the API;
+use the API in a manner that impacts the stability of Mouser Electronics’s servers or impacts the behavior of other applications using the API; or
+use the API or Mouser Electronics Data in any manner or for any purpose that may violate any applicable law or regulation, or any right of any person including, but not limited to, intellectual property rights, rights of privacy and/or data protection, or which otherwise may be harmful (in Mouser Electronics’s sole discretion) to Mouser Electronics, its providers, its suppliers, end users of this website, or your end users.
+5. Limited License and Attribution
+
+The API, including without limitation all Mouser Electronics Data, is owned by or licensed to Mouser Electronics or our third-party content providers. Subject to the terms set forth in these Terms, and as long as you have a current and valid Key(s), Mouser Electronics grants to you a limited, non-exclusive, revocable, non-sublicensable, non-transferable license to copy and display the Mouser Electronics Data solely on your Application. You may not use the API or Mouser Electronics Data for any other purpose without Mouser Electronics’s prior written consent. Other than the limited license expressly set forth in this Section 5, we reserve all right, title and interest in and to the API, the Mouser Electronics Data, our and our affiliates’ trademarks and logos and any other intellectual property and technology that we provide or use in connection with the API or the Mouser Electronics Data.
+
+You must clearly and conspicuously attribute the source of all Mouser Electronics Data as received from Mouser Electronics. You may not modify, obscure or otherwise disable the functioning of links to Mouser Electronics or third-party applications or websites provided within the Mouser Electronics Data. Similarly, you may not omit, modify, or obscure text, images, artwork, logos, copyright or similar notices of any Mouser Electronics Data that you receive from the API, provided however, that with graphic images, you may re-size such images while maintaining the same relative proportions of the image.
+
+You acknowledge and agree that Mouser Electronics may monitor your Application in order to confirm compliance with the Terms and may request information at any time to support your compliance with the Terms. Should you fail to provide responsive information, or if Mouser Electronics, in its sole discretion, determines that you are not complying with the Terms, Mouser Electronics may terminate your license and invalidate your Key(s) with or without notice to you. Upon such termination for any reason, you shall immediately cease using the API and Mouser Electronics Data and promptly remove from your Application and delete or otherwise destroy any portion of all Mouser Electronics Data, as requested by us.
+
+6. Obligations Regarding Your Application
+
+You are solely responsible for, and we have no liability for, the development, operation, or maintenance of your Application or for any materials contained on your Application.
+You agree that you will not: (i) send or initiate any email or other electronic messages that in any way suggest or imply or mislead or are likely to mislead a recipient into believing that we were the sender or sponsor of such email or electronic message or procured you or induced you to send such email or electronic message; (ii) forward, redistribute or otherwise repurpose any email or other electronic messages that we send our customers or (iii) send or initiate any email in violation of any applicable laws, rules or regulations and other requirements of any governmental authority that has jurisdiction over you.
+When promoting the Mouser Electronics API the following guidelines must be followed: (i) you must not give the impression that you are, or represent, Mouser Electronics through use of phrases such as ‘Official Site’; (ii) you must not engage in any pay per click, keyword or ad word campaigns unless you receive the prior written approval from Mouser Electronics, which approval may be withheld at our sole discretion; (iii) you must not target the brand names of any entities that are direct competitors of Mouser Electronics, or otherwise engage in marketing practices that are illegal or violate the rights of any third party; and (iv) you must ensure that all copy used for search and keyword purposes is appropriate and 100% accurate and does not contain any claims that could be construed to be false or misleading. You agree that, following notice from Mouser Electronics, you will promptly remove any search listing containing copy and/or creative components that Mouser Electronics, in its sole discretion, deems inappropriate for any reason.
+You agree that you will not exceed the number of calls assigned to you by Mouser Electronics. If you anticipate exceeding call limitations, contact us and we can discuss your particular situation. Mouser Electronics may, at its sole discretion, choose to increase call limits in certain situations. Repeat violations of the call limit may result in revocation of your right to use the API.
+7. Term and Termination
+
+The Terms will take effect upon our acceptance of your access request application and will end when terminated by either party. Either you or Mouser Electronics may terminate the Terms at any time, with or without cause, by giving the other party written notice of termination. Upon any termination of the Terms, any and all licenses you have with respect to the API and Mouser Electronics Data will automatically terminate and you will immediately stop using the API, and promptly remove from your Application and delete or otherwise destroy all Mouser Electronics Data and any other materials provided or made available by or on behalf of us to you under the Terms or otherwise in connection with the API. In addition, we may terminate or suspend your license to access and use the API or any part of or all Mouser Electronics Data at any time without terminating the Terms by giving you written notice. Upon your receipt of that notice, you will immediately stop using the API and Mouser Electronics Data, and promptly remove Mouser Electronics Data from your Application, provided that (a) in the case of a suspension you may resume access to and use of the API and Mouser Electronics Data upon notice from us; or (b) in the case of a termination you will additionally promptly delete or otherwise destroy all Mouser Electronics Data. Upon any termination of the Terms , all rights and obligations of the parties will be extinguished, except that the rights and obligations of the parties under Sections 5, 6, 8, and 11-20 will survive the termination of the Terms . No termination of the Terms will relieve either party for any liability for any breach of, or liability accruing under, the Terms prior to termination.
+
+8. Publicity
+
+You shall not create, publish, distribute or permit any written or verbal materials (e.g. press releases, marketing material or screen shots) that make reference to us without first submitting such material to us and receiving our prior written consent, which may be withheld in our sole discretion.
+
+9. Modification
+
+Mouser Electronics reserves the right at any time, at its sole discretion, and without liability to you, to change the Terms by posting a change notice on the www.mouser.com/apihome site. It is your responsibility to check the Terms for updates. If any modification is unacceptable to you, you agree that your only recourse is to discontinue use of the API. Your continued usage of the API after our posting of a change notice will constitute binding acceptance of the change.
+
+10. Relationship of Parties
+
+You and Mouser Electronics are independent contractors, and nothing in the Terms will create any partnership, joint venture, agency, franchise, sales representative, or employment relationship between the parties. You will have no authority to make or accept any offers or representations on our behalf.
+
+11. Indemnification
+
+You shall indemnify, defend, and hold harmless Mouser Electronics and its company affiliates and suppliers, and their respective officers, directors, employees, agents, shareholders, partners, and representatives harmless from and against any and all allegations, claims, suits, proceedings, actions, causes of action, lawsuits, damages, liabilities, obligations, costs and expenses (including without limitation reasonable attorneys’ fees, arbitration fees, court costs and witness fees) (collectively, “Losses”) insofar as such Losses arise out of or are based upon (i) your Application or any materials that appear on or with your Application; (ii) your misuse, unauthorized modification or unauthorized use of the API or Mouser Electronics Data ;(iii) your violation of the Terms; or (iv) your negligence or willful misconduct.
+
+12. Disclaimer of Warranties and Limitation of Liability
+YOUR USE OF THE API AND MOUSER ELECTRONICS DATA IS AT YOUR SOLE RISK UNLESS OTHERWISE EXPLICITLY STATED. THE API, INCLUDING ALL MOUSER ELECTRONICS DATA, IS PROVIDED ON AN “AS IS” “AS AVAILABLE” AND “WITH ALL FAULTS” BASIS. TO THE EXTENT PERMITTED BY LAW, MOUSER ELECTRONICS AND ITS AFFILIATES DISCLAIM ALL EXPRESS OR IMPLIED CONDITIONS, REPRESENTATIONS, AND WARRANTIES OF ANY KIND, INCLUDING ANY IMPLIED WARRANTY OR CONDITION OF MERCHANTABILITY, SATISFACTORY QUALITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. MOUSER ELECTRONICS AND ITS AFFILIATES MAKE NO REPRESENTATIONS, WARRANTIES, CONDITIONS OR GUARANTEES AS TO THE USEFULNESS, QUALITY, SUITABILITY, TRUTH, ACCURACY, OR COMPLETENESS OF THE API OR MOUSER ELECTRONICS DATA.
+
+MOUSER ELECTRONICS AND ITS AFFILIATES MAKE NO WARRANTY OR REPRESENTATION THAT: (a) THE API WILL BE UNINTERRUPTED, TIMELY, SECURE, OR ERROR-FREE; (b) THE RESULTS THAT MAY BE OBTAINED FROM THE USE OF THE API WILL BE ACCURATE OR RELIABLE; (c) THE QUALITY OF ANY PRODUCTS, SERVICES, CONTENT, INFORMATION, OR OTHER MATERIAL OBTAINED FROM THE API WILL MEET YOUR EXPECTATIONS OR REQUIREMENTS; OR (d) ANY ERRORS IN THE API WILL BE CORRECTED.
+
+YOU ASSUME ALL RISK FOR ANY DAMAGE TO YOUR COMPUTER SYSTEM OR LOSS OF DATA THAT RESULTS FROM OBTAINING ANY CONTENT FROM THE API, INCLUDING ANY DAMAGES RESULTING FROM COMPUTER VIRUSES.
+
+13. Limitation of Liability
+
+TO THE FULL EXTENT PERMITTED BY LAW, MOUSER ELECTRONICS AND ITS AFFILIATES ARE NOT LIABLE FOR ANY INDIRECT, PUNITIVE, SPECIAL, INCIDENTAL, CONSEQUENTIAL, OR EXEMPLARY DAMAGES (INCLUDING, WITHOUT LIMITATION, LOSS OF BUSINESS, REVENUE, PROFITS, GOODWILL, USE, DATA, ELECTRONICALLY TRANSMITTED ORDERS, OR OTHER ECONOMIC ADVANTAGE) ARISING OUT OF OR IN CONNECTION WITH THE API, EVEN IF MOUSER ELECTRONICS OR ANY OF ITS AFFILIATES HAVE PREVIOUSLY BEEN ADVISED OF, OR REASONABLY COULD HAVE FORESEEN, THE POSSIBILITY OF SUCH DAMAGES, HOWEVER THEY ARISE, WHETHER IN BREACH OF CONTRACT OR IN TORT (INCLUDING NEGLIGENCE), INCLUDING WITHOUT LIMITATION DAMAGES DUE TO: (a) THE USE OF OR THE INABILITY TO USE THE API; (b) THE COST OF PROCUREMENT OF SUBSTITUTE GOODS AND SERVICES RESULTING FROM ANY GOODS, DATA, INFORMATION, OR SERVICES PURCHASED OR OBTAINED, OR MESSAGES RECEIVED OR TRANSACTIONS ENTERED INTO, THROUGH, OR FROM THE API; (c) STATEMENTS OR CONDUCT OF ANY THIRD PARTY THROUGH THE SERVICE, INCLUDING WITHOUT LIMITATION UNAUTHORIZED ACCESS TO OR ALTERATION OF TRANSMISSIONS OR DATA, MALICIOUS OR CRIMINAL BEHAVIOR, OR FALSE OR FRAUDULENT TRANSACTIONS; OR (d) CONTENT OR INFORMATION YOU MAY DOWNLOAD, USE, MODIFY, OR DISTRIBUTE.
+
+TO THE EXTENT THAT ANY JURISDICTION DOES NOT ALLOW THE EXCLUSION OR LIMITATION OF INCIDENTAL OR CONSEQUENTIAL DAMAGES, PORTIONS OF THE ABOVE LIMITATION OR EXCLUSION MAY NOT APPLY. MOUSER ELECTRONICS AND ITS AFFILIATES DO NOT SEEK TO EXCLUDE OR RESTRICT ITS LIABILITY FOR PERSONAL INJURY ARISING FROM ITS NEGLIGENCE.
+
+IN THE EVENT YOU HAVE ANY DISPUTE WITH ONE OR MORE THIRD PARTIES AS A RESULT OF YOUR USE OF THE API OR MOUSER ELECTRONICS DATA, OR ARE IN ANY WAY DAMAGED AS A RESULT OF ANY THIRD PARTY IN CONNECTION THEREWITH, YOU HEREBY RELEASE AND COVENANT NOT TO SUE OR OTHERWISE MAKE A CLAIM, DEMAND OR FILE ANY LEGAL ACTION OR INSTITUTE ANY LEGAL OR REGULATORY PROCEEDINGS AGAINST MOUSER ELECTRONICS, ITS AFFILIATES, OFFICERS, DIRECTORS, EMPLOYEES, AGENTS, REPRESENTATIVES AND SUPPLIERS FROM, FOR ANY CLAIMS, ACTIONS, DEMANDS OR DAMAGES (WHETHER DIRECT, INDIRECT, SPECIAL, INCIDENTAL OR CONSEQUENTIAL), OF WHATEVER KIND OR NATURE, KNOWN OR UNKNOWN, SUSPECTED OR UNSUSPECTED, WHETHER FORESEEABLE OR NOT, DISCLOSED OR UNDISCLOSED.
+
+14. Choice of Law and Attorneys’ Fees
+
+This Agreement is governed by United States law and, in the event of any dispute, the relevant parties shall irrevocably submit to the non-exclusive jurisdiction of the United States Courts. The application of the United Nations Convention on the International Sale of Goods is expressly excluded.
+
+15. Entire Agreement
+
+This Agreement contains the entire understanding and agreement of the parties and there have been no promises, representations, agreements, warranties or undertakings by either of the parties, either oral or written, except as stated in this Agreement.
+
+16. Notice
+
+Except as provided elsewhere herein, both parties must send all notices relating to this Agreement to: (a) for Mouser Electronics, via registered mail, return receipt requested or via an internationally recognized express mail carrier to: Mouser Electronics, Inc., Internet Business Department, 1000 N. Main Street, Mansfield, TX 76063, USA; and (b) for You, at the email or physical address listed on your account (effective upon sending as long as Mouser Electronics does not receive an error message regarding delivery of the email) or five days after mailing).
+
+17. Assignment
+
+No rights or obligations under this Agreement may be assigned by you without the prior written consent of Mouser Electronics. Any assignment, transfer or attempted assignment or transfer in violation of this Section shall be void and of no force and effect. Mouser Electronics and any of its subsequent assignees may assign this Agreement, in whole or in part, or any of its rights or delegate any of its duties, under this Agreement to any party. This Agreement shall be binding upon and inure to the benefit of the parties hereto and their respective permitted successors and assigns.
+
+18. Force Majeure
+
+Neither party shall be liable by reason of any failure or delay in the performance of its obligations hereunder for any cause beyond the reasonable control of such party, including but not limited to electrical outages, failure of Internet service providers, default due to Internet disruption (including without limitation denial of service attacks), riots, insurrection, acts of terrorism, war (or similar), fires, flood, earthquakes, explosions, and other acts of God.
+
+19. Remedies and Waiver
+
+Except as otherwise specified, the rights and remedies granted to a party under this Agreement are cumulative and in addition to, not in lieu of, any other rights and remedies which the party may possess at law or in equity. Failure of either party to require strict performance by the other party of any provision shall not affect the first party’s right to require strict performance thereafter. Waiver by either party of a breach of any provision shall not waive either the provision itself or any subsequent breach.
+
+20. Export Control Laws and Regulations
+
+The API, Mouser Electronics Data, and products derived or obtained from the API may be subject to export control laws, restrictions, regulations and orders of the United States or other countries. You agree to comply with all applicable export laws, restrictions and regulations of the United States or foreign agencies or authorities, and shall (i) obtain any export, re-export or import authorizations required by United States or your local laws; (ii) not use Mouser Electronics Data, or direct product from the API to design, develop or produce missile, chemical/biological or nuclear weaponry; and (iii) not provide the API, Mouser Electronics Data or direct product from the API to prohibited countries and entities identified in any United States or foreign law or regulation.
+
+Cliccando "Accetta i termini" confermi di aver letto e accettato quanto sopra.

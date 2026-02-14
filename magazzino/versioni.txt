@@ -133,49 +133,49 @@
                 - In Settaggi aggiunto backup database
                 - Aggiunta libreria picqer/php-barcode-generator per generazione Barcode
                 - implementati nuove funzioni di sicurezza per poterlo esporre
-                  - [Aggiunto] assets/js/qrcode.min.js
-                  - [Aggiunto] composer.json
-                  - [Aggiunto] composer.lock
-                  - [Aggiunto] create_release.php
-                  - [Aggiunto] includes/csrf.php
-                  - [Aggiunto] includes/env_loader.php
-                  - [Aggiunto] includes/rate_limiter.php
-                  - [Aggiunto] includes/secure_upload.php
-                  - [Aggiunto] includes/session_config.php
-                  - [Aggiunto] update/cleanup.php
-                  - [Aggiunto] - warehouse/barcode_scan.php
-                  - [Aggiunto] - warehouse/barcodes.php
-                  - [Aggiunto] - warehouse/generate_barcodes.php
-                  - [Modificato] .htaccess
-                  - [Modificato] admin/add_user.php
-                  - [Modificato] admin/edit_user.php
-                  - [Modificato] includes/auth_check.php
-                  - [Modificato] includes/db_connect.php
-                  - [Modificato] includes/header.php
-                  - [Modificato] includes/navbar.php
-                  - [Modificato] index.php
-                  - [Modificato] login.php
-                  - [Modificato] logout.php
-                  - [Modificato] profile.php
-                  - [Modificato] settings.php
-                  - [Modificato] update/index.php
-                  - [Modificato] update/migration_manager.php
-                  - [Modificato] update/migrations/1.8.sql
-                  - [Modificato] update/run_migrations.php
-                  - [Modificato] - warehouse/add_component.php
-                  - [Modificato] - warehouse/boms.php
-                  - [Modificato] - warehouse/edit_component.php
-                  - [Modificato] - warehouse/export_csv.php
-                  - [Modificato] - warehouse/generate_qrcodes.php
-                  - [Modificato] - warehouse/get_compartment_components.php
-                  - [Modificato] - warehouse/get_components.php
-                  - [Modificato] - warehouse/get_low_stock.php
-                  - [Modificato] - warehouse/import_csv.php
-                  - [Modificato] - warehouse/mobile_component.php
-                  - [Modificato] - warehouse/qrcodes.php
-                  - [Modificato] - warehouse/update_component_quantity.php
-                  - [Modificato] - warehouse/upload_component_image.php
-                  - [Modificato] - warehouse/view_component.php
+                    - [Aggiunto] assets/js/qrcode.min.js
+                    - [Aggiunto] composer.json
+                    - [Aggiunto] composer.lock
+                    - [Aggiunto] create_release.php
+                    - [Aggiunto] includes/csrf.php
+                    - [Aggiunto] includes/env_loader.php
+                    - [Aggiunto] includes/rate_limiter.php
+                    - [Aggiunto] includes/secure_upload.php
+                    - [Aggiunto] includes/session_config.php
+                    - [Aggiunto] update/cleanup.php
+                    - [Aggiunto] - warehouse/barcode_scan.php
+                    - [Aggiunto] - warehouse/barcodes.php
+                    - [Aggiunto] - warehouse/generate_barcodes.php
+                    - [Modificato] .htaccess
+                    - [Modificato] admin/add_user.php
+                    - [Modificato] admin/edit_user.php
+                    - [Modificato] includes/auth_check.php
+                    - [Modificato] includes/db_connect.php
+                    - [Modificato] includes/header.php
+                    - [Modificato] includes/navbar.php
+                    - [Modificato] index.php
+                    - [Modificato] login.php
+                    - [Modificato] logout.php
+                    - [Modificato] profile.php
+                    - [Modificato] settings.php
+                    - [Modificato] update/index.php
+                    - [Modificato] update/migration_manager.php
+                    - [Modificato] update/migrations/1.8.sql
+                    - [Modificato] update/run_migrations.php
+                    - [Modificato] - warehouse/add_component.php
+                    - [Modificato] - warehouse/boms.php
+                    - [Modificato] - warehouse/edit_component.php
+                    - [Modificato] - warehouse/export_csv.php
+                    - [Modificato] - warehouse/generate_qrcodes.php
+                    - [Modificato] - warehouse/get_compartment_components.php
+                    - [Modificato] - warehouse/get_components.php
+                    - [Modificato] - warehouse/get_low_stock.php
+                    - [Modificato] - warehouse/import_csv.php
+                    - [Modificato] - warehouse/mobile_component.php
+                    - [Modificato] - warehouse/qrcodes.php
+                    - [Modificato] - warehouse/update_component_quantity.php
+                    - [Modificato] - warehouse/upload_component_image.php
+                    - [Modificato] - warehouse/view_component.php
 1.9 03/02/2026    - Import csv: Aggiunta verifica codici duplicati prima dell'inserimento, corretti bug
                   - Aggiunta nuova pagina in Magazzino > Ultimi Componenti Inseriti
                   - Pagina Aggiornamento: aggiunto controllo del tema
@@ -186,58 +186,94 @@
                   - aggiunta possibilità di stampare QR code e barcode anche se non sono stati impostati i comparti
                   - aggiunta possibilità di usare il sito sia in locale che su dominio
                   - aggiunto sito personale
-                  - [Aggiunto] assets/css/personal_themes.css
-                  - [Aggiunto] assets/personal_site/
-                  - [Aggiunto] includes/.htaccess
-                  - [Aggiunto] includes/navbar_personal.php
-                  - [Aggiunto] includes/personal_footer.php
-                  - [Aggiunto] includes/personal_header.php
-                  - [Aggiunto] personal_home.php
-                  - [Aggiunto] personal_home_settings.php
-                  - [Aggiunto] update/auto_updater.php
-                  - [Aggiunto] update/init_database.php
-                  - [Aggiunto] update/migrations/.htaccess
-                  - [Aggiunto] update/migrations/1.0.sql
-                  - [Aggiunto] update/migrations/1.9.sql
-                  - [Aggiunto] update/setup_db_wizard.php
-                  - [Aggiunto] warehouse/recent_components.php
-                  - [Eliminato] update/init_versioning.php
-                  - [Modificato] .htaccess
-                  - [Modificato] create_release.php
-                  - [Modificato] includes/auth_check.php
-                  - [Modificato] includes/db_connect.php
-                  - [Modificato] includes/footer.php
-                  - [Modificato] includes/header.php
-                  - [Modificato] includes/navbar.php
-                  - [Modificato] index.php
-                  - [Modificato] login.php
-                  - [Modificato] settings.php
-                  - [Modificato] update/index.php
-                  - [Modificato] update/migration_manager.php
-                  - [Modificato] update/migrations/1.5.sql
-                  - [Modificato] update/migrations/1.7.sql
-                  - [Modificato] update/migrations/1.8.sql
-                  - [Modificato] update/run_migrations.php
-                  - [Modificato] warehouse/add_component.php
-                  - [Modificato] warehouse/add_location.php
-                  - [Modificato] warehouse/barcode_scan.php
-                  - [Modificato] warehouse/barcodes.php
-                  - [Modificato] warehouse/boms.php
-                  - [Modificato] warehouse/bulk_move_components.php
-                  - [Modificato] warehouse/bulk_swap_components.php
-                  - [Modificato] warehouse/compartments.php
-                  - [Modificato] warehouse/components.php
-                  - [Modificato] warehouse/edit_component.php
-                  - [Modificato] warehouse/export_csv.php
-                  - [Modificato] warehouse/generate_barcodes.php
-                  - [Modificato] warehouse/generate_qrcodes.php
-                  - [Modificato] warehouse/get_compartments.php
-                  - [Modificato] warehouse/get_components.php
-                  - [Modificato] warehouse/get_locations.php
-                  - [Modificato] warehouse/import_csv.php
-                  - [Modificato] warehouse/low_stock.php
-                  - [Modificato] warehouse/mobile_component.php
-                  - [Modificato] warehouse/orphan_files.php
-                  - [Modificato] warehouse/qrcodes.php
-                  - [Modificato] warehouse/quick_add_location.php
-                  - [Modificato] warehouse/view_component.php
+                  - aggiunta configurazione QR Code e BarCode
+                    - [Aggiunto] assets/css/personal_themes.css
+                    - [Aggiunto] assets/personal_site/
+                    - [Aggiunto] includes/.htaccess
+                    - [Aggiunto] includes/navbar_personal.php
+                    - [Aggiunto] includes/personal_footer.php
+                    - [Aggiunto] includes/personal_header.php
+                    - [Aggiunto] personal_home.php
+                    - [Aggiunto] personal_home_settings.php
+                    - [Aggiunto] update/auto_updater.php
+                    - [Aggiunto] update/init_database.php
+                    - [Aggiunto] update/migrations/.htaccess
+                    - [Aggiunto] update/migrations/1.0.sql
+                    - [Aggiunto] update/migrations/1.9.sql
+                    - [Aggiunto] update/setup_db_wizard.php
+                    - [Aggiunto] warehouse/recent_components.php
+                    - [Eliminato] update/init_versioning.php
+                    - [Modificato] .htaccess
+                    - [Modificato] create_release.php
+                    - [Modificato] includes/auth_check.php
+                    - [Modificato] includes/db_connect.php
+                    - [Modificato] includes/footer.php
+                    - [Modificato] includes/header.php
+                    - [Modificato] includes/navbar.php
+                    - [Modificato] index.php
+                    - [Modificato] login.php
+                    - [Modificato] settings.php
+                    - [Modificato] update/index.php
+                    - [Modificato] update/migration_manager.php
+                    - [Modificato] update/migrations/1.5.sql
+                    - [Modificato] update/migrations/1.7.sql
+                    - [Modificato] update/migrations/1.8.sql
+                    - [Modificato] update/run_migrations.php
+                    - [Modificato] warehouse/add_component.php
+                    - [Modificato] warehouse/add_location.php
+                    - [Modificato] warehouse/barcode_scan.php
+                    - [Modificato] warehouse/barcodes.php
+                    - [Modificato] warehouse/boms.php
+                    - [Modificato] warehouse/bulk_move_components.php
+                    - [Modificato] warehouse/bulk_swap_components.php
+                    - [Modificato] warehouse/compartments.php
+                    - [Modificato] warehouse/components.php
+                    - [Modificato] warehouse/edit_component.php
+                    - [Modificato] warehouse/export_csv.php
+                    - [Modificato] warehouse/generate_barcodes.php
+                    - [Modificato] warehouse/generate_qrcodes.php
+                    - [Modificato] warehouse/get_compartments.php
+                    - [Modificato] warehouse/get_components.php
+                    - [Modificato] warehouse/get_locations.php
+                    - [Modificato] warehouse/import_csv.php
+                    - [Modificato] warehouse/low_stock.php
+                    - [Modificato] warehouse/mobile_component.php
+                    - [Modificato] warehouse/orphan_files.php
+                    - [Modificato] warehouse/qrcodes.php
+                    - [Modificato] warehouse/quick_add_location.php
+                    - [Modificato] warehouse/view_component.php
+1.10  10/02/2026  - in "Aggiungi componente" nel campo "Codice prodotto" aggiunto bottone per importazione componente da Mouser (autore Andrea Gonzo)
+                  - corretto bug che impediva di ricordare alcuni valori nei campi avanzati quando veniva rilevato un duplicato in altre posizioni o un errore di validazione
+                  - nel popup di visualizzazione del componente, tolti campi vuoti e unità di misura e aggiunto ID
+                  - implementata gestione dei progetti
+                  - Aggiunta visualizzazione ID componente nel modal dei dettagli
+                  - In aggiungi componente aggiunto flag "Ricorda valori" per mantenere o resettare i campi dopo l'inserimento
+                  - In aggiungi componente aggiunto bottone per la visualizzazione rapida del componente
+                  - In aggiungi componente aggiunto bottone "Clona componente"
+                  - In componenti aggiunto bottone "Clona componente"
+                  - In componenti aggiunto ordinamento per codice prodotto, categoria, comparto, quantità e posizione
+                  - aggiunta verifica del sistema prima di procedere con l'aggiornamento (PHP, MySQL, permessi cartelle/file)
+                  - sistemata grafica pagina principale
+                    - [Aggiunto] assets/css/magazzino.css
+                    - [Aggiunto] update/migrations/1.10.sql
+                    - [Aggiunto] warehouse/component_modal.php
+                    - [Aggiunto] warehouse/fornitori/
+                    - [Aggiunto] warehouse/get_component_json.php
+                    - [Aggiunto] warehouse/js/
+                    - [Aggiunto] warehouse/mouser_import.php
+                    - [Aggiunto] warehouse/progetti/
+                    - [Modificato] assets/css/bootstrap.min.css
+                    - [Modificato] includes/footer.php
+                    - [Modificato] includes/header.php
+                    - [Modificato] includes/navbar.php
+                    - [Modificato] index.php
+                    - [Modificato] info.php
+                    - [Modificato] update/index.php
+                    - [Modificato] update/run_migrations.php
+                    - [Modificato] warehouse/add_component.php
+                    - [Modificato] warehouse/boms.php
+                    - [Modificato] warehouse/components.php
+                    - [Modificato] warehouse/edit_component.php
+                    - [Modificato] warehouse/get_components.php
+                    - [Modificato] warehouse/low_stock.php
+                    - [Modificato] warehouse/view_component.php

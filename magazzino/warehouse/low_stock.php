@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-08 18:50:13 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-08 20:17:16
+ * @Last Modified time: 2026-02-09 20:03:06
 */
 
 require_once '../includes/db_connect.php';
@@ -171,7 +171,6 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
     }
 </style>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(function(){
     function loadCompartments(location_id) {

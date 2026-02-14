@@ -1,5 +1,6 @@
 <?php
 // Configurazione database
+require_once __DIR__ . '/base_path.php';
 return [
     'host' => 'localhost',
     'db' => 'magazzino_db',

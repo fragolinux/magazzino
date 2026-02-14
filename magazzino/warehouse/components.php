@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:50:58 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-02 18:30:40
+ * @Last Modified time: 2026-02-09 20:13:52
 */
 // 2026-01-03: Aggiunta funzionalità carico/scarico quantità componente
 // 2026-01-05: Aggiunta ricerca tramite equivalente del codice prodotto
@@ -13,6 +13,9 @@
 // 2026-01-09: Impostazione focus sul campo di ricerca all'apertura della pagina
 // 2026-01-09: Aggiunta gestione immagine componente
 // 2026-01-12: Aggiunti filtri per package, tensione, corrente, potenza, hfe e tags
+// 2026-02-08: Aggiunto id del componente nel modal dei dettagli
+// 2026-02-09: Aggiunta funzionalità di clonazione componente (apre add_component.php in nuova finestra)
+// 2026-02-09: Aggiunto ordinamento per codice prodotto, categoria, comparto, quantità e posizione
 
 require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
@@ -142,15 +145,25 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
 
     <!-- Tabella componenti -->
     <div class="table-responsive">
-        <table class="table table-striped table-sm align-middle">
+        <table class="table table-striped table-sm align-middle" id="components-table">
             <thead class="table-light">
                 <tr>
                     <th class="text-center" style="width: 60px;">Img</th>
-                    <th>Codice prodotto</th>
-                    <th>Categoria</th>
-                    <th>Quantità</th>
-                    <th>Posizione</th>
-                    <th>Comparto</th>
+                    <th class="sortable" data-sort="codice_prodotto" style="cursor: pointer; user-select: none;">
+                        Codice prodotto <span class="sort-icon"></span>
+                    </th>
+                    <th class="sortable" data-sort="category" style="cursor: pointer; user-select: none;">
+                        Categoria <span class="sort-icon"></span>
+                    </th>
+                    <th class="sortable" data-sort="quantity" style="cursor: pointer; user-select: none;">
+                        Quantità <span class="sort-icon"></span>
+                    </th>
+                    <th class="sortable" data-sort="location" style="cursor: pointer; user-select: none;">
+                        Posizione <span class="sort-icon"></span>
+                    </th>
+                    <th class="sortable" data-sort="compartment" style="cursor: pointer; user-select: none;">
+                        Comparto <span class="sort-icon"></span>
+                    </th>
                     <th class="text-end">Azioni</th>
                 </tr>
             </thead>
@@ -268,7 +281,8 @@ $(function(){
         let notes = $('#filter-notes').val();
 
         $('#components-body').html('<tr><td colspan="7" class="text-center text-muted">Caricamento...</td></tr>');
-        $.get('<?= BASE_PATH ?>warehouse/get_components.php', {
+        
+        let requestData = {
             locale_id: locale_id,
             location_id: loc_id,
             compartment_id: cmp_id,
@@ -281,7 +295,15 @@ $(function(){
             hfe: hfe,
             tags: tags,
             notes: notes
-        }, function(data){
+        };
+        
+        // Aggiungi parametri di ordinamento se presenti
+        if (currentSortColumn) {
+            requestData.sort_column = currentSortColumn;
+            requestData.sort_direction = currentSortDirection;
+        }
+        
+        $.get('<?= BASE_PATH ?>warehouse/get_components.php', requestData, function(data){
             $('#components-body').html(data);
         });
     }
@@ -300,6 +322,49 @@ $(function(){
     
     // Eventi filtri ricerca avanzata
     $('#filter-package, #filter-tensione, #filter-corrente, #filter-potenza, #filter-hfe, #filter-tags, #filter-notes').on('keyup', loadComponents);
+
+    // Variabili per l'ordinamento
+    let currentSortColumn = '';
+    let currentSortDirection = 'ASC';
+
+    // Gestione click sulle intestazioni per ordinamento
+    $(document).on('click', '.sortable', function() {
+        const column = $(this).data('sort');
+        
+        // Se si clicca sulla stessa colonna, inverte la direzione
+        if (currentSortColumn === column) {
+            currentSortDirection = currentSortDirection === 'ASC' ? 'DESC' : 'ASC';
+        } else {
+            // Nuova colonna, ordine crescente di default
+            currentSortColumn = column;
+            currentSortDirection = 'ASC';
+        }
+        
+        // Aggiorna le icone di ordinamento
+        updateSortIcons();
+        
+        // Ricarica i componenti con il nuovo ordinamento
+        loadComponents();
+    });
+
+    // Funzione per aggiornare le icone di ordinamento
+    function updateSortIcons() {
+        $('.sortable').each(function() {
+            const column = $(this).data('sort');
+            const iconSpan = $(this).find('.sort-icon');
+            
+            if (column === currentSortColumn) {
+                // Mostra icona in base alla direzione
+                const icon = currentSortDirection === 'ASC' ? '<i class="fa-solid fa-sort-up"></i>' : '<i class="fa-solid fa-sort-down"></i>';
+                iconSpan.html(' ' + icon);
+                $(this).addClass('table-active');
+            } else {
+                // Icona neutra o vuota per le altre colonne
+                iconSpan.html(' <i class="fa-solid fa-sort text-muted" style="opacity: 0.3;"></i>');
+                $(this).removeClass('table-active');
+            }
+        });
+    }
 
     // Gestione parametri GET dall'URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -436,6 +501,9 @@ $(function(){
         $('#search-code').focus();
     }
 
+    // Inizializza le icone di ordinamento
+    updateSortIcons();
+
     // Pulsante per eliminare tutti i filtri
     $('#clear-filters').click(function() {
         $('#filter-locale').val('');
@@ -449,6 +517,12 @@ $(function(){
         $('#filter-hfe').val('');
         $('#filter-tags').val('');
         $('#filter-notes').val('');
+        
+        // Resetta anche l'ordinamento
+        currentSortColumn = '';
+        currentSortDirection = 'ASC';
+        updateSortIcons();
+        
         loadComponents(); // Ricarica la tabella con solo il filtro di ricerca se presente
     });
 
@@ -458,7 +532,12 @@ $(function(){
         $('#component-details').html('Caricamento...');
         $('#componentModal').modal('show');
         $.get('<?= BASE_PATH ?>warehouse/view_component.php', {id: id}, function(data){
-            $('#component-details').html(data);
+            $('#component-details').html(`
+                <div class="alert alert-secondary py-1 mb-2">
+                    <small><strong>ID Componente:</strong> ${id}</small>
+                </div>
+                ${data}
+            `);
         });
     });
 
@@ -545,6 +624,26 @@ $(function(){
             error: function() {
                 alert('Errore di comunicazione con il server');
             }
+        });
+    });
+
+    // Clonazione componente - salva in localStorage e apre in nuova pagina
+    $(document).on('click', '.btn-clone', function(){
+        const componentId = $(this).data('id');
+        
+        $.getJSON('<?= BASE_PATH ?>warehouse/get_component_json.php', { id: componentId }, function(data) {
+            if (data.error) {
+                alert('Errore: ' + data.error);
+                return;
+            }
+            
+            // Salva i dati del componente in localStorage
+            localStorage.setItem('clone_component_data', JSON.stringify(data));
+            
+            // Apre add_component.php in una nuova finestra/tab
+            window.open('<?= BASE_PATH ?>warehouse/add_component.php', '_blank');
+        }).fail(function() {
+            alert('Errore durante il caricamento dei dati del componente.');
         });
     });
 });

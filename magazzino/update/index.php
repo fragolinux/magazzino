@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-04 12:59:50 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-03 16:48:57
+ * @Last Modified time: 2026-02-10 14:04:07
  *
  * Update script:
  * - apre file .zip nella stessa cartella
@@ -14,6 +14,7 @@
  */
 
 // 2026-02-01: aggiunto controllo per rilevare il tema
+// 2026-02-09: aggiunta verifica del sistema prima di procedere con l'aggiornamento (PHP, MySQL, permessi cartelle/file)
 
 require_once __DIR__ . '/../config/base_path.php';
 require_once __DIR__ . '/../includes/auth_check.php';
@@ -33,6 +34,378 @@ if (empty($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 		echo "Accesso negato: permessi insufficienti.";
 		exit;
 }
+
+// ============================================================
+// VERIFICA PRELIMINARE SISTEMA
+// ============================================================
+
+/**
+ * Verifica i requisiti di sistema prima dell'aggiornamento
+ * @return array Report delle verifiche
+ */
+function checkSystemRequirements() {
+    $report = [
+        'php' => ['ok' => false, 'version' => PHP_VERSION, 'required' => '8.0.0', 'message' => ''],
+        'mysql' => ['ok' => false, 'version' => '', 'required' => '10.4.0', 'message' => ''],
+        'folders' => [],
+        'files' => [],
+        'can_proceed' => true,
+        'warnings' => []
+    ];
+    
+    // Verifica PHP >= 8.0
+    $report['php']['ok'] = version_compare(PHP_VERSION, '8.0.0', '>=');
+    if (!$report['php']['ok']) {
+        $report['php']['message'] = "PHP " . PHP_VERSION . " è obsoleto. Richiesto >= 8.0";
+        $report['can_proceed'] = false;
+    } else {
+        $report['php']['message'] = "PHP " . PHP_VERSION . " ✓";
+    }
+    
+    // Verifica MySQL >= 8.0 o MariaDB >= 10.4
+    try {
+        global $pdo;
+        if (isset($pdo)) {
+            $stmt = $pdo->query("SELECT VERSION() as version");
+            $dbVersion = $stmt->fetchColumn();
+            $report['mysql']['version'] = $dbVersion;
+            
+            // Rileva se è MariaDB o MySQL
+            $isMariaDB = stripos($dbVersion, 'MariaDB') !== false;
+            $isMySQL = !$isMariaDB; // Se non è MariaDB, presumibilmente è MySQL
+            
+            // Estrai versione numerica (es. "10.5.8-MariaDB" -> "10.5.8", "8.0.33" -> "8.0.33")
+            preg_match('/^(\d+\.\d+\.?\d*)/', $dbVersion, $matches);
+            $numericVersion = isset($matches[1]) ? $matches[1] : $dbVersion;
+            
+            if ($isMariaDB) {
+                // MariaDB richiede >= 10.4
+                $report['mysql']['required'] = '10.4.0';
+                $report['mysql']['ok'] = version_compare($numericVersion, '10.4.0', '>=');
+                if (!$report['mysql']['ok']) {
+                    $report['mysql']['message'] = "MariaDB $dbVersion è obsoleto. Richiesto >= 10.4";
+                    $report['can_proceed'] = false;
+                } else {
+                    $report['mysql']['message'] = "MariaDB $dbVersion ✓";
+                }
+            } else {
+                // MySQL richiede >= 8.0
+                $report['mysql']['required'] = '8.0.0';
+                $report['mysql']['ok'] = version_compare($numericVersion, '8.0.0', '>=');
+                if (!$report['mysql']['ok']) {
+                    $report['mysql']['message'] = "MySQL $dbVersion è obsoleto. Richiesto >= 8.0";
+                    $report['can_proceed'] = false;
+                } else {
+                    $report['mysql']['message'] = "MySQL $dbVersion ✓";
+                }
+            }
+        } else {
+            $report['mysql']['message'] = "Connessione DB non disponibile";
+            $report['can_proceed'] = false;
+        }
+    } catch (Exception $e) {
+        $report['mysql']['message'] = "Errore: " . $e->getMessage();
+        $report['can_proceed'] = false;
+    }
+    
+    // Cartelle da verificare (ricorsive per images e datasheet)
+    $foldersToCheck = [
+        'images' => ['recursive' => true],
+        'datasheet' => ['recursive' => true],
+        'update' => ['recursive' => false],
+        'config' => ['recursive' => false]
+    ];
+    
+    $projectRoot = realpath(__DIR__ . '/..');
+    $isLinux = (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN');
+    
+    foreach ($foldersToCheck as $folder => $options) {
+        $path = $projectRoot . DIRECTORY_SEPARATOR . $folder;
+        $folderReport = checkFolderWritable($path, $options['recursive'], $isLinux);
+        $report['folders'][$folder] = $folderReport;
+        
+        if (!$folderReport['writable']) {
+            $report['can_proceed'] = false;
+        }
+    }
+    
+    // File specifici da verificare
+    $filesToCheck = [
+        'config/database.php',
+        'config/settings.php'
+    ];
+    
+    foreach ($filesToCheck as $file) {
+        $path = $projectRoot . DIRECTORY_SEPARATOR . $file;
+        $fileReport = checkFileWritable($path, $isLinux);
+        $report['files'][$file] = $fileReport;
+        
+        if (!$fileReport['writable']) {
+            $report['can_proceed'] = false;
+        }
+    }
+    
+    return $report;
+}
+
+/**
+ * Verifica se una cartella è scrivibile (opzionalmente ricorsivo)
+ */
+function checkFolderWritable($path, $recursive = false, $isLinux = false) {
+    $result = [
+        'path' => $path,
+        'exists' => false,
+        'writable' => false,
+        'items' => [],
+        'fixed' => false,
+        'message' => ''
+    ];
+    
+    if (!file_exists($path)) {
+        $result['message'] = "Cartella non esistente";
+        return $result;
+    }
+    
+    $result['exists'] = true;
+    
+    // Verifica scrittura cartella principale
+    $isWritable = is_writable($path);
+    
+    // Su Linux, tenta di fixare i permessi
+    if (!$isWritable && $isLinux) {
+        @chmod($path, 0755);
+        $isWritable = is_writable($path);
+        if ($isWritable) {
+            $result['fixed'] = true;
+        }
+    }
+    
+    if (!$isWritable) {
+        $result['message'] = "Cartella non scrivibile";
+        return $result;
+    }
+    
+    $result['writable'] = true;
+    $result['message'] = "Scrivibile ✓";
+    
+    // Se ricorsivo, verifica anche le sottocartelle
+    if ($recursive && is_dir($path)) {
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+        
+        foreach ($iterator as $item) {
+            $itemPath = $item->getPathname();
+            $itemWritable = $item->isWritable();
+            
+            // Su Linux, tenta di fixare
+            if (!$itemWritable && $isLinux && $item->isDir()) {
+                @chmod($itemPath, 0755);
+                $itemWritable = is_writable($itemPath);
+            } elseif (!$itemWritable && $isLinux && $item->isFile()) {
+                @chmod($itemPath, 0644);
+                $itemWritable = is_writable($itemPath);
+            }
+            
+            $relativePath = str_replace($path . DIRECTORY_SEPARATOR, '', $itemPath);
+            $result['items'][$relativePath] = [
+                'type' => $item->isDir() ? 'dir' : 'file',
+                'writable' => $itemWritable,
+                'fixed' => ($isLinux && !$item->isWritable() && $itemWritable)
+            ];
+            
+            if (!$itemWritable) {
+                $result['writable'] = false;
+                $result['message'] = "Elementi non scrivibili trovati";
+            }
+        }
+    }
+    
+    return $result;
+}
+
+/**
+ * Verifica se un file è scrivibile
+ */
+function checkFileWritable($path, $isLinux = false) {
+    $result = [
+        'path' => $path,
+        'exists' => false,
+        'writable' => false,
+        'fixed' => false,
+        'message' => ''
+    ];
+    
+    if (!file_exists($path)) {
+        $result['message'] = "File non esistente";
+        return $result;
+    }
+    
+    $result['exists'] = true;
+    $isWritable = is_writable($path);
+    
+    // Su Linux, tenta di fixare i permessi
+    if (!$isWritable && $isLinux) {
+        @chmod($path, 0644);
+        $isWritable = is_writable($path);
+        if ($isWritable) {
+            $result['fixed'] = true;
+        }
+    }
+    
+    $result['writable'] = $isWritable;
+    $result['message'] = $isWritable ? "Scrivibile ✓" : "File non scrivibile";
+    
+    return $result;
+}
+
+// Esegui verifica preliminare
+$systemCheck = checkSystemRequirements();
+
+// Se c'è una richiesta di refresh dei check, forza la visualizzazione
+$forceCheck = isset($_GET['check']) && $_GET['check'] === '1';
+
+// Mostra report se ci sono problemi o se richiesto esplicitamente
+if ((!$systemCheck['can_proceed'] || $forceCheck) && !isset($_POST['proceed_anyway'])) {
+    ?><!doctype html>
+    <html lang="it" data-bs-theme="<?= $appTheme ?>">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Verifica Sistema - Aggiornamento</title>
+        <link href="<?= BASE_PATH ?>assets/css/bootstrap.min.css" rel="stylesheet">
+        <link href="<?= BASE_PATH ?>assets/css/all.min.css" rel="stylesheet">
+        <style>
+            .check-item { padding: 10px; margin-bottom: 5px; border-radius: 5px; }
+            .check-ok { background-color: #d4edda; border: 1px solid #c3e6cb; }
+            .check-error { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+            .check-warning { background-color: #fff3cd; border: 1px solid #ffeeba; }
+            .check-fixed { background-color: #d1ecf1; border: 1px solid #bee5eb; }
+        </style>
+    </head>
+    <body class="p-4">
+        <div class="container">
+            <h1><i class="fa-solid fa-stethoscope me-2"></i>Verifica Preliminare Sistema</h1>
+            
+            <?php if (!$systemCheck['can_proceed']): ?>
+            <div class="alert alert-danger mt-4">
+                <i class="fa-solid fa-exclamation-triangle me-2"></i>
+                <strong>Attenzione:</strong> Sono stati rilevati problemi che impediscono l'aggiornamento.
+                Correggili prima di procedere.
+            </div>
+            <?php else: ?>
+            <div class="alert alert-success mt-4">
+                <i class="fa-solid fa-check-circle me-2"></i>
+                <strong>Tutto OK:</strong> Il sistema soddisfa tutti i requisiti per l'aggiornamento.
+            </div>
+            <?php endif; ?>
+            
+            <!-- PHP Version -->
+            <h4 class="mt-4"><i class="fa-brands fa-php me-2"></i>Versione PHP</h4>
+            <div class="check-item <?= $systemCheck['php']['ok'] ? 'check-ok' : 'check-error' ?>">
+                <strong>Versione attuale:</strong> <?= htmlspecialchars($systemCheck['php']['version']) ?><br>
+                <strong>Richiesta:</strong> >= <?= htmlspecialchars($systemCheck['php']['required']) ?><br>
+                <i class="fa-solid <?= $systemCheck['php']['ok'] ? 'fa-check' : 'fa-xmark' ?>"></i>
+                <?= htmlspecialchars($systemCheck['php']['message']) ?>
+            </div>
+            
+            <!-- MySQL/MariaDB Version -->
+            <h4 class="mt-4"><i class="fa-solid fa-database me-2"></i>Versione Database</h4>
+            <div class="check-item <?= $systemCheck['mysql']['ok'] ? 'check-ok' : 'check-error' ?>">
+                <strong>Versione rilevata:</strong> <?= htmlspecialchars($systemCheck['mysql']['version'] ?: 'N/D') ?><br>
+                <strong>Richiesta:</strong> >= <?= htmlspecialchars($systemCheck['mysql']['required']) ?><br>
+                <i class="fa-solid <?= $systemCheck['mysql']['ok'] ? 'fa-check' : 'fa-xmark' ?>"></i>
+                <?= htmlspecialchars($systemCheck['mysql']['message']) ?>
+            </div>
+            
+            <!-- Cartelle -->
+            <h4 class="mt-4"><i class="fa-solid fa-folder me-2"></i>Permessi Cartelle</h4>
+            <?php foreach ($systemCheck['folders'] as $folderName => $folderData): ?>
+                <div class="check-item <?= $folderData['writable'] ? ($folderData['fixed'] ? 'check-fixed' : 'check-ok') : 'check-error' ?>">
+                    <strong><?= htmlspecialchars($folderName) ?>/</strong><br>
+                    <i class="fa-solid <?= $folderData['writable'] ? 'fa-check' : 'fa-xmark' ?>"></i>
+                    <?= htmlspecialchars($folderData['message']) ?>
+                    <?php if ($folderData['fixed']): ?>
+                        <span class="badge bg-info">Permessi corretti automaticamente</span>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($folderData['items']) && !$folderData['writable']): ?>
+                        <div class="mt-2 small">
+                            <strong>Elementi con problemi:</strong>
+                            <ul class="mb-0">
+                                <?php 
+                                $problemItems = array_filter($folderData['items'], function($i) { return !$i['writable']; });
+                                $shown = 0;
+                                foreach ($problemItems as $itemPath => $itemData): 
+                                    if ($shown++ > 5): 
+                                ?>
+                                    <li>... e altri <?= count($problemItems) - 5 ?> elementi</li>
+                                    <?php break; endif; ?>
+                                    <li><?= htmlspecialchars($itemPath) ?> (<?= $itemData['type'] ?>)</li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+            
+            <!-- File -->
+            <h4 class="mt-4"><i class="fa-solid fa-file me-2"></i>Permessi File</h4>
+            <?php foreach ($systemCheck['files'] as $fileName => $fileData): ?>
+                <div class="check-item <?= $fileData['writable'] ? ($fileData['fixed'] ? 'check-fixed' : 'check-ok') : 'check-error' ?>">
+                    <strong><?= htmlspecialchars($fileName) ?></strong><br>
+                    <i class="fa-solid <?= $fileData['writable'] ? 'fa-check' : 'fa-xmark' ?>"></i>
+                    <?= htmlspecialchars($fileData['message']) ?>
+                    <?php if ($fileData['fixed']): ?>
+                        <span class="badge bg-info">Permessi corretti automaticamente</span>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+            
+            <!-- Azioni -->
+            <div class="mt-4">
+                <?php if (!$systemCheck['can_proceed']): ?>
+                    <form method="POST" class="d-inline">
+                        <input type="hidden" name="proceed_anyway" value="1">
+                        <button type="submit" class="btn btn-warning" onclick="return confirm('Procedere comunque potrebbe causare errori. Sei sicuro?');">
+                            <i class="fa-solid fa-triangle-exclamation me-2"></i>Procedi comunque (rischio tuo)
+                        </button>
+                    </form>
+                <?php endif; ?>
+                <a href="?check=1" class="btn btn-secondary">
+                    <i class="fa-solid fa-rotate me-2"></i>Aggiorna verifica
+                </a>
+                <?php if ($systemCheck['can_proceed']): ?>
+                    <a href="?" class="btn btn-primary">
+                        <i class="fa-solid fa-arrow-right me-2"></i>Continua con l'aggiornamento
+                    </a>
+                <?php endif; ?>
+                <a href="<?= BASE_PATH ?>index.php" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-home me-2"></i>Torna all'applicazione
+                </a>
+            </div>
+            
+            <!-- Info aggiuntive -->
+            <?php if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN'): ?>
+            <div class="alert alert-info mt-4">
+                <i class="fa-solid fa-linux me-2"></i>
+                <strong>Sistema Linux rilevato:</strong> Su Linux potrebbero essere necessari permessi specifici.
+                Se i permessi non possono essere corretti automaticamente, esegui:<br>
+                <code>chmod -R 755 images/ datasheet/ update/ config/</code><br>
+                <code>chmod 644 config/database.php config/settings.php</code>
+            </div>
+            <?php endif; ?>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
+// ============================================================
+// FINE VERIFICA PRELIMINARE
+// ============================================================
 
 // Esegui pulizia preventiva SOLO di file temporanei (non ZIP)
 include __DIR__ . '/cleanup.php';
@@ -194,6 +567,9 @@ if ($zipPath === null) {
 							<i class="fa-solid fa-upload me-1"></i>Carica e avvia aggiornamento
 						</button>
 						<a href="<?= BASE_PATH ?>index.php" class="btn btn-secondary">Annulla</a>
+					<a href="?check=1" class="btn btn-outline-info">
+						<i class="fa-solid fa-stethoscope me-1"></i>Verifica sistema
+					</a>
 					</form>
 				</div>
 			</div>

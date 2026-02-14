@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:48:46 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-02 19:50:59
+ * @Last Modified time: 2026-02-09 21:59:32
 */
 
 // 2026-01-03: Aggiunto link Info nel menu di navigazione
@@ -13,6 +13,7 @@
 // 2026-01-12: Aggiunta pagina profilo utente
 // 2026-01-13: Diviso header in due file (header.php e navbar.php)
 // 2026-02-01: Rimossi i riferimenti a Google Fonts e Cloudflare
+// 2026-02-09: Rimossa la direttiva `frame-ancestors 'self';` dal meta tag
 
 require_once __DIR__ . '/../config/base_path.php';
 
@@ -41,13 +42,12 @@ try {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <?php if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'): ?>
     <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
     <?php endif; ?>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self';">
     
     <title>Magazzino Componenti</title>
     <link rel="icon" href="<?= BASE_PATH ?>favicon.ico" type="image/x-icon">
@@ -55,6 +55,7 @@ try {
     <link href="<?= BASE_PATH ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?= BASE_PATH ?>assets/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= BASE_PATH ?>assets/css/jquery-ui.css">
+    <link href="<?= BASE_PATH ?>assets/css/magazzino.css?v=1" rel="stylesheet">
     <script src="<?= BASE_PATH ?>assets/js/jquery-3.6.0.min.js"></script>
     <script src="<?= BASE_PATH ?>assets/js/jquery-ui.min.js"></script>
     <script>

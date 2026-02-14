@@ -17,7 +17,7 @@ class MigrationManager {
     
     public function __construct($pdo, $migrationsDir = null) {
         $this->pdo = $pdo;
-        $this->migrationsDir = $migrationsDir ?? __DIR__ . '/migrations';
+        $this->migrationsDir = isset($migrationsDir) ? $migrationsDir : __DIR__ . '/migrations';
         
         // FORZA il buffering delle query per evitare errore 2014
         $this->pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
