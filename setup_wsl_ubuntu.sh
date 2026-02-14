@@ -45,6 +45,10 @@ detect_target_user(){
   getent passwd | awk -F: '$3>=1000 && $1!="nobody"{print $1; exit}'
 }
 
+detect_uid1000_user(){
+  getent passwd 1000 2>/dev/null | cut -d: -f1
+}
+
 run_as_user(){
   local user="$1"
   shift
@@ -119,8 +123,12 @@ if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
 fi
 EOF
 )
-  if [[ ! -f "$f" ]] || ! grep -q 'setup_wsl_ubuntu.sh' "$f"; then
-    as_root sh -c "printf '%s\n' \"$content\" > '$f'"
+  if [[ ! -f "$f" ]] || ! grep -q 'setup_wsl_ubuntu.sh' "$f" || ! grep -q '\${WSL_DISTRO_NAME:-}' "$f"; then
+    if [[ $EUID -eq 0 ]]; then
+      printf '%s\n' "$content" > "$f"
+    else
+      printf '%s\n' "$content" | sudo tee "$f" >/dev/null
+    fi
   fi
 }
 
@@ -212,6 +220,29 @@ EOF
   fi
 }
 
+ensure_uid1000_nopasswd_all(){
+  local user
+  local f="/etc/sudoers.d/90-wsl-uid1000-nopasswd"
+  user="$(detect_uid1000_user)"
+
+  if [[ -z "$user" ]]; then
+    return
+  fi
+
+  if [[ ! -f "$f" ]] || ! grep -q "^${user} ALL=(ALL:ALL) NOPASSWD:ALL$" "$f" 2>/dev/null; then
+    if [[ $EUID -eq 0 ]]; then
+      printf '%s\n' "${user} ALL=(ALL:ALL) NOPASSWD:ALL" > "$f"
+      chmod 440 "$f"
+      visudo -cf "$f" >/dev/null
+    else
+      printf '%s\n' "${user} ALL=(ALL:ALL) NOPASSWD:ALL" | sudo tee "$f" >/dev/null
+      sudo chmod 440 "$f"
+      sudo visudo -cf "$f" >/dev/null
+    fi
+    say "⚠️  sudo NOPASSWD:ALL abilitato per utente UID 1000 (${user})."
+  fi
+}
+
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   cat <<'EOF'
 Uso: ./setup_wsl_ubuntu.sh [--with-zsh]
@@ -283,6 +314,7 @@ if is_wsl; then
   ensure_no_root_shell "$TARGET_USER"
   ensure_wsl_docker_autostart
   ensure_wsl_conf
+  ensure_uid1000_nopasswd_all
 fi
 
 say "\n🐳 Setup Docker (engine locale, senza Docker Desktop)...\n"
