@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/base_path.php';
 
 return [
     "host" => getenv("DB_HOST") ?: "db",

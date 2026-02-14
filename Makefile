@@ -3,7 +3,7 @@
 SHELL := /bin/sh
 UNAME_S := $(shell uname -s)
 
-.PHONY: help up down devup devdown backup backup-db backup-file restore restore-db restore-file release logs run run-safe clone dbcheck menu
+.PHONY: help up down devup devdown backup backup-db backup-file restore restore-db restore-file release logs run run-safe clone dbcheck menu cleanstart
 
 help:
 > @echo "Uso: make <target>"
@@ -22,6 +22,7 @@ help:
 > @printf "  %-12s %s\n" "restore" "Ripristino completo (DB + file)"
 > @printf "  %-12s %s\n" "restore-db" "Ripristina DB da BACKUP"
 > @printf "  %-12s %s\n" "restore-file" "Ripristina file dati da BACKUP"
+> @printf "  %-12s %s\n" "cleanstart" "Backup + reset ambiente dev (DISTRUTTIVO)"
 > @printf "  %-12s %s\n" "logs" "Log dello stack attivo (dev o prod)"
 > @echo ""
 > @echo "Target per sviluppo:"
@@ -99,6 +100,9 @@ restore-file: check-linux
 
 restore: check-linux
 > ./scripts/restore.sh "$(BACKUP)"
+
+cleanstart: check-linux
+> ./scripts/cleanstart.sh "$(BACKUP)"
 
 release: check-linux
 > @if [ -z "$(TAG)" ]; then \
