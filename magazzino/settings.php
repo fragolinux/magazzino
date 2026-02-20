@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-05 09:20:18 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-03 11:41:10
+ * @Last Modified time: 2026-02-19 15:42:51
 */
 // 2026-01-08: Aggiunto supporto tema dark/light
 // 2026-01-11: Aggiunto URL in alternativa all'IP del PC
@@ -12,6 +12,7 @@
 // 2026-01-14: Aggiunta funzionalità download backup database
 // 2026-02-01: Aggiunti parametri QR Code (qr_per_riga, qr_size) e barcode
 // 2026-02-02: Aggiunto sito personale completamente configurabile
+// 2026-02-19: Aggiunti parametri etichette (etichette_per_riga, etichette_font_size)
 
 /**
  * Pagina impostazioni generali (solo admin)
@@ -102,6 +103,10 @@ $barcodePerRiga = 6;  // valore default
 $barcodeWidth = '50'; // valore default (mm)
 $barcodeHeight = '10'; // valore default (mm)
 
+// Carica impostazioni Etichette dal database
+$etichettePerRiga = 6;  // valore default
+$etichetteFontSize = '10'; // valore default (pt)
+
 try {
     $dsn = "mysql:host={$dbConfig['host']};port={$dbConfig['port']};dbname={$dbConfig['db']};charset={$dbConfig['charset']}";
     $pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['pass'], [
@@ -147,6 +152,22 @@ try {
     $result = $stmt->fetch();
     if ($result) {
         $barcodeHeight = $result['setting_value'];
+    }
+    
+    // Leggi etichette_per_riga
+    $stmt = $pdo->prepare("SELECT setting_value FROM setting WHERE setting_name = ? LIMIT 1");
+    $stmt->execute(['etichette_per_riga']);
+    $result = $stmt->fetch();
+    if ($result) {
+        $etichettePerRiga = intval($result['setting_value']);
+    }
+    
+    // Leggi etichette_font_size
+    $stmt = $pdo->prepare("SELECT setting_value FROM setting WHERE setting_name = ? LIMIT 1");
+    $stmt->execute(['etichette_font_size']);
+    $result = $stmt->fetch();
+    if ($result) {
+        $etichetteFontSize = $result['setting_value'];
     }
 } catch (Exception $e) {
     // Se il database non è raggiungibile, usa i default
@@ -227,13 +248,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $activeTab = isset($_POST['active_tab']) ? $_POST['active_tab'] : 'general'; // Mantieni tab attivo
     
     // Parametri QR Code
-    $qrPerRiga = isset($_POST['qr_per_riga']) ? intval($_POST['qr_per_riga']) : 3;
-    $qrSize = isset($_POST['qr_size']) ? trim($_POST['qr_size']) : '300';
+    $qrPerRiga = isset($_POST['qr_per_riga']) ? intval($_POST['qr_per_riga']) : 10;
+    $qrSize = isset($_POST['qr_size']) ? trim($_POST['qr_size']) : '100';
     
     // Parametri Barcode
-    $barcodePerRiga = isset($_POST['barcode_per_riga']) ? intval($_POST['barcode_per_riga']) : 5;
-    $barcodeWidth = isset($_POST['barcode_width']) ? trim($_POST['barcode_width']) : '20';
+    $barcodePerRiga = isset($_POST['barcode_per_riga']) ? intval($_POST['barcode_per_riga']) : 6;
+    $barcodeWidth = isset($_POST['barcode_width']) ? trim($_POST['barcode_width']) : '50';
     $barcodeHeight = isset($_POST['barcode_height']) ? trim($_POST['barcode_height']) : '10';
+    
+    // Parametri Etichette
+    $etichettePerRiga = isset($_POST['etichette_per_riga']) ? intval($_POST['etichette_per_riga']) : 6;
+    $etichetteFontSize = isset($_POST['etichette_font_size']) ? trim($_POST['etichette_font_size']) : '10';
     
     // Parametri database
     $dbHost = isset($_POST['db_host']) ? trim($_POST['db_host']) : '';
@@ -399,6 +424,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insBC3 = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
                     $insBC3->execute(['barcode_height', $barcodeHeight]);
                 }
+                
+                // Salva etichette per riga
+                $stmtET1 = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
+                $stmtET1->execute(['etichette_per_riga']);
+                $existsET1 = $stmtET1->fetch(PDO::FETCH_ASSOC);
+                if ($existsET1) {
+                    $updET1 = $pdo->prepare("UPDATE setting SET setting_value = ? WHERE setting_name = ?");
+                    $updET1->execute([$_POST['etichette_per_riga'] ?? $etichettePerRiga, 'etichette_per_riga']);
+                } else {
+                    $insET1 = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
+                    $insET1->execute(['etichette_per_riga', $_POST['etichette_per_riga'] ?? $etichettePerRiga]);
+                }
+                
+                // Salva dimensione font etichette
+                $stmtET2 = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
+                $stmtET2->execute(['etichette_font_size']);
+                $existsET2 = $stmtET2->fetch(PDO::FETCH_ASSOC);
+                if ($existsET2) {
+                    $updET2 = $pdo->prepare("UPDATE setting SET setting_value = ? WHERE setting_name = ?");
+                    $updET2->execute([$_POST['etichette_font_size'] ?? $etichetteFontSize, 'etichette_font_size']);
+                } else {
+                    $insET2 = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
+                    $insET2->execute(['etichette_font_size', $_POST['etichette_font_size'] ?? $etichetteFontSize]);
+                }
             } catch (Exception $dbErr) {
                 // Ignora errori DB, i dati sono già salvati su file
             }
@@ -525,6 +574,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         </div>
 
+                        <hr class="my-4">
+
                         <div class="row">
                             <div class="col-md-6 mb-4">
                                 <label for="qr_per_riga" class="form-label fw-bold">QR per riga</label>
@@ -559,6 +610,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="barcode_height" class="form-label fw-bold">Spaziatura Barcode</label>
                                 <input type="number" id="barcode_height" name="barcode_height" class="form-control form-control-lg" value="<?= intval($barcodeHeight) ?>" min="5" max="50" required>
                                 <div class="form-text">Spaziatura del barcode (5-50, default: 10)</div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3"><i class="fas fa-tags me-2 text-primary"></i>Configurazione Etichette</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="etichette_per_riga" class="form-label fw-bold">Etichette per riga</label>
+                                <input type="number" id="etichette_per_riga" name="etichette_per_riga" class="form-control form-control-lg" value="<?= intval($etichettePerRiga) ?>" min="1" max="20" required>
+                                <div class="form-text">Numero di etichette per riga nella stampa (1-20, default: 6)</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-4">
+                                <label for="etichette_font_size" class="form-label fw-bold">Dimensione Font Etichette</label>
+                                <input type="number" id="etichette_font_size" name="etichette_font_size" class="form-control form-control-lg" value="<?= intval($etichetteFontSize) ?>" min="6" max="24" required>
+                                <div class="form-text">Dimensione del font per le etichette in punti (6-24, default: 10)</div>
                             </div>
                         </div>
                     </div>

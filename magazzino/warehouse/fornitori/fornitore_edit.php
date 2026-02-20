@@ -1,9 +1,11 @@
 <?php
 /*
  * @Author: RG4Tech
- * @Date: 2026-02-10
+ * @Date: 2026-02-19
  * @Description: Modifica Fornitore
  */
+
+// 2026-02-19 il campo API Key si visualizza solo se esiste un file termini_*.txt
 
 require_once '../../config/base_path.php';
 require_once '../../includes/db_connect.php';
@@ -26,11 +28,23 @@ $stmt = $pdo->prepare("SELECT * FROM fornitori WHERE id = ?");
 $stmt->execute([$id]);
 $fornitore = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Mappa pattern fornitore → file termini (solo per developer, non modificabile da admin)
-$termini_fornitori = [
-    'mouser' => 'termini_mouser.txt',
-    // Aggiungi altri fornitori qui es: 'digikey' => 'termini_digikey.txt',
-];
+// Determina il file termini basato sul nome del fornitore (match parziale)
+$termini_file = '';
+$nome_lower = strtolower($fornitore['nome'] ?? '');
+
+// Cerca tutti i file termini_*.txt nella directory
+$termini_files = glob(__DIR__ . '/termini_*.txt');
+foreach ($termini_files as $file_path) {
+    // Estrai la keyword dal nome file (termini_keyword.txt -> keyword)
+    $filename = basename($file_path, '.txt'); // termini_keyword
+    $keyword = substr($filename, 8); // rimuovi 'termini_' -> keyword
+    
+    // Verifica se il nome fornitore contiene la keyword
+    if (strpos($nome_lower, strtolower($keyword)) !== false) {
+        $termini_file = basename($file_path);
+        break;
+    }
+}
 
 if (!$fornitore) {
     $_SESSION['error'] = 'Fornitore non trovato.';
@@ -93,11 +107,13 @@ include '../../includes/header.php';
                         <input type="url" name="link" class="form-control" value="<?= htmlspecialchars($fornitore['link'] ?? '') ?>" placeholder="https://">
                     </div>
                     
-                    <div class="col-12">
+                    <?php if ($termini_file): ?>
+                    <div class="col-12" id="apikey-container">
                         <label class="form-label">API Key</label>
-                        <input type="text" name="apikey" id="apikey" class="form-control" value="<?= htmlspecialchars($fornitore['apikey'] ?? '') ?>" data-terms-accepted="<?= !empty($fornitore['apikey']) ? 'true' : 'false' ?>" data-terms-required="false">
+                        <input type="text" name="apikey" id="apikey" class="form-control" value="<?= htmlspecialchars($fornitore['apikey'] ?? '') ?>" data-terms-accepted="<?= !empty($fornitore['apikey']) ? 'true' : 'false' ?>" data-terms-file="<?= htmlspecialchars($termini_file) ?>">
                         <div class="form-text">Chiave API per integrazioni (opzionale). <span id="termsHint" style="display:none;">Clicca sul campo per accettare i termini specifici del fornitore.</span></div>
                     </div>
+                    <?php endif; ?>
                     
                     <div class="col-12">
                         <label class="form-label">Note</label>
@@ -141,53 +157,31 @@ include '../../includes/header.php';
 </div>
 
 <script>
-// Mappa pattern → file termini (deve corrispondere a quella PHP)
-const terminiFornitori = {
-    'mouser': 'termini_mouser.txt',
-    // Aggiungi altri fornitori qui
-};
-
 document.addEventListener('DOMContentLoaded', function() {
     const nomeInput = document.getElementById('nome');
     const apikeyInput = document.getElementById('apikey');
+    
+    // Se non c'è il campo API Key (nessun file termini), esci
+    if (!apikeyInput) return;
+    
     const termsModal = new bootstrap.Modal(document.getElementById('termsModal'));
     const btnAccept = document.getElementById('btnAccept');
     const btnDecline = document.getElementById('btnDecline');
     const termsContent = document.getElementById('termsContent');
     const termsHint = document.getElementById('termsHint');
     
-    let currentTermsFile = null;
+    // Il file termini è già determinato dal server
+    let currentTermsFile = apikeyInput.dataset.termsFile || null;
     
-    // Controlla se il nome fornitore matcha un pattern
-    function checkSupplierTerms() {
-        const nome = nomeInput.value.toLowerCase();
-        currentTermsFile = null;
-        
-        for (const [pattern, file] of Object.entries(terminiFornitori)) {
-            if (nome.includes(pattern.toLowerCase())) {
-                currentTermsFile = file;
-                break;
-            }
-        }
-        
-        // Aggiorna UI
-        if (currentTermsFile) {
-            apikeyInput.dataset.termsRequired = 'true';
-            termsHint.style.display = 'inline';
-            // Se cambia il fornitore e il campo è vuoto, resetta l'accettazione
-            if (apikeyInput.value.trim() === '') {
-                apikeyInput.dataset.termsAccepted = 'false';
-            }
-        } else {
-            apikeyInput.dataset.termsRequired = 'false';
-            termsHint.style.display = 'none';
-            apikeyInput.dataset.termsAccepted = 'true'; // Nessun termine richiesto
-        }
+    // Aggiorna UI iniziale
+    if (currentTermsFile) {
+        apikeyInput.dataset.termsRequired = 'true';
+        termsHint.style.display = 'inline';
+    } else {
+        apikeyInput.dataset.termsRequired = 'false';
+        termsHint.style.display = 'none';
+        apikeyInput.dataset.termsAccepted = 'true';
     }
-    
-    // Monitora cambiamenti nel nome
-    nomeInput.addEventListener('input', checkSupplierTerms);
-    checkSupplierTerms(); // Controlla subito (per il valore iniziale)
     
     // Se il campo ha già un valore, considera i termini già accettati
     if (apikeyInput.value.trim() !== '') {

@@ -136,7 +136,6 @@
                     - [Aggiunto] assets/js/qrcode.min.js
                     - [Aggiunto] composer.json
                     - [Aggiunto] composer.lock
-                    - [Aggiunto] create_release.php
                     - [Aggiunto] includes/csrf.php
                     - [Aggiunto] includes/env_loader.php
                     - [Aggiunto] includes/rate_limiter.php
@@ -277,3 +276,35 @@
                     - [Modificato] warehouse/get_components.php
                     - [Modificato] warehouse/low_stock.php
                     - [Modificato] warehouse/view_component.php
+1.11  19/02/2026  - versione ritirata a causa bug in add_components.php
+1.12  19/02/2026  - in "Clona componente" aggiunto clona di: categoria, costruttore, fornitore. I campi q.tà rimangono 0
+                  - sistemata gestione API Key di Mouser (è inseribile solo per i fornitori in cui è stato fatto lo script)
+                  - in Aggiungi componente: il bottone "Clona componente" ora è visibile solo se è stata inserita l'API di Mouser
+                  - in Progetti aggiunti: link web, link locali e note
+                  - in Magazzino, aggiunta voce stampa etichette. In setting inseriti i settaggi.
+                    - [Aggiunto] update/migrations/1.12.sql
+                    - [Aggiunto] warehouse/etichette.php
+                    - [Aggiunto] warehouse/fornitori/check_termini.php
+                    - [Aggiunto] warehouse/generate_etichette.php
+                    - [Aggiunto] warehouse/progetti/ajax_progetto_info.php
+                    - [Aggiunto] warehouse/progetti/file_download.php
+                    - [Aggiunto] warehouse/progetti/file_viewer.php
+                    - [Aggiunto] warehouse/progetti/progetto_cartella.php
+                    - [Modificato] includes/auth_check.php
+                    - [Modificato] includes/header.php
+                    - [Modificato] includes/navbar.php
+                    - [Modificato] includes/personal_header.php
+                    - [Modificato] settings.php
+                    - [Modificato] update/index.php
+                    - [Modificato] update/migration_manager.php
+                    - [Modificato] warehouse/add_component.php
+                    - [Modificato] warehouse/fornitori/fornitore_edit.php
+                    - [Modificato] warehouse/fornitori/fornitore_nuovo.php
+                    - [Modificato] warehouse/get_components.php
+                    - [Modificato] warehouse/js/mouser_import.js
+                    - [Modificato] warehouse/mouser_import.php
+                    - [Modificato] warehouse/progetti/ajax_import_csv.php
+                    - [Modificato] warehouse/progetti/progetti.php
+                    - [Modificato] warehouse/progetti/progetto_edit.php
+                    - [Modificato] warehouse/progetti/progetto_nuovo.php
+                    - [Modificato] warehouse/progetti/progetto_view.php

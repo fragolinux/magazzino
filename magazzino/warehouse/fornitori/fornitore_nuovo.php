@@ -1,9 +1,11 @@
 <?php
 /*
  * @Author: RG4Tech
- * @Date: 2026-02-10
+ * @Date: 2026-02-19
  * @Description: Nuovo Fornitore
  */
+
+// 2026-02-19 il campo API Key si visualizza solo se esiste un file termini_*.txt
 
 require_once '../../config/base_path.php';
 require_once '../../includes/db_connect.php';
@@ -17,12 +19,6 @@ if (empty($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 
 $error = '';
 $fornitore = ['nome' => '', 'link' => '', 'apikey' => '', 'note' => ''];
-
-// Mappa pattern fornitore → file termini (solo per developer, non modificabile da admin)
-$termini_fornitori = [
-    'mouser' => 'termini_mouser.txt',
-    // Aggiungi altri fornitori qui es: 'digikey' => 'termini_digikey.txt',
-];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = trim($_POST['nome'] ?? '');
@@ -77,9 +73,10 @@ include '../../includes/header.php';
                         <input type="url" name="link" class="form-control" value="<?= htmlspecialchars($fornitore['link']) ?>" placeholder="https://">
                     </div>
                     
-                    <div class="col-12">
+                    <!-- Container API Key - mostrato solo se esiste file termini -->
+                    <div class="col-12" id="apikey-container" style="display: none;">
                         <label class="form-label">API Key</label>
-                        <input type="text" name="apikey" id="apikey" class="form-control" value="<?= htmlspecialchars($fornitore['apikey']) ?>" data-terms-accepted="<?= !empty($fornitore['apikey']) ? 'true' : 'false' ?>" data-terms-required="false">
+                        <input type="text" name="apikey" id="apikey" class="form-control" value="<?= htmlspecialchars($fornitore['apikey']) ?>" data-terms-accepted="<?= !empty($fornitore['apikey']) ? 'true' : 'false' ?>" data-terms-file="">
                         <div class="form-text">Chiave API per integrazioni (opzionale). <span id="termsHint" style="display:none;">Clicca sul campo per accettare i termini specifici del fornitore.</span></div>
                     </div>
                     
@@ -125,14 +122,9 @@ include '../../includes/header.php';
 </div>
 
 <script>
-// Mappa pattern → file termini (deve corrispondere a quella PHP)
-const terminiFornitori = {
-    'mouser': 'termini_mouser.txt',
-    // Aggiungi altri fornitori qui
-};
-
 document.addEventListener('DOMContentLoaded', function() {
     const nomeInput = document.getElementById('nome');
+    const apikeyContainer = document.getElementById('apikey-container');
     const apikeyInput = document.getElementById('apikey');
     const termsModal = new bootstrap.Modal(document.getElementById('termsModal'));
     const btnAccept = document.getElementById('btnAccept');
@@ -141,37 +133,57 @@ document.addEventListener('DOMContentLoaded', function() {
     const termsHint = document.getElementById('termsHint');
     
     let currentTermsFile = null;
+    let checkTimeout = null;
     
-    // Controlla se il nome fornitore matcha un pattern
+    // Controlla via AJAX se esiste un file termini per il nome fornitore
     function checkSupplierTerms() {
-        const nome = nomeInput.value.toLowerCase();
-        currentTermsFile = null;
+        const nome = nomeInput.value.trim();
         
-        for (const [pattern, file] of Object.entries(terminiFornitori)) {
-            if (nome.includes(pattern.toLowerCase())) {
-                currentTermsFile = file;
-                break;
-            }
+        // Clear previous timeout
+        if (checkTimeout) {
+            clearTimeout(checkTimeout);
         }
         
-        // Aggiorna UI
-        if (currentTermsFile) {
-            apikeyInput.dataset.termsRequired = 'true';
-            termsHint.style.display = 'inline';
-            // Se cambia il fornitore, resetta l'accettazione
-            if (apikeyInput.value.trim() === '') {
-                apikeyInput.dataset.termsAccepted = 'false';
-            }
-        } else {
-            apikeyInput.dataset.termsRequired = 'false';
-            termsHint.style.display = 'none';
-            apikeyInput.dataset.termsAccepted = 'true'; // Nessun termine richiesto
+        if (!nome) {
+            apikeyContainer.style.display = 'none';
+            currentTermsFile = null;
+            return;
         }
+        
+        // Debounce: attendi 300ms dopo l'ultimo carattere
+        checkTimeout = setTimeout(() => {
+            fetch('check_termini.php?nome=' + encodeURIComponent(nome))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists && data.file) {
+                        currentTermsFile = data.file;
+                        apikeyInput.dataset.termsFile = data.file;
+                        apikeyInput.dataset.termsRequired = 'true';
+                        apikeyContainer.style.display = 'block';
+                        termsHint.style.display = 'inline';
+                        // Reset acceptance if empty
+                        if (apikeyInput.value.trim() === '') {
+                            apikeyInput.dataset.termsAccepted = 'false';
+                        }
+                    } else {
+                        currentTermsFile = null;
+                        apikeyInput.dataset.termsFile = '';
+                        apikeyInput.dataset.termsRequired = 'false';
+                        apikeyContainer.style.display = 'none';
+                        termsHint.style.display = 'none';
+                        apikeyInput.dataset.termsAccepted = 'true';
+                    }
+                })
+                .catch(() => {
+                    // In caso di errore, nascondi il campo
+                    apikeyContainer.style.display = 'none';
+                    currentTermsFile = null;
+                });
+        }, 300);
     }
     
     // Monitora cambiamenti nel nome
     nomeInput.addEventListener('input', checkSupplierTerms);
-    checkSupplierTerms(); // Controlla subito
     
     // Se il campo ha già un valore, considera i termini già accettati
     if (apikeyInput.value.trim() !== '') {

@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:52:20 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-09 19:06:09
+ * @Last Modified time: 2026-02-19
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-08: aggiunti quick add per posizioni e categorie
@@ -21,6 +21,8 @@
 // 2026-02-09: aggiunto flag "Ricorda valori" per mantenere o resettare i campi dopo l'inserimento
 // 2026-02-09: aggiunto bottone per la visualizzazione rapida del componente appena inserito
 // 2026-02-09: aggiunto bottone "Clona componente"
+// 2026-02-19: in "Clona componente" aggiunto clona di: categoria, costruttore, fornitore. I campi q.tà rimangono 0
+// 2026-02-19: il bottone "Clona componente" ora è visibile solo se è stata inserita l'API di Mouser
 
 require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
@@ -50,6 +52,17 @@ $lastComponents = $pdo->query("
     ORDER BY c.id DESC
     LIMIT 10
 ")->fetchAll(PDO::FETCH_ASSOC);
+
+// Verifica se esiste un fornitore Mouser con API Key configurata
+$stmtMouser = $pdo->query("
+    SELECT * FROM fornitori 
+    WHERE LOWER(nome) LIKE '%mouser%' 
+    AND apikey IS NOT NULL 
+    AND apikey != ''
+    LIMIT 1
+");
+$mouserFornitore = $stmtMouser->fetch(PDO::FETCH_ASSOC);
+$showMouserButton = !empty($mouserFornitore);
 
 // Compartimenti se è selezionata una location
 $compartments = [];
@@ -405,11 +418,13 @@ include '../includes/header.php';
         <label class="form-label mb-1">Codice prodotto *</label>
         <div class="input-group">
           <input type="text" name="codice_prodotto" id="codice_prodotto" class="form-control form-control-sm" value="<?= htmlspecialchars($component['codice_prodotto'] ?? ($ricorda_valori ? ($_POST['codice_prodotto'] ?? $_GET['codice'] ?? '') : ($_GET['codice'] ?? ''))) ?>" required>
+          <?php if ($showMouserButton): ?>
           <div id="btnMouserWrapper" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Inserisci codice prodotto" style="display: flex;">
             <button type="button" class="btn btn-outline-success btn-sm" id="btnMouserImport" disabled>
               <i class="fa-solid fa-download"></i>
             </button>
           </div>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -742,15 +757,11 @@ $(function() {
   if (cloneData) {
     const data = JSON.parse(cloneData);
     
-    // Salva i valori attuali di posizione, comparto e categoria
-    const currentLocationId = $('#locationSelect').val();
-    const currentCompartmentId = $('#compartmentSelect').val();
-    const currentCategoryId = $('#categorySelect').val();
-    
     // Popola i campi del form con i dati del componente clonato
     $('#codice_prodotto').val(data.codice_prodotto ? data.codice_prodotto + '-COPY' : '');
-    $('input[name="quantity"]').val(data.quantity || 0);
-    $('input[name="quantity_min"]').val(data.quantity_min || 0);
+    // Quantità e quantità minima non vengono clonate (impostate a 0)
+    $('input[name="quantity"]').val(0);
+    $('input[name="quantity_min"]').val(0);
     $('select[name="unita_misura"]').val(data.unita_misura || 'pz');
     $('#equivalents').val(data.equivalents ? data.equivalents.join(', ') : '');
     $('textarea[name="notes"]').val(data.notes || '');
@@ -767,12 +778,25 @@ $(function() {
     $('input[name="datasheet_url"]').val(data.datasheet_url || '');
     $('input[name="tags"]').val(data.tags ? data.tags.join(', ') : '');
     
-    // Ripristina posizione, comparto e categoria (non vengono sovrascritti)
-    $('#locationSelect').val(currentLocationId).trigger('change');
-    setTimeout(function() {
-      $('#compartmentSelect').val(currentCompartmentId);
-    }, 300);
-    $('#categorySelect').val(currentCategoryId);
+    // Imposta posizione e categoria dal componente clonato
+    if (data.location_id) {
+      $('#locationSelect').val(data.location_id);
+    }
+    if (data.category_id) {
+      $('#categorySelect').val(data.category_id);
+    }
+    
+    // Carica i compartimenti per la posizione selezionata e imposta il comparto
+    if (data.location_id) {
+      $.getJSON('<?= BASE_PATH ?>warehouse/get_compartments.php', { location_id: data.location_id }, function(compData) {
+        let opts = '<option value="">-- Seleziona comparto --</option>';
+        compData.compartments.forEach(function(it) {
+          const selected = (data.compartment_id && it.id == data.compartment_id) ? ' selected' : '';
+          opts += `<option value="${it.id}"${selected}>${it.code}</option>`;
+        });
+        $('#compartmentSelect').html(opts);
+      });
+    }
     
     // Rimuovi i dati da localStorage
     localStorage.removeItem('clone_component_data');
@@ -781,35 +805,36 @@ $(function() {
     $('#codice_prodotto').focus();
   }
 
-  // Tooltip per pulsante Mouser
-  const $input = $('#codice_prodotto');
-  const $btn = $('#btnMouserImport');
+  // Tooltip per pulsante Mouser (solo se il bottone esiste)
   const $wrapper = $('#btnMouserWrapper');
+  if ($wrapper.length) {
+    const $input = $('#codice_prodotto');
+    const $btn = $('#btnMouserImport');
 
-  // Crea il tooltip una volta al caricamento della pagina
-  let tooltip = new bootstrap.Tooltip($wrapper[0]);
+    // Crea il tooltip una volta al caricamento della pagina
+    let tooltip = new bootstrap.Tooltip($wrapper[0]);
 
-  $input.on('input', function() {
-    const codice = $(this).val().trim();
+    $input.on('input', function() {
+      const codice = $(this).val().trim();
 
-    if (codice === '') {
-      $btn.prop('disabled', true);
-      $wrapper.attr('data-bs-title', 'Inserisci codice prodotto');
-    } else {
-      $btn.prop('disabled', false);
-      $wrapper.attr('data-bs-title', 'Scarica dati da Mouser');
-    }
+      if (codice === '') {
+        $btn.prop('disabled', true);
+        $wrapper.attr('data-bs-title', 'Inserisci codice prodotto');
+      } else {
+        $btn.prop('disabled', false);
+        $wrapper.attr('data-bs-title', 'Scarica dati da Mouser');
+      }
 
-    // Aggiorna il testo del tooltip
-    tooltip._config.title = $wrapper.attr('data-bs-title');
-    tooltip.update();
-  });
+      // Aggiorna il testo del tooltip
+      tooltip._config.title = $wrapper.attr('data-bs-title');
+      tooltip.update();
+    });
 
-  // Nascondi il tooltip quando si clicca sul bottone
-  $btn.on('click', function() {
-    tooltip.hide();
-  });
-  // Tooltip per pulsante Mouser
+    // Nascondi il tooltip quando si clicca sul bottone
+    $btn.on('click', function() {
+      tooltip.hide();
+    });
+  }
 
   // Variabili per memorizzare le immagini ridimensionate
   let resizedImageData = null;
@@ -1119,14 +1144,9 @@ $(function() {
     }
   });
 
-  // Gestione clonazione componente
+  // Gestione clonazione componente (dalla tabella ultimi inseriti)
   $(document).on('click', '.btn-clone', function() {
     const componentId = $(this).data('id');
-    
-    // Salva i valori attuali di posizione, comparto e categoria
-    const currentLocationId = $('#locationSelect').val();
-    const currentCompartmentId = $('#compartmentSelect').val();
-    const currentCategoryId = $('#categorySelect').val();
     
     $.getJSON('<?= BASE_PATH ?>warehouse/get_component_json.php', { id: componentId }, function(data) {
       if (data.error) {
@@ -1134,20 +1154,25 @@ $(function() {
         return;
       }
       
-      // Ripristina i valori di posizione, comparto e categoria (non vengono sovrascritti)
-      $('#locationSelect').val(currentLocationId).trigger('change');
-      
-      // Aspetta che i compartimenti siano caricati prima di selezionare
-      setTimeout(function() {
-        $('#compartmentSelect').val(currentCompartmentId);
-      }, 300);
-      
-      $('#categorySelect').val(currentCategoryId);
+      // Imposta posizione, comparto e categoria dal componente clonato
+      if (data.location_id) {
+        $('#locationSelect').val(data.location_id).trigger('change');
+      }
+      if (data.category_id) {
+        $('#categorySelect').val(data.category_id);
+      }
+      // Il comparto viene impostato dopo che i compartimenti sono stati caricati
+      if (data.compartment_id && data.location_id) {
+        setTimeout(function() {
+          $('#compartmentSelect').val(data.compartment_id);
+        }, 300);
+      }
       
       // Popola gli altri campi del form con i dati del componente
       $('#codice_prodotto').val(data.codice_prodotto ? data.codice_prodotto + '-COPY' : '');
-      $('input[name="quantity"]').val(data.quantity || 0);
-      $('input[name="quantity_min"]').val(data.quantity_min || 0);
+      // Quantità e quantità minima non vengono clonate (impostate a 0)
+      $('input[name="quantity"]').val(0);
+      $('input[name="quantity_min"]').val(0);
       $('select[name="unita_misura"]').val(data.unita_misura || 'pz');
       $('#equivalents').val(data.equivalents ? data.equivalents.join(', ') : '');
       $('textarea[name="notes"]').val(data.notes || '');
@@ -1211,7 +1236,9 @@ $(function() {
   });
 });
 </script>
+ <?php if ($showMouserButton): ?>
  <script src="js/mouser_import.js"></script>
+ <?php endif; ?>
 
 <?php include 'component_modal.php'; ?>
 

@@ -103,8 +103,8 @@ class MigrationManager {
         
         foreach ($files as $file) {
             $filename = basename($file, '.sql');
-            // Estrai il numero di versione (es: 1.1, 1.2, ecc.)
-            if (preg_match('/^(\d+\.\d+)/', $filename, $matches)) {
+            // Estrai il numero di versione (es: 1.1, 1.2, 1.11.1, ecc.)
+            if (preg_match('/^(\d+\.\d+(?:\.\d+)?)/', $filename, $matches)) {
                 $version = $matches[1];
                 $migrations[$version] = $file;
             }

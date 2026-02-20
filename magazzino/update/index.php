@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-04 12:59:50 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-10 14:04:07
+ * @Last Modified time: 2026-02-19
  *
  * Update script:
  * - apre file .zip nella stessa cartella
@@ -15,11 +15,30 @@
 
 // 2026-02-01: aggiunto controllo per rilevare il tema
 // 2026-02-09: aggiunta verifica del sistema prima di procedere con l'aggiornamento (PHP, MySQL, permessi cartelle/file)
+// 2026-02-19: aggiunto controllo esistenza file di configurazione prima di sovrascriverli, con possibilità di scegliere quali sovrascrivere
 
 require_once __DIR__ . '/../config/base_path.php';
 require_once __DIR__ . '/../includes/auth_check.php';
-require_once __DIR__ . '/../includes/db_connect.php';
-require_once __DIR__ . '/migration_manager.php';
+
+// Verifica se il database è disponibile
+$dbAvailable = false;
+$pdo = null;
+try {
+    // Controlla prima se il file di configurazione esiste
+    $dbConfigFile = __DIR__ . '/../config/database.php';
+    if (file_exists($dbConfigFile)) {
+        require_once __DIR__ . '/../includes/db_connect.php';
+        if (isset($pdo) && $pdo instanceof PDO) {
+            $pdo->query('SELECT 1');
+            $dbAvailable = true;
+        }
+    } else {
+        // File di configurazione non esiste, modalità standalone
+        $dbAvailable = false;
+    }
+} catch (Exception $e) {
+    $dbAvailable = false;
+}
 
 // Leggi il tema da file config
 $appTheme = 'light'; // default
@@ -34,6 +53,9 @@ if (empty($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 		echo "Accesso negato: permessi insufficienti.";
 		exit;
 }
+
+// Flag modalità standalone (senza DB)
+$standaloneMode = !$dbAvailable;
 
 // ============================================================
 // VERIFICA PRELIMINARE SISTEMA
@@ -62,50 +84,57 @@ function checkSystemRequirements() {
         $report['php']['message'] = "PHP " . PHP_VERSION . " ✓";
     }
     
-    // Verifica MySQL >= 8.0 o MariaDB >= 10.4
-    try {
-        global $pdo;
-        if (isset($pdo)) {
-            $stmt = $pdo->query("SELECT VERSION() as version");
-            $dbVersion = $stmt->fetchColumn();
-            $report['mysql']['version'] = $dbVersion;
-            
-            // Rileva se è MariaDB o MySQL
-            $isMariaDB = stripos($dbVersion, 'MariaDB') !== false;
-            $isMySQL = !$isMariaDB; // Se non è MariaDB, presumibilmente è MySQL
-            
-            // Estrai versione numerica (es. "10.5.8-MariaDB" -> "10.5.8", "8.0.33" -> "8.0.33")
-            preg_match('/^(\d+\.\d+\.?\d*)/', $dbVersion, $matches);
-            $numericVersion = isset($matches[1]) ? $matches[1] : $dbVersion;
-            
-            if ($isMariaDB) {
-                // MariaDB richiede >= 10.4
-                $report['mysql']['required'] = '10.4.0';
-                $report['mysql']['ok'] = version_compare($numericVersion, '10.4.0', '>=');
-                if (!$report['mysql']['ok']) {
-                    $report['mysql']['message'] = "MariaDB $dbVersion è obsoleto. Richiesto >= 10.4";
-                    $report['can_proceed'] = false;
+    // Verifica MySQL >= 8.0 o MariaDB >= 10.4 (solo se DB disponibile)
+    global $standaloneMode;
+    if (!$standaloneMode) {
+        try {
+            global $pdo;
+            if (isset($pdo)) {
+                $stmt = $pdo->query("SELECT VERSION() as version");
+                $dbVersion = $stmt->fetchColumn();
+                $report['mysql']['version'] = $dbVersion;
+                
+                // Rileva se è MariaDB o MySQL
+                $isMariaDB = stripos($dbVersion, 'MariaDB') !== false;
+                $isMySQL = !$isMariaDB; // Se non è MariaDB, presumibilmente è MySQL
+                
+                // Estrai versione numerica (es. "10.5.8-MariaDB" -> "10.5.8", "8.0.33" -> "8.0.33")
+                preg_match('/^(\d+\.\d+\.?\d*)/', $dbVersion, $matches);
+                $numericVersion = isset($matches[1]) ? $matches[1] : $dbVersion;
+                
+                if ($isMariaDB) {
+                    // MariaDB richiede >= 10.4
+                    $report['mysql']['required'] = '10.4.0';
+                    $report['mysql']['ok'] = version_compare($numericVersion, '10.4.0', '>=');
+                    if (!$report['mysql']['ok']) {
+                        $report['mysql']['message'] = "MariaDB $dbVersion è obsoleto. Richiesto >= 10.4";
+                        $report['can_proceed'] = false;
+                    } else {
+                        $report['mysql']['message'] = "MariaDB $dbVersion ✓";
+                    }
                 } else {
-                    $report['mysql']['message'] = "MariaDB $dbVersion ✓";
+                    // MySQL richiede >= 8.0
+                    $report['mysql']['required'] = '8.0.0';
+                    $report['mysql']['ok'] = version_compare($numericVersion, '8.0.0', '>=');
+                    if (!$report['mysql']['ok']) {
+                        $report['mysql']['message'] = "MySQL $dbVersion è obsoleto. Richiesto >= 8.0";
+                        $report['can_proceed'] = false;
+                    } else {
+                        $report['mysql']['message'] = "MySQL $dbVersion ✓";
+                    }
                 }
             } else {
-                // MySQL richiede >= 8.0
-                $report['mysql']['required'] = '8.0.0';
-                $report['mysql']['ok'] = version_compare($numericVersion, '8.0.0', '>=');
-                if (!$report['mysql']['ok']) {
-                    $report['mysql']['message'] = "MySQL $dbVersion è obsoleto. Richiesto >= 8.0";
-                    $report['can_proceed'] = false;
-                } else {
-                    $report['mysql']['message'] = "MySQL $dbVersion ✓";
-                }
+                $report['mysql']['message'] = "Connessione DB non disponibile";
+                $report['mysql']['ok'] = true; // Non blocca in modalità standalone
             }
-        } else {
-            $report['mysql']['message'] = "Connessione DB non disponibile";
-            $report['can_proceed'] = false;
+        } catch (Exception $e) {
+            $report['mysql']['message'] = "Errore: " . $e->getMessage();
+            $report['mysql']['ok'] = true; // Non blocca in modalità standalone
         }
-    } catch (Exception $e) {
-        $report['mysql']['message'] = "Errore: " . $e->getMessage();
-        $report['can_proceed'] = false;
+    } else {
+        // Modalità standalone - DB non verificato
+        $report['mysql']['message'] = "Modalità autonoma - DB non verificato";
+        $report['mysql']['ok'] = true;
     }
     
     // Cartelle da verificare (ricorsive per images e datasheet)
@@ -129,7 +158,7 @@ function checkSystemRequirements() {
         }
     }
     
-    // File specifici da verificare
+    // File specifici da verificare (solo se esistono - se non esistono verranno creati)
     $filesToCheck = [
         'config/database.php',
         'config/settings.php'
@@ -137,11 +166,23 @@ function checkSystemRequirements() {
     
     foreach ($filesToCheck as $file) {
         $path = $projectRoot . DIRECTORY_SEPARATOR . $file;
-        $fileReport = checkFileWritable($path, $isLinux);
-        $report['files'][$file] = $fileReport;
-        
-        if (!$fileReport['writable']) {
-            $report['can_proceed'] = false;
+        // Verifica solo se il file esiste - se non esiste, verrà creato durante l'aggiornamento
+        if (file_exists($path)) {
+            $fileReport = checkFileWritable($path, $isLinux);
+            $report['files'][$file] = $fileReport;
+            
+            if (!$fileReport['writable']) {
+                $report['can_proceed'] = false;
+            }
+        } else {
+            // File non esistente - non è un errore, verrà creato
+            $report['files'][$file] = [
+                'path' => $path,
+                'exists' => false,
+                'writable' => true,
+                'fixed' => false,
+                'message' => 'File non esistente - verrà creato durante l\'aggiornamento'
+            ];
         }
     }
     
@@ -407,13 +448,37 @@ if ((!$systemCheck['can_proceed'] || $forceCheck) && !isset($_POST['proceed_anyw
 // FINE VERIFICA PRELIMINARE
 // ============================================================
 
-// Esegui pulizia preventiva SOLO di file temporanei (non ZIP)
-include __DIR__ . '/cleanup.php';
-
 // Flag per indicare che siamo nella fase 2 (dopo aver aggiornato i file)
 $isPhase2 = isset($_GET['phase2']) && $_GET['phase2'] === '1';
 
+// Verifica se siamo nel processo di selezione/aggiornamento
+$inUpdateProcess = isset($_GET['select_files']) || isset($_GET['confirm_update']) || isset($_GET['proceed_update']) || isset($_GET['cancel']);
+
+// Se c'è un file ZIP nella cartella e non siamo nel processo di aggiornamento,
+// reindirizza immediatamente alla schermata di selezione SENZA fare pulizia
+if (!$inUpdateProcess && !$isPhase2) {
+    $zipFilesInDir = glob(__DIR__ . '/*.zip');
+    if (!empty($zipFilesInDir)) {
+        $latest = null;
+        foreach ($zipFilesInDir as $zf) {
+            if ($latest === null || filemtime($zf) > filemtime($latest)) {
+                $latest = $zf;
+            }
+        }
+        // Salva il percorso in sessione e reindirizza alla schermata di selezione
+        $_SESSION['uploaded_zip_path'] = $latest;
+        header('Location: ' . $_SERVER['PHP_SELF'] . '?select_files=1');
+        exit;
+    }
+}
+
+// Esegui pulizia preventiva SOLO se non siamo nel processo di selezione/aggiornamento
+if (!$inUpdateProcess) {
+    include __DIR__ . '/cleanup.php';
+}
+
 // Gestione upload file .zip
+
 $uploadSuccess = false;
 $uploadError = null;
 
@@ -434,9 +499,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['updateZip'])) {
 		if (@move_uploaded_file($file['tmp_name'], $destPath)) {
 			$uploadSuccess = true;
 			// Segna che abbiamo appena caricato un file
-			$_SESSION['just_uploaded_zip'] = true;
-			// Ricarica la pagina per iniziare l'estrazione
-			header('Location: ' . $_SERVER['REQUEST_URI']);
+		$_SESSION['just_uploaded_zip'] = true;
+		// Salva il percorso del file caricato in sessione
+		$_SESSION['uploaded_zip_path'] = $destPath;
+		// Reindirizza alla schermata di selezione file
+		header('Location: ' . $_SERVER['PHP_SELF'] . '?select_files=1');
 			exit;
 		} else {
 			$uploadError = "Impossibile salvare il file.";
@@ -470,13 +537,20 @@ function cleanupOldFiles($updateDir) {
         }
     }
     
-    // Elimina file ZIP vecchi (tranne update.zip se presente)
+    // Verifica se siamo nel processo di selezione o aggiornamento (non eliminare il file ZIP in questi casi)
+    $inSelectionProcess = isset($_GET['select_files']) || isset($_GET['confirm_update']) || isset($_GET['proceed_update']);
+    
+    // Elimina file ZIP vecchi (tranne update.zip se presente e siamo nel processo di aggiornamento)
     $zipFiles = glob($updateDir . DIRECTORY_SEPARATOR . '*.zip');
     foreach ($zipFiles as $zipFile) {
         $basename = basename($zipFile);
-        // Mantieni update.zip se è stato appena caricato, ma elimina altri ZIP
+        // Mantieni il file ZIP se:
+        // 1. Siamo nel processo di selezione/aggiornamento, OPPURE
+        // 2. È update.zip ed è stato appena caricato
         $justUploaded = isset($_SESSION['just_uploaded_zip']) && $_SESSION['just_uploaded_zip'];
-        if ($basename !== 'update.zip' || !$justUploaded) {
+        $isUploadedZip = ($basename === 'update.zip' && $justUploaded);
+        
+        if (!$inSelectionProcess && !$isUploadedZip) {
             if (@unlink($zipFile)) {
                 $cleaned['zip_files'][] = $basename;
             }
@@ -492,20 +566,164 @@ $projectRoot = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..');
 // Variabili per la pulizia
 $tmpDir = null;
 
-// Pulizia preventiva di file/cartelle temporanee
-$cleanupResult = cleanupOldFiles(__DIR__);
+// Pulizia preventiva di file/cartelle temporanee (solo se non siamo nel processo di aggiornamento)
+if (!$inUpdateProcess) {
+    $cleanupResult = cleanupOldFiles(__DIR__);
+} else {
+    $cleanupResult = ['temp_dirs' => [], 'zip_files' => []];
+}
 
-// Cerca qualsiasi file .zip nella cartella update (scegli il più recente)
-$zipFilesInDir = glob(__DIR__ . '/*.zip');
+// ============================================================
+// SCHERMATA SELEZIONE FILE (dopo upload, prima estrazione)
+// ============================================================
+
+// Se l'utente ha appena caricato un file ZIP, mostra la schermata di selezione
+if (isset($_GET['select_files']) && $_GET['select_files'] === '1') {
+    $zipPath = isset($_SESSION['uploaded_zip_path']) ? $_SESSION['uploaded_zip_path'] : null;
+    
+    if (!$zipPath || !file_exists($zipPath)) {
+        // Nessun file trovato, torna alla pagina principale
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+    
+    // Verifica quali file sensibili esistono già nel progetto
+    $sensitiveFiles = [
+        '.htaccess' => ['path' => $projectRoot . '/.htaccess', 'label' => '.htaccess', 'desc' => 'Configurazione Apache'],
+        'config/database.php' => ['path' => $projectRoot . '/config/database.php', 'label' => 'config/database.php', 'desc' => 'Configurazione database'],
+        'config/settings.php' => ['path' => $projectRoot . '/config/settings.php', 'label' => 'config/settings.php', 'desc' => 'Impostazioni applicazione']
+    ];
+    
+    ?><!doctype html>
+    <html lang="it" data-bs-theme="<?= $appTheme ?>">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Selezione File - Aggiornamento</title>
+        <link href="<?= BASE_PATH ?>assets/css/bootstrap.min.css" rel="stylesheet">
+        <link href="<?= BASE_PATH ?>assets/css/all.min.css" rel="stylesheet">
+        <style>
+            .file-card { border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+            .file-new { border-left: 4px solid #28a745; }
+            .file-exists { border-left: 4px solid #ffc107; }
+            .file-missing { border-left: 4px solid #dc3545; }
+        </style>
+    </head>
+    <body class="p-4">
+        <div class="container" style="max-width: 800px;">
+            <h1><i class="fa-solid fa-file-circle-check me-2"></i>Selezione File da Aggiornare</h1>
+            
+            <div class="alert alert-info mt-4">
+                <i class="fa-solid fa-info-circle me-2"></i>
+                <strong>File caricato con successo!</strong><br>
+                Scegli quali file di configurazione sovrascrivere. I file <strong>evidenziati in verde</strong> non esistono e verranno creati automaticamente.
+            </div>
+            
+            <form method="POST" action="<?= $_SERVER['PHP_SELF'] ?>?confirm_update=1">
+                <h5 class="mb-3">File di configurazione sensibili:</h5>
+                
+                <?php foreach ($sensitiveFiles as $key => $fileInfo): 
+                    $exists = file_exists($fileInfo['path']);
+                    $class = $exists ? 'file-exists' : 'file-new';
+                    $statusIcon = $exists ? '<i class="fa-solid fa-triangle-exclamation text-warning"></i>' : '<i class="fa-solid fa-plus-circle text-success"></i>';
+                    $statusText = $exists ? 'Esistente - verrà sovrascritto se selezionato' : 'Nuovo - verrà creato';
+                ?>
+                <div class="file-card <?= $class ?>">
+                    <div class="d-flex align-items-center">
+                        <div class="form-check flex-grow-1">
+                            <input class="form-check-input" type="checkbox" 
+                                   name="overwrite_<?= str_replace(['.', '/'], '_', $key) ?>" 
+                                   id="overwrite_<?= str_replace(['.', '/'], '_', $key) ?>" 
+                                   value="1"
+                                   <?= !$exists ? 'checked disabled' : '' ?>>
+                            <label class="form-check-label fw-bold" for="overwrite_<?= str_replace(['.', '/'], '_', $key) ?>">
+                                <?= htmlspecialchars($fileInfo['label']) ?>
+                            </label>
+                            <div class="small text-muted"><?= htmlspecialchars($fileInfo['desc']) ?></div>
+                        </div>
+                        <div class="text-end" style="min-width: 200px;">
+                            <?= $statusIcon ?> <small class="text-muted"><?= $statusText ?></small>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+                
+                <div class="alert alert-warning mt-4">
+                    <i class="fa-solid fa-exclamation-triangle me-2"></i>
+                    <strong>Attenzione:</strong> Se selezioni un file esistente, verranno sovrascritte le tue configurazioni attuali presenti nel file stesso. 
+                    Assicurati di avere un backup dei file di configurazione prima di procedere.
+                </div>
+                
+                <div class="d-grid gap-2 d-md-block mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fa-solid fa-rocket me-2"></i>Procedi con l'aggiornamento
+                    </button>
+                    <a href="<?= $_SERVER['PHP_SELF'] ?>?cancel=1" class="btn btn-secondary btn-lg" onclick="return confirm('Annullare l\'aggiornamento? Il file ZIP verrà eliminato.');">
+                        <i class="fa-solid fa-times me-2"></i>Annulla
+                    </a>
+                </div>
+            </form>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
+// Gestione annullamento aggiornamento
+if (isset($_GET['cancel']) && $_GET['cancel'] === '1') {
+    // Elimina il file ZIP caricato
+    if (isset($_SESSION['uploaded_zip_path']) && file_exists($_SESSION['uploaded_zip_path'])) {
+        @unlink($_SESSION['uploaded_zip_path']);
+    }
+    unset($_SESSION['uploaded_zip_path']);
+    unset($_SESSION['just_uploaded_zip']);
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
+}
+
+// Gestione conferma aggiornamento con flag
+if (isset($_GET['confirm_update']) && $_GET['confirm_update'] === '1' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Salva i flag in sessione
+    $_SESSION['overwrite_htaccess'] = isset($_POST['overwrite__htaccess']) && $_POST['overwrite__htaccess'] === '1';
+    $_SESSION['overwrite_config_database_php'] = isset($_POST['overwrite_config_database_php']) && $_POST['overwrite_config_database_php'] === '1';
+    $_SESSION['overwrite_config_settings_php'] = isset($_POST['overwrite_config_settings_php']) && $_POST['overwrite_config_settings_php'] === '1';
+    
+    // Reindirizza alla pagina di aggiornamento effettivo
+    header('Location: ' . $_SERVER['PHP_SELF'] . '?proceed_update=1');
+    exit;
+}
+
+// ============================================================
+// FINE SCHERMATA SELEZIONE FILE
+// ============================================================
+
+// Cerca il file ZIP da usare per l'aggiornamento
 $zipPath = null;
-if (!empty($zipFilesInDir)) {
-	$latest = null;
-	foreach ($zipFilesInDir as $zf) {
-		if ($latest === null || filemtime($zf) > filemtime($latest)) {
-			$latest = $zf;
-		}
-	}
-	$zipPath = $latest;
+
+// Se stiamo procedendo con l'aggiornamento dopo la selezione file, usa il percorso in sessione
+if (isset($_GET['proceed_update']) && $_GET['proceed_update'] === '1') {
+    $zipPath = isset($_SESSION['uploaded_zip_path']) ? $_SESSION['uploaded_zip_path'] : null;
+    if (!$zipPath || !file_exists($zipPath)) {
+        // File non trovato, torna alla pagina principale
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+} else {
+    // Altrimenti cerca qualsiasi file .zip nella cartella update (scegli il più recente)
+    $zipFilesInDir = glob(__DIR__ . '/*.zip');
+    if (!empty($zipFilesInDir)) {
+        $latest = null;
+        foreach ($zipFilesInDir as $zf) {
+            if ($latest === null || filemtime($zf) > filemtime($latest)) {
+                $latest = $zf;
+            }
+        }
+        // Salva il percorso in sessione e reindirizza alla schermata di selezione
+        $_SESSION['uploaded_zip_path'] = $latest;
+        header('Location: ' . $_SERVER['PHP_SELF'] . '?select_files=1');
+        exit;
+    }
 }
 
 if ($zipPath === null) {
@@ -742,6 +960,13 @@ function getAllFiles($dir, $baseDir = '') {
 // Ottieni tutti i file dalla cartella temporanea
 $allFiles = getAllFiles($tmpDir);
 
+// Leggi i flag di sovrascrittura dalla sessione (se presenti)
+$overwriteFlags = [
+    '.htaccess' => isset($_SESSION['overwrite_htaccess']) ? $_SESSION['overwrite_htaccess'] : true,
+    'config/database.php' => isset($_SESSION['overwrite_config_database_php']) ? $_SESSION['overwrite_config_database_php'] : true,
+    'config/settings.php' => isset($_SESSION['overwrite_config_settings_php']) ? $_SESSION['overwrite_config_settings_php'] : true,
+];
+
 // Copia file uno per uno, proteggendo da path traversal
 foreach ($allFiles as $rel) {
     // normalizza percorso e impedisce path traversal
@@ -797,6 +1022,26 @@ foreach ($allFiles as $rel) {
         }
     }
 
+    // CONTROLLA I FLAG DI SOVRASCRITTURA per file sensibili
+    $shouldSkip = false;
+    foreach ($overwriteFlags as $protectedFile => $canOverwrite) {
+        // Confronto case-insensitive e con/without leading slash
+        $normalizedRel = strtolower(ltrim($rel, '/'));
+        $normalizedProtected = strtolower(ltrim($protectedFile, '/'));
+        
+        if ($normalizedRel === $normalizedProtected) {
+            // Se il flag è false e il file esiste già, salta
+            if (!$canOverwrite && file_exists($dest)) {
+                $filesReport['skipped'][] = $rel . ' (mantenuto esistente per scelta utente)';
+                $shouldSkip = true;
+                break;
+            }
+        }
+    }
+    if ($shouldSkip) {
+        continue;
+    }
+
     // copia file
     if (!copy($source, $dest)) {
         $filesReport['errors'][] = [ 'file' => $rel, 'message' => 'Copia fallita' ];
@@ -804,6 +1049,12 @@ foreach ($allFiles as $rel) {
     }
     $filesReport['updated'][] = $rel;
 }
+
+// Pulisci i flag dalla sessione dopo l'uso
+unset($_SESSION['overwrite_htaccess']);
+unset($_SESSION['overwrite_config_database_php']);
+unset($_SESSION['overwrite_config_settings_php']);
+unset($_SESSION['uploaded_zip_path']);
 
 // Controlla se update/index.php o migration_manager.php sono stati aggiornati
 $needsManualMigration = in_array('update/index.php', $filesReport['updated']) || 
@@ -890,7 +1141,10 @@ if ($needsManualMigration && !$isPhase2) {
 
 // Se non serve migrazione manuale, esegui subito le migrazioni
 $configUpdated = false;
-if (!$isPhase2) {
+if (!$isPhase2 && $dbAvailable && isset($pdo) && $pdo instanceof PDO) {
+	// Carica il migration manager DOPO aver copiato i file (potrebbe essere stato aggiornato)
+	require_once __DIR__ . '/migration_manager.php';
+	
 	// Usa il nuovo sistema di migrazioni
 	$migrationManager = new MigrationManager($pdo);
 	$migrationResult = $migrationManager->runPendingMigrations();
@@ -919,10 +1173,10 @@ if (!$isPhase2) {
 	// NON registrare la versione qui per evitare problemi con PDO unbuffered queries
 	// La versione verrà registrata automaticamente da runPendingMigrations()
 } else {
-	// Non eseguire migrazioni, sono già state eseguite da run_migrations.php
+	// Database non disponibile o PDO non valido
 	$migrationResult = [
 		'applied' => [],
-		'message' => 'Migrazioni già eseguite'
+		'message' => 'Database non disponibile - migrazioni saltate'
 	];
 }
 // Crea un report compatibile con il formato precedente

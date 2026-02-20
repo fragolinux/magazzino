@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 18:00:51 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-09 20:13:59
+ * @Last Modified time: 2026-02-19 20:13:59
 */
 // 2026-01-03: Aggiunta funzionalità carico/scarico quantità componente
 // 2026-01-08: Aggiunta quantità minima
@@ -161,7 +161,7 @@ if (!$components) {
                     <td>'.htmlspecialchars($c['location_name'] ?? '-').'</td>
                     <td>'.htmlspecialchars($c['compartment_code'] ?? '-').'</td>
                     <td class="text-end">
-                        <button class="btn btn-xs btn-outline-secondary btn-clone me-1" data-id="'.$c['id'].'" title="Clona in Add Component" style="--bs-btn-padding-y: .15rem; --bs-btn-padding-x: .3rem; --bs-btn-font-size: .75rem;">
+                        <button class="btn btn-xs btn-outline-secondary btn-clone me-1" data-id="'.$c['id'].'" title="Clona in: Aggiungi componente" style="--bs-btn-padding-y: .15rem; --bs-btn-padding-x: .3rem; --bs-btn-font-size: .75rem;">
                             <i class="fa-solid fa-copy"></i>
                         </button>
                         <button class="btn btn-xs btn-outline-info btn-view me-1" data-id="'.$c['id'].'" title="Visualizza dettagli" style="--bs-btn-padding-y: .15rem; --bs-btn-padding-x: .3rem; --bs-btn-font-size: .75rem;">
@@ -170,7 +170,7 @@ if (!$components) {
                         <button class="btn btn-xs btn-outline-success btn-unload me-1" data-id="'.$c['id'].'" data-product="'.htmlspecialchars($c['codice_prodotto']).'" data-quantity="'.$c['quantity'].'" title="Carico/Scarico" style="--bs-btn-padding-y: .15rem; --bs-btn-padding-x: .3rem; --bs-btn-font-size: .75rem;">
                             <i class="fa-solid fa-arrows-up-down"></i>
                         </button>
-                        <a href="edit_component.php?id='.$c['id'].'&return_url='.urlencode(BASE_PATH . 'warehouse/components.php?search_code=' . urlencode($search_code)).'" class="btn btn-xs btn-outline-secondary me-1" title="Modifica" style="--bs-btn-padding-y: .15rem; --bs-btn-padding-x: .3rem; --bs-btn-font-size: .75rem;">
+                        <a href="edit_component.php?id='.$c['id'].'&return_url='.urlencode(BASE_PATH . 'warehouse/components.php?search_code=' . urlencode($search_code)).'" class="btn btn-xs btn-outline-secondary me-1" title="Modifica" target="_blank" style="--bs-btn-padding-y: .15rem; --bs-btn-padding-x: .3rem; --bs-btn-font-size: .75rem;">
                             <i class="fa-solid fa-pen"></i>
                         </a>
                         <button class="btn btn-xs btn-outline-danger btn-delete" data-id="'.$c['id'].'" data-product="'.htmlspecialchars($c['codice_prodotto'], ENT_QUOTES).'" title="Elimina" style="--bs-btn-padding-y: .15rem; --bs-btn-padding-x: .3rem; --bs-btn-font-size: .75rem;">

@@ -134,6 +134,11 @@ function isActive($pages, $dir = null) {
                   <i class="fa-solid fa-barcode me-2 text-secondary"></i>Stampa Barcode
                 </a>
               </li>
+              <li>
+                <a class="dropdown-item <?= isActive('etichette.php', 'warehouse') ?>" href="<?= BASE_PATH ?>warehouse/etichette.php">
+                  <i class="fa-solid fa-tags me-2 text-secondary"></i>Stampa Etichette
+                </a>
+              </li>
             </ul>
           </li>
           <?php endif; ?>
