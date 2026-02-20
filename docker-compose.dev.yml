@@ -1,6 +1,7 @@
 services:
   nginx:
     image: nginx:1.25-alpine
+    restart: unless-stopped
     ports:
       - "${HTTP_PORT:-80}:80"
     environment:
@@ -16,11 +17,15 @@ services:
 
   php:
     build: ./docker/php
+    restart: unless-stopped
     volumes:
       - ./magazzino:/var/www/html
       - ./data/config:/var/www/html/config
+      - ./overrides/db_connect.php:/var/www/html/includes/db_connect.php:ro
+      - ./overrides/auth_check.php:/var/www/html/includes/auth_check.php:ro
       - ./overrides/update_index.php:/var/www/html/update/index.php:ro
       - ./overrides/database.php:/var/www/html/config/database.php:ro
+      - ./overrides/settings.php:/var/www/html/settings.php:ro
       - ./data/uploads/datasheet:/var/www/html/datasheet
       - ./data/uploads/images:/var/www/html/images
       - ./data/php-logs:/var/log/php
@@ -37,6 +42,7 @@ services:
 
   db:
     image: mariadb:10.4
+    restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MARIADB_DATABASE: ${DB_NAME}
