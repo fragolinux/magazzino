@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Setup WSL/Ubuntu for this repo (Linux/WSL).
-# Installs prerequisites: git, make, dialog, docker, docker compose.
+# Installs prerequisites: git, make, dialog, ccze, docker, docker compose.
 # Optional: Zsh + Oh My Zsh + Docker completions.
 
 timestamp(){ date +"%Y%m%d%H%M%S"; }
@@ -60,7 +60,7 @@ run_as_user(){
 }
 
 pkg_installed(){
-  dpkg -s "$1" >/dev/null 2>&1
+  dpkg-query -W -f='${db:Status-Status}\n' "$1" 2>/dev/null | grep -qx 'installed'
 }
 
 backup_file(){
@@ -248,7 +248,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 Uso: ./setup_wsl_ubuntu.sh [--with-zsh]
 
 Installa i prerequisiti per usare il repo su Ubuntu/WSL:
-- git, make, dialog, docker, docker compose
+- git, make, dialog, ccze, docker, docker compose
 - tool base (curl, ca-certificates, gnupg, lsb-release, unzip, tar, gzip, xz-utils, jq, acl)
 
 Opzionale:
@@ -277,12 +277,13 @@ if [[ "${1:-}" == "--with-zsh" ]]; then
   WITH_ZSH=1
 fi
 
-say "\n✅ Setup prerequisiti base (git, make, dialog, docker, compose)...\n"
+say "\n✅ Setup prerequisiti base (git, make, dialog, ccze, docker, compose)...\n"
 
 need_pkgs=(
   git
   make
   dialog
+  ccze
   curl
   ca-certificates
   gnupg

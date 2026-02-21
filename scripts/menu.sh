@@ -14,14 +14,29 @@ export DIALOGOPTS="--no-shadow"
 run_and_show() {
   local title="$1"
   shift
-  local tmp
+  local tmp status_tmp status
   tmp="$(mktemp)"
-  if "$@" >"$tmp" 2>&1; then
+  status_tmp="$(mktemp)"
+
+  dialog --title "$title" --programbox "Esecuzione in corso..." 25 100 < <(
+    set +e
+    "$@" 2>&1 | tee "$tmp"
+    code=${PIPESTATUS[0]}
+    printf '%s' "$code" >"$status_tmp"
+  ) || true
+
+  status=1
+  if [[ -s "$status_tmp" ]]; then
+    status="$(cat "$status_tmp")"
+  fi
+
+  if [[ "$status" -eq 0 ]]; then
     dialog --title "$title (OK)" --textbox "$tmp" 0 0
   else
     dialog --title "$title (ERRORE)" --textbox "$tmp" 0 0
   fi
-  rm -f "$tmp"
+
+  rm -f "$tmp" "$status_tmp"
 }
 
 select_backup_dir() {
@@ -123,7 +138,7 @@ main_menu() {
     "dbcheck" "Verifica migrazioni pendenti (dev o prod)" \
     "backup" "Backup" \
     "restore" "Restore" \
-    "logs" "Log stack attivo" \
+    "logs" "Log stack attivo (Ctrl+C esci)" \
     "exit" "Esci" \
     2>&1 >/dev/tty
 }
@@ -199,7 +214,11 @@ while true; do
       ;;
     logs)
       clear
-      make logs
+      if command -v ccze >/dev/null 2>&1; then
+        make logs 2>&1 | ccze -A || true
+      else
+        make logs || true
+      fi
       ;;
     clone)
       run_and_show "Clone" make clone
