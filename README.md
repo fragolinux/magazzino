@@ -32,6 +32,19 @@ Grazie per lo sviluppo e per aver condiviso il progetto con la community.
 - Sito web del progetto: https://rg4tech.altervista.org/forum/thread-463-post-576.html
 - Playlist Video del progetto: https://www.youtube.com/playlist?list=PLNZXUv5jKUn4FmaiDwSzNop_WA8vuwMkV
 
+## Video guide al funzionamento
+
+In questi 3 asciinema viene mostrato il processo completo in Docker:
+
+1. Setup automatico completo dell'ambiente (in questo esempio su WSL/Windows, replicabile su Ubuntu): in poco piu di un minuto Docker e prerequisiti risultano installati e configurati.
+[![asciicast](https://asciinema.org/a/gTlH40GGNnSmieOA.svg)](https://asciinema.org/a/gTlH40GGNnSmieOA)
+
+2. Clone del repository GitHub e primo avvio dell'applicativo (gli eventuali warning mostrati sono attesi al primo avvio senza configurazione utente/password).
+[![asciicast](https://asciinema.org/a/SxrlaMpUJfvNu3xo.svg)](https://asciinema.org/a/SxrlaMpUJfvNu3xo)
+
+3. Panoramica del menu e avvio di alcune funzioni; in alternativa puoi usare i comandi `make` documentati nel repository.
+[![asciicast](https://asciinema.org/a/Q5OJ3L6amxBhTqRc.svg)](https://asciinema.org/a/Q5OJ3L6amxBhTqRc)
+
 ## TL;DR (avvio rapido, Linux/WSL)
 
 ```bash
