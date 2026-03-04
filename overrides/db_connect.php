@@ -3,6 +3,11 @@
  * Override per Docker: usa variabili d'ambiente se presenti.
  */
 
+// Mantiene compatibilita con il codice upstream che usa BASE_PATH nei redirect/cookie.
+if (!defined('BASE_PATH')) {
+    require_once __DIR__ . '/../config/base_path.php';
+}
+
 // Configurazione database
 $host = getenv('DB_HOST') !== false ? getenv('DB_HOST') : 'localhost';
 $db   = getenv('DB_NAME') !== false ? getenv('DB_NAME') : 'magazzino_db'; // nome del database
