@@ -10,6 +10,7 @@ class ComposerStaticInit020a14319fc907242c020bfdc590fbc1
         'P' => 
         array (
             'Picqer\\Barcode\\' => 15,
+            'PHPMailer\\PHPMailer\\' => 20,
         ),
     );
 
@@ -17,6 +18,10 @@ class ComposerStaticInit020a14319fc907242c020bfdc590fbc1
         'Picqer\\Barcode\\' => 
         array (
             0 => __DIR__ . '/..' . '/picqer/php-barcode-generator/src',
+        ),
+        'PHPMailer\\PHPMailer\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
         ),
     );
 

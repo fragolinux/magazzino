@@ -3,18 +3,24 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:53:16 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-09 19:50:15
+ * @Last Modified time: 2026-02-23
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-09: Aggiunta gestione immagine componente
 // 2026-01-11: aggiunto tasto per eliminare datasheet PDF esistente
 // 2026-01-12: Aggiunti campi per prezzo, link fornitore, unità di misura, package, tensione, corrente, potenza, hfe e tags; migliorata gestione equivalenti
 // 2026-02-01: Aggiunto redirect a return_url se presente dopo aggiornamento
+// 2026-02-23: gestione passaggio parametri GET migliorata per precompilare i filtri di posizione, comparto e categoria
 
 require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
 require_once '../includes/secure_upload.php';
+
+// Pulisci eventuali messaggi di sessione vecchi all'ingresso della pagina
+if (isset($_SESSION['success'])) {
+  unset($_SESSION['success']);
+}
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
   header("Location: components.php");
@@ -360,7 +366,9 @@ if (isset($_SESSION['success'])) {
     </div>
   </form>
 
-  <a href="components.php" class="btn btn-secondary mt-3"><i class="fa-solid fa-arrow-left"></i> Torna alla lista componenti</a>
+  <button type="button" id="btn-back-to-list" class="btn btn-secondary mt-3">
+    <i class="fa-solid fa-arrow-left"></i> Torna alla lista componenti
+  </button>
 </div>
 
 <script>
@@ -641,7 +649,20 @@ if (isset($_SESSION['success'])) {
     setupAutocomplete('costruttore');
     setupAutocomplete('fornitore');
 
+    // Gestione pulsante "Torna alla lista componenti" con return_url
+    $('#btn-back-to-list').click(function() {
+      // Recupera il return_url dall'URL corrente
+      const urlParams = new URLSearchParams(window.location.search);
+      const return_url = urlParams.get('return_url');
+      
+      if (return_url) {
+        // Decodifica l'URL e naviga verso di esso
+        window.location.href = decodeURIComponent(return_url);
+      } else {
+        // Se non c'è return_url, torna alla lista componenti standard
+        window.location.href = 'components.php';
+      }
+    });
+
   });
 </script>
-
-<?php include '../includes/footer.php'; ?>

@@ -3,8 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-08
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-08
+ * @Last Modified time: 2026-03-02
 */
+
+// 2026-03-02: aggiunto file pdf al locale
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -37,6 +39,16 @@ if ($locationCount > 0) {
     $_SESSION['error'] = "Impossibile eliminare il locale \"{$locale['name']}\": ci sono {$locationCount} posizioni collegate. Rimuovi prima le posizioni o assegnale ad altro locale.";
     header("Location: locali.php");
     exit;
+}
+
+// Eliminazione file PDF se presente
+if ($locale['pdf_filename']) {
+    $pdf_path = realpath(__DIR__ . '/../uploads/locali/' . basename($locale['pdf_filename']));
+    $expected_dir = realpath(__DIR__ . '/../uploads/locali/');
+    
+    if ($pdf_path && strpos($pdf_path, $expected_dir) === 0 && file_exists($pdf_path)) {
+        @unlink($pdf_path); // Elimina il file PDF
+    }
 }
 
 // Eliminazione locale

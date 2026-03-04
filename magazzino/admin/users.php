@@ -3,8 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:46:41 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2025-10-20 20:00:12
+ * @Last Modified time: 2025-03-03
 */
+
+// 2025-03-03: aggiunto indirizzo email
 
 require '../includes/auth_check.php';
 require '../includes/db_connect.php';
@@ -50,6 +52,7 @@ include '../includes/header.php';
       <tr>
         <th>ID</th>
         <th>Username</th>
+        <th>Email</th>
         <th>Ruolo</th>
         <th>Creato</th>
         <th class="text-end">Azioni</th>
@@ -60,6 +63,7 @@ include '../includes/header.php';
         <tr>
           <td><?= $u['id'] ?></td>
           <td><?= htmlspecialchars($u['username']) ?></td>
+          <td><?= htmlspecialchars($u['email'] ?? '') ?></td>
           <td><?= $u['role'] ?></td>
           <td><?= $u['created_at'] ?></td>
           <td class="text-end">

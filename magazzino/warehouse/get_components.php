@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 18:00:51 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-19 20:13:59
+ * @Last Modified time: 2026-02-23
 */
 // 2026-01-03: Aggiunta funzionalità carico/scarico quantità componente
 // 2026-01-08: Aggiunta quantità minima
@@ -13,6 +13,7 @@
 // 2026-01-14: Sistemati conteggi quantità per unità di misura
 // 2026-02-01: Aggiunto return_url al link di modifica componente
 // 2026-02-09: Aggiunto ordinamento per codice prodotto, categoria, comparto, quantità e posizione
+// 2026-02-23: gestione passaggio parametri GET migliorata per precompilare i filtri di posizione, comparto e categoria
 
 require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
@@ -170,7 +171,20 @@ if (!$components) {
                         <button class="btn btn-xs btn-outline-success btn-unload me-1" data-id="'.$c['id'].'" data-product="'.htmlspecialchars($c['codice_prodotto']).'" data-quantity="'.$c['quantity'].'" title="Carico/Scarico" style="--bs-btn-padding-y: .15rem; --bs-btn-padding-x: .3rem; --bs-btn-font-size: .75rem;">
                             <i class="fa-solid fa-arrows-up-down"></i>
                         </button>
-                        <a href="edit_component.php?id='.$c['id'].'&return_url='.urlencode(BASE_PATH . 'warehouse/components.php?search_code=' . urlencode($search_code)).'" class="btn btn-xs btn-outline-secondary me-1" title="Modifica" target="_blank" style="--bs-btn-padding-y: .15rem; --bs-btn-padding-x: .3rem; --bs-btn-font-size: .75rem;">
+                        <a href="edit_component.php?id='.$c['id'].'&return_url='.urlencode(BASE_PATH . 'warehouse/components.php?' . http_build_query(array_filter([
+                            'locale_id' => $locale_id,
+                            'location_id' => $location_id,
+                            'compartment_id' => $compartment_id,
+                            'category_id' => $category_id,
+                            'search_code' => $search_code,
+                            'package' => $package,
+                            'tensione' => $tensione,
+                            'corrente' => $corrente,
+                            'potenza' => $potenza,
+                            'hfe' => $hfe,
+                            'tags' => $tags,
+                            'notes' => $notes
+                        ]))).'" class="btn btn-xs btn-outline-secondary me-1 btn-edit" title="Modifica" style="--bs-btn-padding-y: .15rem; --bs-btn-padding-x: .3rem; --bs-btn-font-size: .75rem;">
                             <i class="fa-solid fa-pen"></i>
                         </a>
                         <button class="btn btn-xs btn-outline-danger btn-delete" data-id="'.$c['id'].'" data-product="'.htmlspecialchars($c['codice_prodotto'], ENT_QUOTES).'" title="Elimina" style="--bs-btn-padding-y: .15rem; --bs-btn-padding-x: .3rem; --bs-btn-font-size: .75rem;">

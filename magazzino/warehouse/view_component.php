@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-21 08:47:13 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-09 23:31:14
+ * @Last Modified time: 2026-03-02
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-08: Aggiunto locale
@@ -11,6 +11,7 @@
 // 2026-01-14: Sistemati conteggi quantità per unità di misura
 // 2026-02-08: Tolti campi vuoti e unità di misura
 // 2026-02-09: Aggiunta gestione prezzo/fornitore da progetti_componenti
+// 2026-03-02: aggiunto file pdf al locale
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -25,6 +26,9 @@ $id = intval($_GET['id']);
 $stmt = $pdo->prepare("SELECT c.*, 
                               l.name AS location_name,
                               loc.name AS locale_name,
+                              loc.description AS locale_description,
+                              loc.pdf_filename AS locale_pdf_filename,
+                              loc.id AS locale_id,
                               cmp.code AS compartment_code,
                               cat.name AS category_name
                        FROM components c
@@ -132,7 +136,22 @@ $hasImage = $imagePath && file_exists($imagePath);
             <?php $rowClass = ($qty_min > $qty) ? ' class="table-danger"' : ''; ?>
             <tr<?= $rowClass ?>><th style="width:30%;white-space:nowrap;">Q.tà minima</th><td><?= $qty_min . ' ' . htmlspecialchars($unit) ?></td></tr>
         <?php endif; ?>
-        <?= field('Locale', htmlspecialchars($component['locale_name'] ?? '')) ?>
+        <?php 
+        $locale_info = '';
+        if (!empty($component['locale_name'])) {
+            $locale_info = htmlspecialchars($component['locale_name']);
+            if (!empty($component['locale_description'])) {
+                $locale_info .= ' <span class="text-muted">(' . htmlspecialchars($component['locale_description']) . ')</span>';
+            }
+            // Aggiungi link PDF se esiste
+            if (!empty($component['locale_pdf_filename'])) {
+                $locale_info .= ' <a href="' . BASE_PATH . 'warehouse/download_pdf_locale.php?id=' . $component['locale_id'] . '" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
+                    <i class="fa-solid fa-file-pdf me-1"></i>PDF
+                </a>';
+            }
+        }
+        ?>
+        <?= field('Locale', $locale_info) ?>
         <?= field('Posizione', htmlspecialchars($component['location_name'] ?? '')) ?>
         <?= field('Comparto', htmlspecialchars($component['compartment_code'] ?? '')) ?>
         <?= field('Costruttore', htmlspecialchars($component['costruttore'] ?? '')) ?>

@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-04 12:59:50 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-19
+ * @Last Modified time: 2026-02-22
  *
  * Update script:
  * - apre file .zip nella stessa cartella
@@ -16,6 +16,7 @@
 // 2026-02-01: aggiunto controllo per rilevare il tema
 // 2026-02-09: aggiunta verifica del sistema prima di procedere con l'aggiornamento (PHP, MySQL, permessi cartelle/file)
 // 2026-02-19: aggiunto controllo esistenza file di configurazione prima di sovrascriverli, con possibilità di scegliere quali sovrascrivere
+// 2026-02-22: aggiunto controllo estenzione .zip abilitata in php.ini
 
 require_once __DIR__ . '/../config/base_path.php';
 require_once __DIR__ . '/../includes/auth_check.php';
@@ -68,6 +69,7 @@ $standaloneMode = !$dbAvailable;
 function checkSystemRequirements() {
     $report = [
         'php' => ['ok' => false, 'version' => PHP_VERSION, 'required' => '8.0.0', 'message' => ''],
+        'zip' => ['ok' => false, 'message' => ''],
         'mysql' => ['ok' => false, 'version' => '', 'required' => '10.4.0', 'message' => ''],
         'folders' => [],
         'files' => [],
@@ -82,6 +84,15 @@ function checkSystemRequirements() {
         $report['can_proceed'] = false;
     } else {
         $report['php']['message'] = "PHP " . PHP_VERSION . " ✓";
+    }
+    
+    // Verifica estensione ZipArchive
+    $report['zip']['ok'] = class_exists('ZipArchive');
+    if (!$report['zip']['ok']) {
+        $report['zip']['message'] = "Estensione zip non abilitata. Abilita 'extension=zip' nel php.ini";
+        $report['can_proceed'] = false;
+    } else {
+        $report['zip']['message'] = "Estensione zip disponibile ✓";
     }
     
     // Verifica MySQL >= 8.0 o MariaDB >= 10.4 (solo se DB disponibile)
@@ -349,6 +360,23 @@ if ((!$systemCheck['can_proceed'] || $forceCheck) && !isset($_POST['proceed_anyw
                 <strong>Richiesta:</strong> >= <?= htmlspecialchars($systemCheck['php']['required']) ?><br>
                 <i class="fa-solid <?= $systemCheck['php']['ok'] ? 'fa-check' : 'fa-xmark' ?>"></i>
                 <?= htmlspecialchars($systemCheck['php']['message']) ?>
+            </div>
+            
+            <!-- ZipArchive Extension -->
+            <h4 class="mt-4"><i class="fa-solid fa-file-zipper me-2"></i>Estensione ZIP</h4>
+            <div class="check-item <?= $systemCheck['zip']['ok'] ? 'check-ok' : 'check-error' ?>">
+                <i class="fa-solid <?= $systemCheck['zip']['ok'] ? 'fa-check' : 'fa-xmark' ?>"></i>
+                <?= htmlspecialchars($systemCheck['zip']['message']) ?>
+                <?php if (!$systemCheck['zip']['ok']): ?>
+                    <br><br>
+                    <strong>Come risolvere:</strong><br>
+                    <ol class="mb-0 mt-2">
+                        <li>Apri il file <code>php.ini</code> di PHP</li>
+                        <li>Cerca la riga <code>;extension=zip</code></li>
+                        <li>Rimuovi il punto e virgola iniziale: <code>extension=zip</code></li>
+                        <li>Riavvia Apache</li>
+                    </ol>
+                <?php endif; ?>
             </div>
             
             <!-- MySQL/MariaDB Version -->

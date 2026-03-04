@@ -3,9 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:10:52 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-15
+ * @Last Modified time: 2026-03-03
 */
-// 2026-01-12: Permetti ad un admin di modificare i propri dati senza perdere i privilegi
+// 2026-01-12: Permette ad un admin di modificare i propri dati senza perdere i privilegi
+// 2025-03-03: aggiunto indirizzo email
 
 require '../includes/auth_check.php';
 require '../includes/db_connect.php';
@@ -22,7 +23,7 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $id = intval($_GET['id']);
 
 // Recupera dati utente
-$stmt = $pdo->prepare("SELECT id, username, role FROM users WHERE id = ?");
+$stmt = $pdo->prepare("SELECT id, username, email, role FROM users WHERE id = ?");
 $stmt->execute([$id]);
 $user = $stmt->fetch();
 
@@ -42,40 +43,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "Token di sicurezza non valido. Ricarica la pagina e riprova.";
     } else {
         $username = trim($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
-    
-    // Se è self-edit, mantieni il ruolo esistente, altrimenti prendi quello dal POST
-    if ($isSelfEdit) {
-        $role = $user['role']; // Mantieni il ruolo corrente
-    } else {
-        $role = $_POST['role'] ?? 'user';
-    }
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
 
-    if ($username === '') {
-        $error = "Il campo username è obbligatorio.";
-    } elseif ($password !== '' && strlen($password) < 8) {
-        $error = "La password deve contenere almeno 8 caratteri.";
-    } else {
-        // Controlla se l'username è già usato da un altro utente
-        $stmtCheck = $pdo->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
-        $stmtCheck->execute([$username, $id]);
-        if ($stmtCheck->fetch()) {
-            $error = "Questo username è già utilizzato da un altro utente.";
+        // Se è self-edit, mantieni il ruolo esistente, altrimenti prendi quello dal POST
+        if ($isSelfEdit) {
+            $role = $user['role']; // Mantieni il ruolo corrente
         } else {
-            // Aggiornamento query dinamico
-            if ($password !== '') {
-                $password_hash = password_hash($password, PASSWORD_DEFAULT);
-                $stmtUpdate = $pdo->prepare("UPDATE users SET username = ?, password_hash = ?, role = ? WHERE id = ?");
-                $stmtUpdate->execute([$username, $password_hash, $role, $id]);
-            } else {
-                $stmtUpdate = $pdo->prepare("UPDATE users SET username = ?, role = ? WHERE id = ?");
-                $stmtUpdate->execute([$username, $role, $id]);
-            }
+            $role = $_POST['role'] ?? 'user';
+        }
 
-            $success = "Dati utente aggiornati con successo.";
-            // Aggiorna i dati mostrati
-            $user['username'] = $username;
-            $user['role'] = $role;
+        if ($username === '') {
+            $error = "Il campo username è obbligatorio.";
+        } elseif ($password !== '' && strlen($password) < 8) {
+            $error = "La password deve contenere almeno 8 caratteri.";
+        } else {
+            // Controlla se l'username è già usato da un altro utente
+            $stmtCheck = $pdo->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
+            $stmtCheck->execute([$username, $id]);
+            if ($stmtCheck->fetch()) {
+                $error = "Questo username è già utilizzato da un altro utente.";
+            } else {
+                // Aggiornamento query dinamico
+                if ($password !== '') {
+                    $password_hash = password_hash($password, PASSWORD_DEFAULT);
+                    $stmtUpdate = $pdo->prepare("UPDATE users SET username = ?, email = ?, password_hash = ?, role = ? WHERE id = ?");
+                    $stmtUpdate->execute([$username, $email, $password_hash, $role, $id]);
+                } else {
+                    $stmtUpdate = $pdo->prepare("UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?");
+                    $stmtUpdate->execute([$username, $email, $role, $id]);
+                }
+
+                $success = "Dati utente aggiornati con successo.";
+                // Aggiorna i dati mostrati
+                $user['username'] = $username;
+                $user['email'] = $email;
+                $user['role'] = $role;
 
             // Se l'admin ha cambiato il proprio username, aggiorna la sessione
             if ($isSelfEdit && $username !== $_SESSION['username']) {
@@ -106,6 +109,11 @@ include '../includes/header.php';
     <div class="mb-3">
       <label class="form-label">Username</label>
       <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($user['username']) ?>" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($user['email'] ?? '') ?>">
     </div>
 
     <div class="mb-3">

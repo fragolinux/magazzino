@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:50:58 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-09 20:13:52
+ * @Last Modified time: 2026-02-25
 */
 // 2026-01-03: Aggiunta funzionalità carico/scarico quantità componente
 // 2026-01-05: Aggiunta ricerca tramite equivalente del codice prodotto
@@ -16,6 +16,8 @@
 // 2026-02-08: Aggiunto id del componente nel modal dei dettagli
 // 2026-02-09: Aggiunta funzionalità di clonazione componente (apre add_component.php in nuova finestra)
 // 2026-02-09: Aggiunto ordinamento per codice prodotto, categoria, comparto, quantità e posizione
+// 2026-02-23: gestione passaggio parametri GET migliorata per precompilare i filtri di posizione, comparto e categoria
+// 2026-02-25: Aggiunta funzionalità per ricordare i filtri selezionati al ritorno alla pagina (tramite localStorage e selettore "Ricorda valori")
 
 require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
@@ -36,9 +38,9 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
 <div class="container py-1">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2><i class="fa-solid fa-microchip me-2"></i>Componenti</h2>
-        <a href="add_component.php" class="btn btn-primary">
+        <button type="button" id="btn-add-component" class="btn btn-primary">
             <i class="fa-solid fa-plus"></i> Aggiungi componente
-        </a>
+        </button>
     </div>
 
     <!-- Filtri -->
@@ -76,7 +78,13 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
                 <i class="fa-solid fa-filter-circle-xmark me-1"></i>Elimina filtri
             </button>
         </div>
-        <div class="col-md-6 offset-md-3">
+        <div class="col-md-3">
+            <div class="form-check form-switch m-0">
+                <input class="form-check-input" type="checkbox" role="switch" name="ricorda_valori_ritorno" id="ricorda_val_ritorno" value="1" checked="" style="cursor: pointer;">
+                <label class="form-check-label" for="ricorda_val_ritorno" style="cursor: pointer; user-select: none;">Ricorda valori</label>
+            </div>
+        </div>
+        <div class="col-md-6">
             <input type="text" id="search-code" class="form-control border border-primary border-3" placeholder="Cerca per codice prodotto...">
         </div>
     </div>
@@ -312,16 +320,27 @@ $(function(){
     $('#filter-locale').change(function(){
         loadLocations($(this).val());
         loadComponents();
+        saveFiltersToLocalStorage();
     });
     $('#filter-location').change(function(){
         loadCompartments($(this).val());
         loadComponents();
+        saveFiltersToLocalStorage();
     });
-    $('#filter-compartment, #filter-category').change(loadComponents);
-    $('#search-code').on('keyup', loadComponents);
+    $('#filter-compartment, #filter-category').change(function(){
+        loadComponents();
+        saveFiltersToLocalStorage();
+    });
+    $('#search-code').on('keyup', function(){
+        loadComponents();
+        saveFiltersToLocalStorage();
+    });
     
     // Eventi filtri ricerca avanzata
-    $('#filter-package, #filter-tensione, #filter-corrente, #filter-potenza, #filter-hfe, #filter-tags, #filter-notes').on('keyup', loadComponents);
+    $('#filter-package, #filter-tensione, #filter-corrente, #filter-potenza, #filter-hfe, #filter-tags, #filter-notes').on('keyup', function(){
+        loadComponents();
+        saveFiltersToLocalStorage();
+    });
 
     // Variabili per l'ordinamento
     let currentSortColumn = '';
@@ -342,6 +361,9 @@ $(function(){
         
         // Aggiorna le icone di ordinamento
         updateSortIcons();
+        
+        // Salva i filtri (incluso l'ordinamento) in localStorage
+        saveFiltersToLocalStorage();
         
         // Ricarica i componenti con il nuovo ordinamento
         loadComponents();
@@ -488,15 +510,260 @@ $(function(){
         });
     }
     
+    // Funzione per salvare tutti i filtri in localStorage
+    function saveFiltersToLocalStorage() {
+        if ($('#ricorda_val_ritorno').is(':checked')) {
+            const filters = {
+                locale: $('#filter-locale').val(),
+                location: $('#filter-location').val(),
+                compartment: $('#filter-compartment').val(),
+                category: $('#filter-category').val(),
+                search: $('#search-code').val(),
+                package: $('#filter-package').val(),
+                tensione: $('#filter-tensione').val(),
+                corrente: $('#filter-corrente').val(),
+                potenza: $('#filter-potenza').val(),
+                hfe: $('#filter-hfe').val(),
+                tags: $('#filter-tags').val(),
+                notes: $('#filter-notes').val(),
+                sortColumn: currentSortColumn,
+                sortDirection: currentSortDirection
+            };
+            localStorage.setItem('component_filters', JSON.stringify(filters));
+        }
+    }
+
+    // Funzione per ripristinare i filtri dal localStorage
+    function loadFiltersFromLocalStorage() {
+        const savedFilters = localStorage.getItem('component_filters');
+        if (savedFilters) {
+            try {
+                const filters = JSON.parse(savedFilters);
+                
+                // Ripristina i valori dei filtri
+                if (filters.locale) {
+                    $('#filter-locale').val(filters.locale);
+                    loadLocationsSync(filters.locale).then(function() {
+                        if (filters.location) {
+                            $('#filter-location').val(filters.location);
+                            loadCompartmentsSync(filters.location).then(function() {
+                                if (filters.compartment) {
+                                    $('#filter-compartment').val(filters.compartment);
+                                }
+                                if (filters.category) {
+                                    $('#filter-category').val(filters.category);
+                                }
+                                if (filters.search) {
+                                    $('#search-code').val(filters.search);
+                                }
+                                if (filters.package) {
+                                    $('#filter-package').val(filters.package);
+                                }
+                                if (filters.tensione) {
+                                    $('#filter-tensione').val(filters.tensione);
+                                }
+                                if (filters.corrente) {
+                                    $('#filter-corrente').val(filters.corrente);
+                                }
+                                if (filters.potenza) {
+                                    $('#filter-potenza').val(filters.potenza);
+                                }
+                                if (filters.hfe) {
+                                    $('#filter-hfe').val(filters.hfe);
+                                }
+                                if (filters.tags) {
+                                    $('#filter-tags').val(filters.tags);
+                                }
+                                if (filters.notes) {
+                                    $('#filter-notes').val(filters.notes);
+                                }
+                                
+                                // Ripristina l'ordinamento
+                                if (filters.sortColumn) {
+                                    currentSortColumn = filters.sortColumn;
+                                    currentSortDirection = filters.sortDirection || 'ASC';
+                                    updateSortIcons();
+                                }
+                                
+                                // Carica i componenti con i filtri ripristinati
+                                loadComponents();
+                            });
+                        } else {
+                            // Se non c'è location salvata, carica comunque gli altri filtri
+                            if (filters.category) {
+                                $('#filter-category').val(filters.category);
+                            }
+                            if (filters.search) {
+                                $('#search-code').val(filters.search);
+                            }
+                            if (filters.package) {
+                                $('#filter-package').val(filters.package);
+                            }
+                            if (filters.tensione) {
+                                $('#filter-tensione').val(filters.tensione);
+                            }
+                            if (filters.corrente) {
+                                $('#filter-corrente').val(filters.corrente);
+                            }
+                            if (filters.potenza) {
+                                $('#filter-potenza').val(filters.potenza);
+                            }
+                            if (filters.hfe) {
+                                $('#filter-hfe').val(filters.hfe);
+                            }
+                            if (filters.tags) {
+                                $('#filter-tags').val(filters.tags);
+                            }
+                            if (filters.notes) {
+                                $('#filter-notes').val(filters.notes);
+                            }
+                            
+                            // Ripristina l'ordinamento
+                            if (filters.sortColumn) {
+                                currentSortColumn = filters.sortColumn;
+                                currentSortDirection = filters.sortDirection || 'ASC';
+                                updateSortIcons();
+                            }
+                            
+                            // Carica i componenti con i filtri ripristinati
+                            loadComponents();
+                        }
+                    });
+                } else {
+                    // Se non c'è locale salvato, carica solo gli altri filtri
+                    if (filters.location) {
+                        $('#filter-location').val(filters.location);
+                        loadCompartmentsSync(filters.location).then(function() {
+                            if (filters.compartment) {
+                                $('#filter-compartment').val(filters.compartment);
+                            }
+                            if (filters.category) {
+                                $('#filter-category').val(filters.category);
+                            }
+                            if (filters.search) {
+                                $('#search-code').val(filters.search);
+                            }
+                            if (filters.package) {
+                                $('#filter-package').val(filters.package);
+                            }
+                            if (filters.tensione) {
+                                $('#filter-tensione').val(filters.tensione);
+                            }
+                            if (filters.corrente) {
+                                $('#filter-corrente').val(filters.corrente);
+                            }
+                            if (filters.potenza) {
+                                $('#filter-potenza').val(filters.potenza);
+                            }
+                            if (filters.hfe) {
+                                $('#filter-hfe').val(filters.hfe);
+                            }
+                            if (filters.tags) {
+                                $('#filter-tags').val(filters.tags);
+                            }
+                            if (filters.notes) {
+                                $('#filter-notes').val(filters.notes);
+                            }
+                            
+                            // Ripristina l'ordinamento
+                            if (filters.sortColumn) {
+                                currentSortColumn = filters.sortColumn;
+                                currentSortDirection = filters.sortDirection || 'ASC';
+                                updateSortIcons();
+                            }
+                            
+                            // Carica i componenti con i filtri ripristinati
+                            loadComponents();
+                        });
+                    } else {
+                        // Carica tutti i filtri tranne locale e location
+                        if (filters.compartment) {
+                            $('#filter-compartment').val(filters.compartment);
+                        }
+                        if (filters.category) {
+                            $('#filter-category').val(filters.category);
+                        }
+                        if (filters.search) {
+                            $('#search-code').val(filters.search);
+                        }
+                        if (filters.package) {
+                            $('#filter-package').val(filters.package);
+                        }
+                        if (filters.tensione) {
+                            $('#filter-tensione').val(filters.tensione);
+                        }
+                        if (filters.corrente) {
+                            $('#filter-corrente').val(filters.corrente);
+                        }
+                        if (filters.potenza) {
+                            $('#filter-potenza').val(filters.potenza);
+                        }
+                        if (filters.hfe) {
+                            $('#filter-hfe').val(filters.hfe);
+                        }
+                        if (filters.tags) {
+                            $('#filter-tags').val(filters.tags);
+                        }
+                        if (filters.notes) {
+                            $('#filter-notes').val(filters.notes);
+                        }
+                        
+                        // Ripristina l'ordinamento
+                        if (filters.sortColumn) {
+                            currentSortColumn = filters.sortColumn;
+                            currentSortDirection = filters.sortDirection || 'ASC';
+                            updateSortIcons();
+                        }
+                        
+                        // Carica i componenti con i filtri ripristinati
+                        loadComponents();
+                    }
+                }
+            } catch (e) {
+                console.error('Errore nel ripristino dei filtri:', e);
+            }
+        }
+    }
+
+    // Gestione checkbox "Ricorda valori di ritorno"
+    $('#ricorda_val_ritorno').change(function() {
+        // Salva lo stato del checkbox in localStorage
+        localStorage.setItem('ricorda_valori_ritorno', $(this).is(':checked') ? '1' : '0');
+        
+        if ($(this).is(':checked')) {
+            // Se il checkbox è selezionato, salva i filtri correnti
+            saveFiltersToLocalStorage();
+        }
+    });
+
+    // Carica lo stato del checkbox dal localStorage all'avvio
+    function loadCheckboxState() {
+        const savedState = localStorage.getItem('ricorda_valori_ritorno');
+        if (savedState === '1') {
+            $('#ricorda_val_ritorno').prop('checked', true);
+        } else {
+            $('#ricorda_val_ritorno').prop('checked', false);
+        }
+    }
+
+    // Carica lo stato del checkbox all'avvio
+    loadCheckboxState();
+
     // Inizializza da URL se ci sono parametri
     if (urlLocaleId || urlLocationId || urlCompartmentId || urlCategoryId || urlSearchCode) {
         initializeFromURL();
     } else {
-        // Se non ci sono parametri, seleziona il locale con ID più basso senza caricare
-        <?php if ($defaultLocaleId): ?>
-        $('#filter-locale').val(<?= $defaultLocaleId ?>);
-        loadLocationsSync(<?= $defaultLocaleId ?>);
-        <?php endif; ?>
+        // Se non ci sono parametri, controlla lo stato del checkbox
+        if ($('#ricorda_val_ritorno').is(':checked')) {
+            // Se il checkbox è selezionato, ripristina i filtri memorizzati
+            loadFiltersFromLocalStorage();
+        } else {
+            // Se il checkbox non è selezionato e non ci sono parametri URL, esegui clear-filters
+            const return_url = window.location.href;
+            if (return_url.indexOf('?') === -1) {
+                $('#clear-filters').click();
+            }
+        }
         // Imposta il focus sul campo di ricerca
         $('#search-code').focus();
     }
@@ -522,6 +789,11 @@ $(function(){
         currentSortColumn = '';
         currentSortDirection = 'ASC';
         updateSortIcons();
+        
+        // Cancella i filtri memorizzati in localStorage se il checkbox è selezionato
+        if ($('#ricorda_val_ritorno').is(':checked')) {
+            localStorage.removeItem('component_filters');
+        }
         
         loadComponents(); // Ricarica la tabella con solo il filtro di ricerca se presente
     });
@@ -640,11 +912,67 @@ $(function(){
             // Salva i dati del componente in localStorage
             localStorage.setItem('clone_component_data', JSON.stringify(data));
             
-            // Apre add_component.php in una nuova finestra/tab
-            window.open('<?= BASE_PATH ?>warehouse/add_component.php', '_blank');
+            // Apre add_component.php nella stessa finestra
+            window.location.href = '<?= BASE_PATH ?>warehouse/add_component.php';
         }).fail(function() {
             alert('Errore durante il caricamento dei dati del componente.');
         });
+    });
+
+    // Pulsante "Aggiungi componente" - apre con parametri dei filtri selezionati
+    $('#btn-add-component').click(function() {
+        // Raccogli i valori dei filtri selezionati
+        const localeId = $('#filter-locale').val();
+        const locationId = $('#filter-location').val();
+        const compartmentId = $('#filter-compartment').val();
+        const categoryId = $('#filter-category').val();
+        
+        // Costruisci l'URL con i parametri
+        let url = 'add_component.php';
+        const params = [];
+        
+        if (localeId) params.push('locale_id=' + encodeURIComponent(localeId));
+        if (locationId) params.push('location_id=' + encodeURIComponent(locationId));
+        if (compartmentId) params.push('compartment_id=' + encodeURIComponent(compartmentId));
+        if (categoryId) params.push('category_id=' + encodeURIComponent(categoryId));
+        
+        if (params.length > 0) {
+            url += '?' + params.join('&');
+        }
+        
+        // Apri la pagina nella stessa finestra
+        window.location.href = url;
+    });
+
+    // Pulsante "Modifica" - apre con parametri dei filtri selezionati come return_url
+    $(document).on('click', '.btn-edit', function() {
+        const componentId = $(this).data('id');
+        
+        // Raccogli i valori dei filtri selezionati
+        const localeId = $('#filter-locale').val();
+        const locationId = $('#filter-location').val();
+        const compartmentId = $('#filter-compartment').val();
+        const categoryId = $('#filter-category').val();
+        
+        // Costruisci il return_url con i parametri
+        let return_url = 'components.php';
+        const params = [];
+        
+        if (localeId) params.push('locale_id=' + encodeURIComponent(localeId));
+        if (locationId) params.push('location_id=' + encodeURIComponent(locationId));
+        if (compartmentId) params.push('compartment_id=' + encodeURIComponent(compartmentId));
+        if (categoryId) params.push('category_id=' + encodeURIComponent(categoryId));
+        
+        if (params.length > 0) {
+            return_url += '?' + params.join('&');
+        }
+        
+        // Costruisci l'URL per la modifica
+        let edit_url = 'edit_component.php?id=' + encodeURIComponent(componentId);
+        edit_url += '&return_url=' + encodeURIComponent(return_url);
+        
+        // Apri la pagina nella stessa finestra
+        window.location.href = edit_url;
     });
 });
 </script>

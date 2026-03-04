@@ -22,6 +22,13 @@ services:
       DB_PASS: ${DB_PASS}
       DB_MIGRATION_USER: root
       DB_MIGRATION_PASS: ${DB_ROOT_PASSWORD}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Magazzino Alerts}
+      SMTP_SECURE: ${SMTP_SECURE:-tls}
       TZ: ${TZ:-Europe/Rome}
     volumes:
       - ./data/config:/var/www/html/config
@@ -29,6 +36,7 @@ services:
       - ./overrides/auth_check.php:/var/www/html/includes/auth_check.php:ro
       - ./overrides/update_index.php:/var/www/html/update/index.php:ro
       - ./overrides/database.php:/var/www/html/config/database.php:ro
+      - ./overrides/mail_config.php:/var/www/html/config/mail_config.php:ro
       - ./overrides/settings.php:/var/www/html/settings.php:ro
       - ./data/uploads/datasheet:/var/www/html/datasheet
       - ./data/uploads/images:/var/www/html/images

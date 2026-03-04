@@ -3,12 +3,13 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:44:57 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-02 20:16:48
+ * @Last Modified time: 2026-02-22
 */
 // 2026-01-04: Aggiunta opzione "Ricordami" nel login
 // 2026-01-12: Aggiunto pulsante per mostrare/nascondere la password
 // 2026-01-15: Implementata protezione CSRF, migrazione password_hash, rate limiting contro brute force
 // 2026-02-02: Implementazione login sito personale
+// 2026-02-22: sistemati campi input per migliorare compatibilità browser e sicurezza (autocomplete)
 
 require 'includes/session_config.php';
 session_start();
@@ -144,14 +145,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php endif; ?>
   <form method="POST">
     <div class="mb-3">
-      <label class="form-label">Username</label>
-      <input type="text" name="username" class="form-control" required>
+      <label class="form-label" for="username">Username</label>
+      <input type="text" name="username" id="username" class="form-control" autocomplete="username" required>
     </div>
     <div class="mb-3">
-      <label class="form-label">Password</label>
+      <label class="form-label" for="password">Password</label>
       <div class="input-group">
-        <input type="password" name="password" id="passwordField" class="form-control" required>
-        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+        <input type="password" name="password" id="password" class="form-control" autocomplete="current-password" required>
+        <button class="btn btn-outline-secondary" type="button" id="togglePassword" tabindex="-1">
           <i class="fa-solid fa-eye" id="eyeIcon"></i>
         </button>
       </div>
@@ -169,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <script>
 document.getElementById('togglePassword').addEventListener('click', function() {
-    const passwordField = document.getElementById('passwordField');
+    const passwordField = document.getElementById('password');
     const eyeIcon = document.getElementById('eyeIcon');
     
     if (passwordField.type === 'password') {

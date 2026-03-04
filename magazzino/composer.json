@@ -9,6 +9,7 @@
         }
     ],
     "require": {
-        "picqer/php-barcode-generator": "^2.4"
+        "picqer/php-barcode-generator": "^2.4",
+        "phpmailer/phpmailer": "^7.0"
     }
 }

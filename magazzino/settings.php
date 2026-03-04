@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-05 09:20:18 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-19 15:42:51
+ * @Last Modified time: 2026-03-02
 */
 // 2026-01-08: Aggiunto supporto tema dark/light
 // 2026-01-11: Aggiunto URL in alternativa all'IP del PC
@@ -13,6 +13,7 @@
 // 2026-02-01: Aggiunti parametri QR Code (qr_per_riga, qr_size) e barcode
 // 2026-02-02: Aggiunto sito personale completamente configurabile
 // 2026-02-19: Aggiunti parametri etichette (etichette_per_riga, etichette_font_size)
+// 2026-03-02: Aggiunta guida al ripristino backup database con link a pagina dedicata
 
 /**
  * Pagina impostazioni generali (solo admin)
@@ -725,7 +726,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         <div class="alert alert-info mt-3">
                             <i class="fas fa-info-circle me-2"></i>
-                            <strong>Ripristino backup:</strong> Il backup può essere ripristinato importandolo in phpMyAdmin o tramite command line con <code>mysql -u root -p magazzino_db &lt; backup.sql</code>
+                            <strong>Ripristino backup:</strong> Il backup può essere ripristinato importandolo in phpMyAdmin o tramite command line con <code>mysql -u root -p magazzino_db < backup.sql</code>
+                            <br><br>
+                            <a href="<?= BASE_PATH ?>database_import_guide.php" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-book me-1"></i> Istruzioni Dettagliate
+                            </a>
+                            <span class="text-muted ms-2 small">Guida completa per phpMyAdmin e Command Line</span>
                         </div>
                     </div>
                 </div>

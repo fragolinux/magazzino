@@ -3,8 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:04:40 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-15
+ * @Last Modified time: 2026-03-03
 */
+
+// 2025-03-03: aggiunto indirizzo email
 
 require '../includes/auth_check.php';
 require '../includes/db_connect.php';
@@ -23,24 +25,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "Token di sicurezza non valido. Ricarica la pagina e riprova.";
     } else {
         $username = trim($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $role = $_POST['role'] ?? 'user';
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $role = $_POST['role'] ?? 'user';
 
-    if ($username === '' || $password === '') {
-        $error = "Username e password sono obbligatori.";
-    } else {
-        // Controllo se esiste già
-        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
-        $stmt->execute([$username]);
-        if ($stmt->fetch()) {
-            $error = "Username già utilizzato.";
+        if ($username === '' || $password === '') {
+            $error = "Username e password sono obbligatori.";
         } else {
-            $password_hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt2 = $pdo->prepare("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)");
-            $stmt2->execute([$username, $password_hash, $role]);
-            $success = "Utente creato con successo.";
+            // Controllo se esiste già
+            $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+            $stmt->execute([$username]);
+            if ($stmt->fetch()) {
+                $error = "Username già utilizzato.";
+            } else {
+                $password_hash = password_hash($password, PASSWORD_DEFAULT);
+                $stmt2 = $pdo->prepare("INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)");
+                $stmt2->execute([$username, $email, $password_hash, $role]);
+                $success = "Utente creato con successo.";
+            }
         }
-    }
     } // Chiude il blocco else della verifica CSRF
 }
 
@@ -58,6 +61,10 @@ include '../includes/header.php';
   <div class="mb-3">
     <label class="form-label">Username</label>
     <input type="text" name="username" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Email</label>
+    <input type="email" name="email" class="form-control">
   </div>
   <div class="mb-3">
     <label class="form-label">Password</label>

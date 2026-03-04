@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:52:20 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-19
+ * @Last Modified time: 2026-02-23
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-08: aggiunti quick add per posizioni e categorie
@@ -18,11 +18,13 @@
 // 2026-02-08: corretto bug che impediva di ricordare alcuni valori nei campi avanzati quando veniva rilevato un duplicato in altre posizioni o un errore di validazione
 // 2026-02-08: aggiunto $_GET['codice'] per precompilare il campo codice prodotto da script progetti
 // 2026-02-08: aggiunti altri campi GET per precompilare da script progetti importazione csv (prezzo, note, link_fornitore)
+// 2026-02-23: aggiunti parametri GET per precompilare filtri da components.php (locale_id, location_id, compartment_id, category_id)
 // 2026-02-09: aggiunto flag "Ricorda valori" per mantenere o resettare i campi dopo l'inserimento
 // 2026-02-09: aggiunto bottone per la visualizzazione rapida del componente appena inserito
 // 2026-02-09: aggiunto bottone "Clona componente"
 // 2026-02-19: in "Clona componente" aggiunto clona di: categoria, costruttore, fornitore. I campi q.tà rimangono 0
 // 2026-02-19: il bottone "Clona componente" ora è visibile solo se è stata inserita l'API di Mouser
+// 2026-02-23: gestione passaggio parametri GET migliorata per precompilare i filtri di posizione, comparto e categoria
 
 require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
@@ -67,6 +69,18 @@ $showMouserButton = !empty($mouserFornitore);
 // Compartimenti se è selezionata una location
 $compartments = [];
 $selectedLocationId = $component['location_id'] ?? $_POST['location_id'] ?? null;
+
+// Gestione parametri GET per precompilare i filtri (da components.php)
+$urlLocaleId = $_GET['locale_id'] ?? null;
+$urlLocationId = $_GET['location_id'] ?? null;
+$urlCompartmentId = $_GET['compartment_id'] ?? null;
+$urlCategoryId = $_GET['category_id'] ?? null;
+
+// Se ci sono parametri GET, usa quelli per precompilare i filtri
+if ($urlLocationId && is_numeric($urlLocationId)) {
+    $selectedLocationId = $urlLocationId;
+}
+
 if (isset($selectedLocationId) && is_numeric($selectedLocationId) && $selectedLocationId !== '') {
     $stmt = $pdo->prepare("SELECT * FROM compartments WHERE location_id = ? ORDER BY
       REGEXP_REPLACE(code, '[0-9]', '') ASC,
@@ -326,7 +340,9 @@ include '../includes/header.php';
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0"><i class="fa-solid fa-plus me-2"></i>Aggiungi componente</h4>
       <div class="d-flex align-items-center gap-3">
-        <a href="components.php" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i> Torna alla lista</a>
+        <button type="button" id="btn-back-to-list" class="btn btn-secondary btn-sm">
+          <i class="fa-solid fa-arrow-left me-1"></i> Torna alla lista
+        </button>
       </div>
   </div>
 
@@ -805,6 +821,130 @@ $(function() {
     $('#codice_prodotto').focus();
   }
 
+  // Gestione parametri GET per precompilare i filtri (da components.php)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlLocaleId = urlParams.get('locale_id');
+  const urlLocationId = urlParams.get('location_id');
+  const urlCompartmentId = urlParams.get('compartment_id');
+  const urlCategoryId = urlParams.get('category_id');
+
+  // Versioni sincrone (con Promise) delle funzioni di caricamento
+  function loadLocationsSync(locale_id) {
+    return new Promise(function(resolve) {
+      if (locale_id) {
+        $.getJSON('<?= BASE_PATH ?>warehouse/get_locations.php', {locale_id: locale_id}, function(data) {
+          let options = '<option value="">-- Seleziona posizione --</option>';
+          $.each(data, function(i, item) {
+            options += '<option value="'+item.id+'">'+item.name+'</option>';
+          });
+          $('#locationSelect').html(options);
+          resolve();
+        });
+      } else {
+        $('#locationSelect').html('<option value="">-- Seleziona posizione --</option>');
+        resolve();
+      }
+    });
+  }
+  
+  function loadCompartmentsSync(location_id) {
+    return new Promise(function(resolve) {
+      if (location_id) {
+        $.getJSON('<?= BASE_PATH ?>warehouse/get_compartments.php', {location_id: location_id}, function(data) {
+          let options = '<option value="">-- Seleziona comparto --</option>';
+          $.each(data.compartments, function(i, item) {
+            options += '<option value="'+item.id+'">'+item.code+'</option>';
+          });
+          $('#compartmentSelect').html(options);
+          resolve();
+        });
+      } else {
+        $('#compartmentSelect').html('<option value="">-- Seleziona comparto --</option>');
+        resolve();
+      }
+    });
+  }
+
+  // Funzione per inizializzare i filtri da URL
+  function initializeFiltersFromURL() {
+    let promise = Promise.resolve();
+    
+    // Se c'è compartment_id, devo risalire a location_id e locale_id
+    if (urlCompartmentId) {
+      promise = new Promise(function(resolve) {
+        $.getJSON('<?= BASE_PATH ?>warehouse/get_compartment_details.php', {id: urlCompartmentId}, function(comp) {
+          if (comp && comp.location_id) {
+            // Carica dettagli della location
+            $.getJSON('<?= BASE_PATH ?>warehouse/get_location_details.php', {id: comp.location_id}, function(loc) {
+              if (loc && loc.locale_id) {
+                // Ha un locale, carica la cascata completa
+                $('#locationSelect').val(loc.locale_id);
+                loadLocationsSync(loc.locale_id).then(function() {
+                  $('#locationSelect').val(comp.location_id);
+                  loadCompartmentsSync(comp.location_id).then(function() {
+                    $('#compartmentSelect').val(urlCompartmentId);
+                    resolve();
+                  });
+                });
+              } else {
+                // Nessun locale, carica solo location e compartment
+                loadCompartmentsSync(comp.location_id).then(function() {
+                  $('#locationSelect').val(comp.location_id);
+                  $('#compartmentSelect').val(urlCompartmentId);
+                  resolve();
+                });
+              }
+            });
+          } else {
+            resolve();
+          }
+        });
+      });
+    } else if (urlLocationId) {
+      // Se c'è solo location_id, risali al locale
+      promise = new Promise(function(resolve) {
+        $.getJSON('<?= BASE_PATH ?>warehouse/get_location_details.php', {id: urlLocationId}, function(loc) {
+          if (loc && loc.locale_id) {
+            $('#locationSelect').val(loc.locale_id);
+            loadLocationsSync(loc.locale_id).then(function() {
+              $('#locationSelect').val(urlLocationId);
+              loadCompartmentsSync(urlLocationId).then(function() {
+                resolve();
+              });
+            });
+          } else {
+            $('#locationSelect').val(urlLocationId);
+            loadCompartmentsSync(urlLocationId).then(function() {
+              resolve();
+            });
+          }
+        });
+      });
+    } else if (urlLocaleId) {
+      // Solo locale
+      $('#locationSelect').val(urlLocaleId);
+      promise = loadLocationsSync(urlLocaleId);
+    }
+    
+    if (urlCategoryId) {
+      $('#categorySelect').val(urlCategoryId);
+    }
+    
+    // Dopo aver impostato tutti i filtri, carica i componenti
+    promise.then(function() {
+      // Imposta focus sul campo codice prodotto
+      $('#codice_prodotto').focus();
+    });
+  }
+  
+  // Inizializza da URL se ci sono parametri
+  if (urlLocaleId || urlLocationId || urlCompartmentId || urlCategoryId) {
+    initializeFiltersFromURL();
+  } else {
+    // Se non ci sono parametri, imposta focus sul campo codice prodotto
+    $('#codice_prodotto').focus();
+  }
+
   // Tooltip per pulsante Mouser (solo se il bottone esiste)
   const $wrapper = $('#btnMouserWrapper');
   if ($wrapper.length) {
@@ -1199,6 +1339,56 @@ $(function() {
     }).fail(function() {
       alert('Errore durante il caricamento dei dati del componente.');
     });
+  });
+
+  // Gestione pulsante "Torna alla lista" - passa i parametri dei filtri selezionati
+  $('#btn-back-to-list').click(function() {
+    // Raccogli i valori dei filtri selezionati
+    const localeId = $('#locationSelect').find(':selected').data('locale-id') || getSelectedLocaleId();
+    const locationId = $('#locationSelect').val();
+    const compartmentId = $('#compartmentSelect').val();
+    const categoryId = $('#categorySelect').val();
+    
+    // Costruisci l'URL con i parametri
+    let url = 'components.php';
+    const params = [];
+    
+    if (localeId) params.push('locale_id=' + encodeURIComponent(localeId));
+    if (locationId) params.push('location_id=' + encodeURIComponent(locationId));
+    if (compartmentId) params.push('compartment_id=' + encodeURIComponent(compartmentId));
+    if (categoryId) params.push('category_id=' + encodeURIComponent(categoryId));
+    
+    if (params.length > 0) {
+      url += '?' + params.join('&');
+    }
+    
+    // Apri la pagina nella stessa finestra
+    window.location.href = url;
+  });
+  
+  // Funzione per ottenere l'ID del locale selezionato
+  function getSelectedLocaleId() {
+    const locationId = $('#locationSelect').val();
+    if (!locationId) return null;
+    
+    // Cerca l'opzione selezionata e recupera il data-locale-id
+    const selectedOption = $('#locationSelect').find('option:selected');
+    return selectedOption.data('locale-id') || null;
+  }
+
+  // Aggiungi data-locale-id alle opzioni della select location al caricamento
+  $('#locationSelect option').each(function() {
+    const text = $(this).text();
+    const localeName = text.split(' - ')[1];
+    if (localeName) {
+      // Trova l'ID del locale dal nome
+      <?php foreach ($locali as $loc): ?>
+      if (localeName === '<?= htmlspecialchars($loc['name']) ?>') {
+        $(this).data('locale-id', <?= $loc['id'] ?>);
+        return false; // Esci dal ciclo each di jQuery
+      }
+      <?php endforeach; ?>
+    }
   });
 
   // Gestione cancellazione componente dalla tabella ultimi inseriti

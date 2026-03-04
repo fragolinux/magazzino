@@ -3,8 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-08
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-08
+ * @Last Modified time: 2026-03-02
 */
+
+// 2026-03-02: aggiunto file pdf al locale
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -50,6 +52,7 @@ include '../includes/header.php';
           <th>Descrizione</th>
           <th>Posizioni</th>
           <th>Componenti</th>
+          <th>PDF</th>
           <th class="text-end">Azioni</th>
         </tr>
       </thead>
@@ -65,6 +68,16 @@ include '../includes/header.php';
           <td><?= htmlspecialchars($loc['description'] ?? '') ?></td>
           <td><?= $loc['location_count'] ?></td>
           <td><?= $loc['component_count'] ?></td>
+          <td>
+            <?php if ($loc['pdf_filename']): ?>
+              <a href="download_pdf_locale.php?id=<?= $loc['id'] ?>" class="btn btn-sm btn-outline-primary" 
+                 title="Scarica PDF" target="_blank">
+                <i class="fa-solid fa-file-pdf me-1"></i>PDF
+              </a>
+            <?php else: ?>
+              <span class="text-muted">Nessun PDF</span>
+            <?php endif; ?>
+          </td>
           <td class="text-end">
             <a href="edit_locale.php?id=<?= $loc['id'] ?>" class="btn btn-sm btn-outline-secondary me-1"
               title="Modifica locale">
