@@ -3,8 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-08
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-09
+ * @Last Modified time: 2026-03-07
 */
+// 2026-03-07: tolto target="_blank" dai link
+
 // Vista gerarchica: Locali -> Posizioni -> Comparti -> Componenti
 
 require_once '../includes/db_connect.php';
@@ -136,7 +138,7 @@ $locali = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <div class="alert alert-light mb-3">
                                                             <i class="fa-solid fa-microchip me-2"></i>
                                                             <strong><?= $direct_components ?> componenti</strong> senza comparto specifico
-                                                            <a href="components.php?location_id=<?= $location['id'] ?>" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
+                                                            <a href="components.php?location_id=<?= $location['id'] ?>" class="btn btn-sm btn-outline-primary ms-2">
                                                                 <i class="fa-solid fa-eye"></i> Visualizza
                                                             </a>
                                                         </div>
@@ -159,7 +161,7 @@ $locali = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                                         <div>
                                                                             <span class="badge bg-info me-2"><?= $compartment['components_count'] ?> componenti</span>
                                                                             <?php if ($compartment['components_count'] > 0): ?>
-                                                                                <a href="components.php?compartment_id=<?= $compartment['id'] ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                                                <a href="components.php?compartment_id=<?= $compartment['id'] ?>" class="btn btn-sm btn-outline-primary">
                                                                                     <i class="fa-solid fa-eye"></i> Visualizza
                                                                                 </a>
                                                                             <?php endif; ?>

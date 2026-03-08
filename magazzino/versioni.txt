@@ -310,10 +310,9 @@
                     - [Modificato] warehouse/progetti/progetto_view.php
 1.13  04/03/2026  - gestione passaggio parametri tra schermate migliorata per precompilare i filtri di posizione, comparto e categoria.
                   - comparti: corretto bug bottone "Mostra tutte" che non resettava il filtro posizione
-                  - in setting: aggiunta guida al ripristino backup database con link a pagina dedicata
                   - in locali: aggiunto file pdf (dove poter inserire un disegno dei locali, disposizione dei comparti e posizioni)
                   - in componenti: nel popup aggiunta descrizione e  file pdf al locale
-                  - in Settaggi > Database aggiunta pagina con le info per l'importazione del backup del DB
+                  - in Settaggi > Database aggiunta pagina con le info per l'importazione del backup del DB con link a pagina dedicata
                   - implementata gestione alert per componenti sotto scorta, alert + invio email per l'invio email configurare config\mail_config.php
                     - [Aggiunto] cron/
                     - [Aggiunto] database_import_guide.php
@@ -340,3 +339,21 @@
                     - [Modificato] warehouse/get_components.php
                     - [Modificato] warehouse/locali.php
                     - [Modificato] warehouse/view_component.php
+1.14  08/03/2026  - aggiunta gestione carico/scarico magazzino (autore Andrea Gonzo)
+                  - aggiunti 2 bottoni su pop-up avviso sottoscora per nascondere tutto
+                  - tolta apertura in nuova finestra in gerarchia e ultimi componenti inseriti
+                    - [Aggiunto] update/migrations/1.14.sql
+                    - [Aggiunto] warehouse/ajax_movimento_componente.php
+                    - [Modificato] includes/footer.php
+                    - [Modificato] update/index.php
+                    - [Modificato] login.php
+                    - [Modificato] warehouse/add_component.php
+                    - [Modificato] warehouse/ajax_get_low_stock_alerts.php
+                    - [Modificato] warehouse/components.php
+                    - [Modificato] warehouse/delete_component.php
+                    - [Modificato] warehouse/edit_component.php
+                    - [Modificato] warehouse/hierarchy.php
+                    - [Modificato] warehouse/progetti/ajax_annulla_conferma.php
+                    - [Modificato] warehouse/progetti/ajax_conferma.php
+                    - [Modificato] warehouse/recent_components.php
+                    - [Modificato] warehouse/update_component_quantity.php

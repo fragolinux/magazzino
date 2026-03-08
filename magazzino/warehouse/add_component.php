@@ -2,8 +2,8 @@
 /*
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:52:20 
- * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-23
+ * @Last Modified by: Andrea Gonzo
+ * @Last Modified time: 2026-03-07
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-08: aggiunti quick add per posizioni e categorie
@@ -25,6 +25,7 @@
 // 2026-02-19: in "Clona componente" aggiunto clona di: categoria, costruttore, fornitore. I campi q.tà rimangono 0
 // 2026-02-19: il bottone "Clona componente" ora è visibile solo se è stata inserita l'API di Mouser
 // 2026-02-23: gestione passaggio parametri GET migliorata per precompilare i filtri di posizione, comparto e categoria
+// 2026-03-07 (Andrea Gonzo) aggiunta gestione carico/scarico magazzino
 
 require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
@@ -241,6 +242,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['codice_prodotto']) &&
             
             // Recupera l'ID del componente appena inserito
             $component_id = $pdo->lastInsertId();
+
+
+
+            // Inserimento nella tabella movimenti_magazzino (Andrea)
+                $user_id = $_SESSION['user_id']; // recupera l'ID dell'utente loggato
+                $stmtMov = $pdo->prepare("INSERT INTO movimenti_magazzino 
+                    (component_id, data_ora, movimento, commento, quantity, user_id) 
+                    VALUES (?, NOW(), ?, ?, ?, ?)");
+                $movimento = "Creazione";
+                $commento = "Creazione componente";
+                $stmtMov->execute([$component_id, $movimento, $commento, $quantity, $user_id]); 
+
             
             // Ora elabora il file datasheet se presente e non ci sono errori
             if (isset($_FILES['datasheet_file']) && $_FILES['datasheet_file']['error'] === UPLOAD_ERR_OK && empty($error)) {

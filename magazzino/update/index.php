@@ -3,7 +3,7 @@
  * @Author: gabriele.riva 
  * @Date: 2026-01-04 12:59:50 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-22
+ * @Last Modified time: 2026-03-08
  *
  * Update script:
  * - apre file .zip nella stessa cartella
@@ -17,9 +17,14 @@
 // 2026-02-09: aggiunta verifica del sistema prima di procedere con l'aggiornamento (PHP, MySQL, permessi cartelle/file)
 // 2026-02-19: aggiunto controllo esistenza file di configurazione prima di sovrascriverli, con possibilità di scegliere quali sovrascrivere
 // 2026-02-22: aggiunto controllo estenzione .zip abilitata in php.ini
+// 2026-03-08: aggiornati path
 
-require_once __DIR__ . '/../config/base_path.php';
-require_once __DIR__ . '/../includes/auth_check.php';
+
+$projectRoot = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..');
+define('PROJECT_ROOT', $projectRoot);
+require_once PROJECT_ROOT . '/config/base_path.php';
+require_once PROJECT_ROOT . '/includes/db_connect.php';
+require_once PROJECT_ROOT . '/includes/auth_check.php';
 
 // Verifica se il database è disponibile
 $dbAvailable = false;
@@ -28,7 +33,6 @@ try {
     // Controlla prima se il file di configurazione esiste
     $dbConfigFile = __DIR__ . '/../config/database.php';
     if (file_exists($dbConfigFile)) {
-        require_once __DIR__ . '/../includes/db_connect.php';
         if (isset($pdo) && $pdo instanceof PDO) {
             $pdo->query('SELECT 1');
             $dbAvailable = true;
@@ -156,7 +160,7 @@ function checkSystemRequirements() {
         'config' => ['recursive' => false]
     ];
     
-    $projectRoot = realpath(__DIR__ . '/..');
+    $projectRoot = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..');
     $isLinux = (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN');
     
     foreach ($foldersToCheck as $folder => $options) {
@@ -1193,7 +1197,7 @@ if (!$isPhase2 && $dbAvailable && isset($pdo) && $pdo instanceof PDO) {
 			if (file_put_contents($configFile, $configContent) !== false) {
 				$configUpdated = true;
 			} else {
-				error_log("Errore scrittura config: $configFile");
+				//error_log("Errore scrittura config: $configFile");
 			}
 		}
 	}

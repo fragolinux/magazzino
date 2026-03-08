@@ -2,8 +2,12 @@
 /*
  * @Author: RG4Tech
  * @Date: 2026-02-08
+ * @Last Modified by: Andrea Gonzo
+ * @Last Modified time: 2026-03-07
  * @Description: AJAX Conferma Progetto e Scarico Magazzino
  */
+ 
+// 2026-03-07 (Andrea Gonzo) aggiunta gestione carico/scarico magazzino
 
 require_once '../../config/base_path.php';
 require_once '../../includes/db_connect.php';
@@ -84,6 +88,26 @@ try {
         // Salva quantità scaricata nel progetto
         $stmt = $pdo->prepare("UPDATE progetti_componenti SET quantita_scaricata = ? WHERE id = ?");
         $stmt->execute([$qta_scaricata, $comp['id']]);
+        
+        // INSERIMENTO NELLA TABELLA MOVIMENTI_MAGAZZINO PER OGNI COMPONENTE SCARICATO (Andrea)
+        if ($qta_scaricata > 0) {
+            $user_id = $_SESSION['user_id'] ?? 0;
+            $commento = "Scarico progetto: " . $progetto['nome'];
+            $movimento = "Scarico";
+
+            $stmtMov = $pdo->prepare("
+                INSERT INTO movimenti_magazzino 
+                (component_id, data_ora, movimento, commento, quantity, user_id)
+                VALUES (?, NOW(), ?, ?, ?, ?)
+            ");
+            $stmtMov->execute([
+                $comp['ks_componente'],
+                $movimento,
+                $commento,
+                $qta_scaricata,
+                $user_id
+            ]);
+        }
     }
     
     // Aggiorna stato progetto
@@ -106,6 +130,6 @@ try {
     ]);
     
 } catch (Exception $e) {
-    $pdo->rollBack();
+    if ($pdo->inTransaction()) $pdo->rollBack();
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }

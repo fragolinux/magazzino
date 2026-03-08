@@ -2,10 +2,11 @@
 /*
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:55:25 
- * @Last Modified by:   gabriele.riva
- * @Last Modified time: 2026-01-12 16:10:157
+ * @Last Modified by:   Andrea Gonzo
+ * @Last Modified time: 2026-03-07
 */
 // 2026-01-09: Aggiunta cancellazione immagine componente
+// 2026-03-07 (Andrea Gonzo) aggiunta gestione carico/scarico magazzino
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -48,6 +49,11 @@ if ($component && !empty($component['datasheet_file'])) {
         }
     }
 }
+
+// Eliminazione dei movimenti magazzino collegati (Andrea)
+$stmt_mov = $pdo->prepare("DELETE FROM movimenti_magazzino WHERE component_id = ?");
+$stmt_mov->execute([$id]);
+
 
 // Eliminazione componente
 $stmt = $pdo->prepare("DELETE FROM components WHERE id = ?");

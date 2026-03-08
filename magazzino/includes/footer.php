@@ -3,11 +3,12 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:49:31 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-03-03
+ * @Last Modified time: 2026-03-07
 */
 // 2026-02-01: Aggiunta barra del footer con data/ora, autore e versione
 // 2026-02-09: Footer sticky, migliorato responsive e design
 // 2025-03-03: aggiunto modale di avviso per componenti sotto scorta, con possibilità di nascondere singoli avvisi tramite cookie
+// 2026-03-07: aggiunti bottoni per nascondere tutto
 
 // Recupera versione dal database
 $version_info = null;
@@ -80,6 +81,14 @@ $currentYear = date('Y');
         </div>
       </div>
       <div class="modal-footer">
+        <div class="me-auto">
+          <button type="button" class="btn btn-warning btn-sm" id="hideAllToday">
+            <i class="fa-solid fa-calendar-day me-1"></i>Nascondi tutto oggi
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="hideAllForever">
+            <i class="fa-solid fa-eye-slash me-1"></i>Nascondi tutto
+          </button>
+        </div>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
       </div>
     </div>
@@ -131,16 +140,18 @@ $(document).ready(function() {
         }
     });
 
-    // Gestione pulsante Nascondi
+    // Gestione pulsante Nascondi (singolo)
     $(document).on('click', '.hide-alert', function() {
-        const id = $(this).data('id');
-        const days = $(this).data('days') || 365;
-        let hidden = getCookie('hide_low_stock');
+        const id = $(this).data('id').toString();
+        const days = $(this).data('days');
+        const cookieName = (days === 1) ? 'hide_low_stock_today' : 'hide_low_stock_forever';
+        
+        let hidden = getCookie(cookieName);
         let hiddenList = hidden ? hidden.split(',') : [];
         
-        if (!hiddenList.includes(id.toString())) {
+        if (!hiddenList.includes(id)) {
             hiddenList.push(id);
-            setCookie('hide_low_stock', hiddenList.join(','), days);
+            setCookie(cookieName, hiddenList.join(','), days);
         }
         
         $(this).closest('tr').fadeOut(function() {
@@ -148,6 +159,38 @@ $(document).ready(function() {
                 $('#lowStockAlertModal').modal('hide');
             }
         });
+    });
+
+    // Funzione helper per nascondere tutto
+    function hideAllLowStock(days) {
+        const cookieName = (days === 1) ? 'hide_low_stock_today' : 'hide_low_stock_forever';
+        let hidden = getCookie(cookieName);
+        let hiddenList = hidden ? hidden.split(',') : [];
+        let added = false;
+
+        $('#lowStockAlertBody tr:visible').each(function() {
+            const id = $(this).find('.hide-alert').first().data('id').toString();
+            if (!hiddenList.includes(id)) {
+                hiddenList.push(id);
+                added = true;
+            }
+        });
+
+        if (added) {
+            setCookie(cookieName, hiddenList.join(','), days);
+        }
+
+        $('#lowStockAlertModal').modal('hide');
+    }
+
+    // Gestione pulsante Nascondi tutto oggi
+    $('#hideAllToday').on('click', function() {
+        hideAllLowStock(1);
+    });
+
+    // Gestione pulsante Nascondi tutto (per sempre)
+    $('#hideAllForever').on('click', function() {
+        hideAllLowStock(365);
     });
 });
 </script>

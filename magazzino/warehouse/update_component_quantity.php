@@ -2,10 +2,11 @@
 /*
  * @Author: gabriele.riva 
  * @Date: 2026-01-03 09:42:29 
- * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-01-03 10:30:00
+ * @Last Modified by: Andrea Gonzo
+ * @Last Modified time: 2026-03-07
 */
 // 2026-01-03: Aggiunta funzionalità carico/scarico quantità componente
+// 2026-03-07 (Andrea Gonzo) aggiunta gestione carico/scarico magazzino
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -62,6 +63,31 @@ try {
         echo json_encode($response);
         exit;
     }
+
+//Inserimento movimenti_magazzino (Andrea)
+// Mappa load/unload in carico/scarico
+if ($operation === 'load') {
+    $movimento = 'Carico';
+} else {
+    $movimento = 'Scarico';
+}
+
+$user_id = $_SESSION['user_id']; // recupera l'ID dell'utente loggato
+
+// --- Preparazione commento ---
+$comment = isset($_POST['comment']) ? trim($_POST['comment']) : '';
+
+// --- Inserimento nella tabella movimenti_magazzino ---
+$stmt = $pdo->prepare("
+    INSERT INTO movimenti_magazzino 
+        (component_id, movimento, quantity, commento, user_id, data_ora) 
+    VALUES 
+        (?, ?, ?, ?, ?, NOW())
+");
+$stmt->execute([$component_id, $movimento, $quantity_change, $comment, $user_id]);
+
+
+        
 
     // Aggiorna la quantità nel database
     $stmt = $pdo->prepare("UPDATE components SET quantity = ? WHERE id = ?");

@@ -2,8 +2,8 @@
 /*
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:53:16 
- * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-23
+ * @Last Modified by: Andrea Gonzo
+ * @Last Modified time: 2026-03-07
 */
 // 2026-01-08: Aggiunta quantità minima
 // 2026-01-09: Aggiunta gestione immagine componente
@@ -11,6 +11,7 @@
 // 2026-01-12: Aggiunti campi per prezzo, link fornitore, unità di misura, package, tensione, corrente, potenza, hfe e tags; migliorata gestione equivalenti
 // 2026-02-01: Aggiunto redirect a return_url se presente dopo aggiornamento
 // 2026-02-23: gestione passaggio parametri GET migliorata per precompilare i filtri di posizione, comparto e categoria
+// 2026-03-07 (Andrea Gonzo) aggiunta gestione carico/scarico magazzino
 
 require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
@@ -129,10 +130,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($codice_prodotto === '') {
     $error = "Il campo codice prodotto è obbligatorio.";
   } else if (empty($error)) {
+    $old_quantity = (int)$component['quantity'];
     $stmt = $pdo->prepare("UPDATE components SET 
             codice_prodotto=?, category_id=?, costruttore=?, fornitore=?, codice_fornitore=?, quantity=?, quantity_min=?, location_id=?, compartment_id=?, datasheet_url=?, datasheet_file=?, equivalents=?, notes=?, prezzo=?, link_fornitore=?, unita_misura=?, package=?, tensione=?, corrente=?, potenza=?, hfe=?, tags=?
             WHERE id=?");
     $stmt->execute([$codice_prodotto, $category_id, $costruttore, $fornitore, $codice_fornitore, $quantity, $quantity_min, $location_id, $compartment_id, $datasheet_url, $datasheet_file, $equivalents, $notes, $prezzo, $link_fornitore, $unita_misura, $package, $tensione, $corrente, $potenza, $hfe, $tags, $id]);
+    
+  // Aggiornamento movimenti magazzino SOLO se quantità cambiata (Andrea)
+  $user_id = $_SESSION['user_id'] ?? null;
+
+  if ($user_id && $quantity !== $old_quantity) {
+
+      $stmt_mov = $pdo->prepare("
+          INSERT INTO movimenti_magazzino 
+          (component_id, data_ora, movimento, commento, quantity, user_id) 
+          VALUES (?, NOW(), 'Modifica', 'Aggiornamento quantità da modifica componente', ?, ?)
+      ");
+
+      $stmt_mov->execute([$id, $quantity, $user_id]);
+  } 
+
     // Messaggio di conferma e redirect per evitare reinvio del form
     $_SESSION['success'] = "Componente aggiornato con successo.";
     // Se c'è un return_url valido, torna a quella pagina, altrimenti ricarica questa

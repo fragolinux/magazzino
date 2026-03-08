@@ -3,17 +3,18 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 16:44:57 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-22
+ * @Last Modified time: 2026-03-04
 */
 // 2026-01-04: Aggiunta opzione "Ricordami" nel login
 // 2026-01-12: Aggiunto pulsante per mostrare/nascondere la password
 // 2026-01-15: Implementata protezione CSRF, migrazione password_hash, rate limiting contro brute force
 // 2026-02-02: Implementazione login sito personale
 // 2026-02-22: sistemati campi input per migliorare compatibilità browser e sicurezza (autocomplete)
+// 2026-03-04: richiamato db_connect.php prima di session_start
 
 require 'includes/session_config.php';
-session_start();
 require 'includes/db_connect.php';
+session_start();
 require 'includes/csrf.php';
 require 'includes/rate_limiter.php';
 

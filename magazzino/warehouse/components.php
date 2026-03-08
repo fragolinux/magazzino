@@ -2,8 +2,8 @@
 /*
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:50:58 
- * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-25
+ * @Last Modified by: Andrea Gonzo
+ * @Last Modified time: 2026-03-07
 */
 // 2026-01-03: Aggiunta funzionalità carico/scarico quantità componente
 // 2026-01-05: Aggiunta ricerca tramite equivalente del codice prodotto
@@ -18,6 +18,7 @@
 // 2026-02-09: Aggiunto ordinamento per codice prodotto, categoria, comparto, quantità e posizione
 // 2026-02-23: gestione passaggio parametri GET migliorata per precompilare i filtri di posizione, comparto e categoria
 // 2026-02-25: Aggiunta funzionalità per ricordare i filtri selezionati al ritorno alla pagina (tramite localStorage e selettore "Ricorda valori")
+// 2026-03-07 (Andrea Gonzo) aggiunta gestione carico/scarico magazzino (modificati modal)
 
 require_once '../config/base_path.php';
 require_once '../includes/db_connect.php';
@@ -182,24 +183,53 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
     </div>
 </div>
 
-<!-- Modal Dettagli -->
+<!-- Modal Dettagli MODIFICATO (Andrea) --> 
 <div class="modal fade" id="componentModal" tabindex="-1" aria-labelledby="componentModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="componentModalLabel"><i class="fa-solid fa-eye me-2"></i>Dettagli componente</h5>
+        <h5 class="modal-title" id="componentModalLabel">
+          <i class="fa-solid fa-eye me-2"></i>Dettagli componente
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
       </div>
       <div class="modal-body">
         <div id="component-details" class="text-muted">Caricamento...</div>
       </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-view-all-movements">
+          <i class="fa-solid fa-list"></i> Vedi tutti i movimenti
+        </button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Modal Carico/Scarico -->
+<!-- Modal Tutti Movimenti Magazzino (Andrea) -->
+<div class="modal fade" id="allMovementsModal" tabindex="-1" aria-labelledby="allMovementsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="allMovementsModalLabel">
+          <i class="fa-solid fa-list"></i> Tutti i movimenti di magazzino
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+      </div>
+      <div class="modal-body">
+        <div 
+            id="all-movements-container" 
+            style="width:100%; border:1px solid #ddd; border-radius:6px; padding:10px; max-height:600px; overflow-y:auto;">
+            <!-- Tutti i movimenti saranno caricati qui via JS -->
+            <p class="text-muted">Caricamento...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Carico/Scarico MODIFICATO (Andrea)-->
 <div class="modal fade" id="unloadModal" tabindex="-1" aria-labelledby="unloadModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-lg modal-dialog-centered" style="max-width:950px;">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="unloadModalLabel"><i class="fa-solid fa-arrows-up-down me-2"></i>Carico/Scarico</h5>
@@ -229,11 +259,23 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
           <label for="unload-new-qty" class="form-label">Quantità da scaricare o caricare:</label>
           <input type="number" class="form-control" id="unload-new-qty" min="0" placeholder="Inserisci la quantità">
         </div>
-      </div>
+        <div class="mb-3">
+        <label for="unload-comment" class="form-label">Commento (opzionale):</label>
+        <input type="text" class="form-control" id="unload-comment" placeholder="Inserisci un commento..." autocomplete="off" maxlength="50">
+        </div>
+        </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
         <button type="button" class="btn btn-success" id="unload-confirm">Conferma</button>
       </div>
+    <div class="mb-3">
+        <h6 class="ms-3">Ultimi 10 movimenti</h6>
+    <div 
+        id="movements-container" 
+        class="ms-3"
+        style="width:96.5%; border:1px solid #ddd; border-radius:6px; padding:10px; max-height:200px; overflow-y:auto;">
+    </div> 
+   </div>
     </div>
   </div>
 </div>
@@ -798,39 +840,66 @@ $(function(){
         loadComponents(); // Ricarica la tabella con solo il filtro di ricerca se presente
     });
 
-    // Modal dettagli componente
+    // Modal dettagli componente MODIFICATO (Andrea)
     $(document).on('click', '.btn-view', function(){
-        const id = $(this).data('id');
-        $('#component-details').html('Caricamento...');
-        $('#componentModal').modal('show');
-        $.get('<?= BASE_PATH ?>warehouse/view_component.php', {id: id}, function(data){
-            $('#component-details').html(`
-                <div class="alert alert-secondary py-1 mb-2">
-                    <small><strong>ID Componente:</strong> ${id}</small>
-                </div>
-                ${data}
-            `);
-        });
-    });
+            const componentId = $(this).data('id');         // ID componente
+            const productName = $(this).data('product');    // opzionale
 
+            $('#component-details').html('Caricamento...');
+            // Salvo ID sul modal
+            $('#componentModal').data('component-id', componentId);
+
+            // Mostro il modal
+            $('#componentModal').modal('show');
+
+            // Carico i dettagli via AJAX
+            $.get('<?= BASE_PATH ?>warehouse/view_component.php', {id: componentId}, function(data){
+                $('#component-details').html(`
+                    <div class="alert alert-secondary py-1 mb-2">
+                        <small><strong>ID Componente:</strong> ${componentId}</small>
+                    </div>
+                    ${data}
+                `);
+            });
+        });
+
+
+    
     // Modal carico/scarico quantità
     let unloadComponentId = null;
-    $(document).on('click', '.btn-unload', function(){
+    $(document).on('click', '.btn-unload', function() {
         unloadComponentId = $(this).data('id');
         const productName = $(this).data('product');
         const currentQty = $(this).data('quantity');
-        
+
         $('#unload-product-name').text(productName);
         $('#unload-current-qty').text(currentQty);
         $('#unload-new-qty').val('');
         $('#operation-unload').prop('checked', true).focus();
-        
+        $('#unload-comment').val('');
+
+        // Carica movimenti nel div (non più iframe)
+        const container = document.getElementById('movements-container');
+        container.innerHTML = '<p class="text-muted">Caricamento...</p>';
+
+        fetch('<?= BASE_PATH ?>warehouse/ajax_movimento_componente.php?component_id=' + unloadComponentId + '&from=unload_modal')
+            .then(res => res.text())
+            .then(html => {
+                container.innerHTML = html;
+            })
+            .catch(err => {
+                container.innerHTML = '<p class="text-danger">Errore nel caricamento dei movimenti</p>';
+                console.error(err);
+            });
+
+        // Mostra il modal
         $('#unloadModal').modal('show');
     });
 
     $('#unload-confirm').click(function(){
         const quantityInput = $('#unload-new-qty').val();
         const operation = $('input[name="operation"]:checked').val();
+        const comment = $('#unload-comment').val();
         
         if(quantityInput === '' || isNaN(quantityInput)) {
             alert('Inserisci una quantità valida.');
@@ -851,7 +920,8 @@ $(function(){
             data: {
                 id: unloadComponentId,
                 quantity: quantity,
-                operation: operation
+                operation: operation,
+                comment: comment
             },
             success: function(data) {
                 if(data.success) {
@@ -975,6 +1045,29 @@ $(function(){
         window.location.href = edit_url;
     });
 });
+
+       // Modal movimenti magazzino (Andrea)
+        $('#btn-view-all-movements').on('click', function() {
+            const componentId = $('#componentModal').data('component-id');
+            if (!componentId) return;
+
+            const container = document.getElementById('all-movements-container');
+            container.innerHTML = '<p class="text-muted">Caricamento...</p>';
+
+            fetch('<?= BASE_PATH ?>warehouse/ajax_movimento_componente.php?component_id=' + componentId)
+                .then(res => res.text())
+                .then(html => {
+                    container.innerHTML = html;
+                })
+                .catch(err => {
+                    container.innerHTML = '<p class="text-danger">Errore nel caricamento dei movimenti</p>';
+                    console.error(err);
+                });
+
+            $('#allMovementsModal').modal('show');
+        });
+
+
 </script>
 
 <?php include '../includes/footer.php'; ?>

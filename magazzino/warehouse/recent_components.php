@@ -3,8 +3,10 @@
  * @Author: gabriele.riva 
  * @Date: 2026-02-01 18:18:38 
  * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-01 20:00:37
+ * @Last Modified time: 2026-03-07
 */
+
+// 2026-03-07: tolto target="_blank" dal link
 
 /*
  * Pagina per visualizzare gli ultimi componenti inseriti
@@ -72,7 +74,7 @@ include '../includes/header.php';
           <?php else: ?>
           <?php foreach ($lastComponents as $c): ?>
           <tr class="component-row" data-component-id="<?= $c['id'] ?>">
-            <td><a target="_blank" href="edit_component.php?id=<?= $c['id'] ?>"
+            <td><a href="edit_component.php?id=<?= $c['id'] ?>"
                 class="text-decoration-none"><?= htmlspecialchars($c['codice_prodotto']) ?></a></td>
             <td><?= htmlspecialchars($c['category_name'] ?? '—') ?></td>
             <td><?= htmlspecialchars($c['location_name'] ?? '—') ?></td>
