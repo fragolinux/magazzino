@@ -56,12 +56,14 @@ devdown: check-linux
 > docker compose -f docker-compose.dev.yml down
 
 run: check-linux
+> ./scripts/pre_run_check.sh
 > git pull --rebase
 > docker compose -f docker-compose.dev.yml down
 > docker compose down
 > ./scripts/start.sh
 
 run-safe: check-linux
+> ./scripts/pre_run_check.sh
 > ./scripts/backup.sh
 > git pull --rebase
 > docker compose -f docker-compose.dev.yml down
