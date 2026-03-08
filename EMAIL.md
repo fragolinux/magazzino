@@ -25,23 +25,24 @@ Se usi Gmail con 2FA, usa una **App Password** (non la password normale).
 
 ## 2) Riavvia lo stack
 
-- Produzione: `make down && make up`
-- Sviluppo: `make devdown && make devup`
+Se hai appena cambiato il file `.env`, riavvia:
+
+- `make down && make up`
+
+Se non hai cambiato `.env`, puoi passare direttamente al test.
 
 ## 3) Test manuale invio email
+
+Prerequisiti:
+
+- almeno un utente `admin` con email valorizzata
+- almeno un componente sotto scorta (`quantity < quantity_min`)
 
 Esegui:
 
 ```bash
 make sendmail
 ```
-
-Opzionale:
-
-- `make sendmail MODE=dev`
-- `make sendmail MODE=prod`
-
-`MODE=auto` (default) usa prima `dev` se attivo, altrimenti `prod`.
 
 ## 4) Automazione (cron)
 
@@ -56,11 +57,9 @@ crontab -e
 Aggiungi, ad esempio ogni ora:
 
 ```cron
-0 * * * * cd /percorso/del/repo/magazzino && /usr/bin/make sendmail MODE=auto >> /percorso/del/repo/magazzino/data/php-logs/sendmail-cron.log 2>&1
+0 * * * * cd /percorso/del/repo/magazzino && mkdir -p backup && /bin/echo "[$(/usr/bin/date -Iseconds)] sendmail run" >> backup/sendmail-cron.log && /usr/bin/make sendmail >> backup/sendmail-cron.log 2>&1
 ```
 
 Varianti utili:
 
 - Ogni 15 minuti: `*/15 * * * * ...`
-- Solo produzione: usa `MODE=prod`
-- Solo sviluppo: usa `MODE=dev`
