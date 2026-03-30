@@ -45,9 +45,11 @@
 
 - Non eseguire mai `git push`. I rilasci li fa l’utente con `make release`.
 - Non modificare mai file sotto `magazzino/` con cambi locali. L’albero upstream deve restare l’esatto contenuto del rilascio dell’autore.
+- I file sotto `magazzino/` aggiornati dall'autore per un nuovo rilascio vanno invece importati e committati normalmente nel commit unico di bump versione (es. `Import upstream Magazzino X.Y changes`).
 - Qualsiasi fix locale va messo in `overrides/`, `docker/`, `scripts/` o in altri percorsi non-upstream.
 - Non chiedere conferme su queste regole; vanno sempre applicate.
 - I messaggi di commit devono essere in inglese.
+- Per import di nuove versioni upstream, creare una sola commit con bump versione nel messaggio, includendo sia i file upstream sotto `magazzino/` sia gli eventuali adattamenti locali strettamente collegati all'import.
 
 ## Regole Operative Docker/Override (Persistenti)
 
@@ -60,4 +62,6 @@
 - In caso di utente non-admin, filtrare automaticamente statement privilegiati (`CREATE USER`, `GRANT`, `REVOKE`, `FLUSH PRIVILEGES`) invece di modificare i file upstream.
 - Nginx deve mostrare una pagina di attesa "umana" durante bootstrap (errori 502/503/504) con refresh automatico ogni 5 secondi.
 - Per lint PHP usare preferibilmente il PHP nel container (`docker compose exec -T php php -l ...`) invece di richiedere PHP installato sull'host.
+- Se non c'è uno stack PHP già attivo, per il lint usare un container effimero del servizio `php` in dev con `--no-deps` e `--entrypoint`, senza avviare stack permanenti.
+- Per evitare molte richieste di approvazione, eseguire il lint di tutti i file richiesti con una singola invocazione tramite `scripts/php_lint_container.sh file1.php file2.php ...`.
 - Se l'utente dichiara che sta ripulendo/azzerando l'ambiente, non avviare `make up/devup` o `docker compose up` senza conferma esplicita.

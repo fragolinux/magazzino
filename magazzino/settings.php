@@ -2,8 +2,8 @@
 /*
  * @Author: gabriele.riva 
  * @Date: 2026-01-05 09:20:18 
- * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-03-02
+ * @Last Modified by:   gabriele.riva
+ * @Last Modified time: 2026-03-28 10:15:42
 */
 // 2026-01-08: Aggiunto supporto tema dark/light
 // 2026-01-11: Aggiunto URL in alternativa all'IP del PC
@@ -14,6 +14,7 @@
 // 2026-02-02: Aggiunto sito personale completamente configurabile
 // 2026-02-19: Aggiunti parametri etichette (etichette_per_riga, etichette_font_size)
 // 2026-03-02: Aggiunta guida al ripristino backup database con link a pagina dedicata
+// 2026-03-28: Andrea Gonzo - anggiunto setting per colore tema movimenti di magazzino (mov_theme)
 
 /**
  * Pagina impostazioni generali (solo admin)
@@ -49,6 +50,7 @@ $settingsConfigFile = __DIR__ . '/config/settings.php';
 $appSettings = file_exists($settingsConfigFile) ? require $settingsConfigFile : [
     'ip_address' => '',
     'app_theme' => 'light',
+    'mov_theme' => 'color',
     'environment_mode' => 'production'
 ];
 
@@ -114,7 +116,7 @@ try {
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
-    
+
     // Leggi qr_per_riga
     $stmt = $pdo->prepare("SELECT setting_value FROM setting WHERE setting_name = ? LIMIT 1");
     $stmt->execute(['qr_per_riga']);
@@ -122,7 +124,7 @@ try {
     if ($result) {
         $qrPerRiga = intval($result['setting_value']);
     }
-    
+
     // Leggi qr_size
     $stmt = $pdo->prepare("SELECT setting_value FROM setting WHERE setting_name = ? LIMIT 1");
     $stmt->execute(['qr_size']);
@@ -130,7 +132,7 @@ try {
     if ($result) {
         $qrSize = $result['setting_value'];
     }
-    
+
     // Leggi barcode_per_riga
     $stmt = $pdo->prepare("SELECT setting_value FROM setting WHERE setting_name = ? LIMIT 1");
     $stmt->execute(['barcode_per_riga']);
@@ -138,7 +140,7 @@ try {
     if ($result) {
         $barcodePerRiga = intval($result['setting_value']);
     }
-    
+
     // Leggi barcode_width
     $stmt = $pdo->prepare("SELECT setting_value FROM setting WHERE setting_name = ? LIMIT 1");
     $stmt->execute(['barcode_width']);
@@ -146,7 +148,7 @@ try {
     if ($result) {
         $barcodeWidth = $result['setting_value'];
     }
-    
+
     // Leggi barcode_height
     $stmt = $pdo->prepare("SELECT setting_value FROM setting WHERE setting_name = ? LIMIT 1");
     $stmt->execute(['barcode_height']);
@@ -154,7 +156,7 @@ try {
     if ($result) {
         $barcodeHeight = $result['setting_value'];
     }
-    
+
     // Leggi etichette_per_riga
     $stmt = $pdo->prepare("SELECT setting_value FROM setting WHERE setting_name = ? LIMIT 1");
     $stmt->execute(['etichette_per_riga']);
@@ -162,7 +164,7 @@ try {
     if ($result) {
         $etichettePerRiga = intval($result['setting_value']);
     }
-    
+
     // Leggi etichette_font_size
     $stmt = $pdo->prepare("SELECT setting_value FROM setting WHERE setting_name = ? LIMIT 1");
     $stmt->execute(['etichette_font_size']);
@@ -182,44 +184,44 @@ if (isset($_GET['action']) && $_GET['action'] === 'backup_db') {
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
         ]);
-        
+
         // Genera dump SQL
         $backup = "-- Backup Database: {$dbConfig['db']}\n";
         $backup .= "-- Data: " . date('Y-m-d H:i:s') . "\n";
         $backup .= "-- Host: {$dbConfig['host']}:{$dbConfig['port']}\n\n";
         $backup .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
-        
+
         // Ottieni tutte le tabelle
         $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
-        
+
         foreach ($tables as $table) {
             // DROP TABLE
             $backup .= "-- Table: $table\n";
             $backup .= "DROP TABLE IF EXISTS `$table`;\n\n";
-            
+
             // CREATE TABLE
             $createTable = $pdo->query("SHOW CREATE TABLE `$table`")->fetch();
             $backup .= $createTable['Create Table'] . ";\n\n";
-            
+
             // INSERT DATA
             $rows = $pdo->query("SELECT * FROM `$table`")->fetchAll(PDO::FETCH_ASSOC);
             if (!empty($rows)) {
                 $backup .= "-- Data for table: $table\n";
-                
+
                 foreach ($rows as $row) {
                     $columns = array_keys($row);
-                    $values = array_map(function($val) use ($pdo) {
+                    $values = array_map(function ($val) use ($pdo) {
                         return $val === null ? 'NULL' : $pdo->quote($val);
                     }, array_values($row));
-                    
+
                     $backup .= "INSERT INTO `$table` (`" . implode('`, `', $columns) . "`) VALUES (" . implode(', ', $values) . ");\n";
                 }
                 $backup .= "\n";
             }
         }
-        
+
         $backup .= "SET FOREIGN_KEY_CHECKS=1;\n";
-        
+
         // Invia file per download
         $filename = $dbConfig['db'] . '_backup_' . date('Y-m-d_His') . '.sql';
         header('Content-Type: application/sql');
@@ -227,7 +229,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'backup_db') {
         header('Content-Length: ' . strlen($backup));
         echo $backup;
         exit;
-        
     } catch (PDOException $e) {
         $_SESSION['backup_error'] = 'Errore backup database: ' . $e->getMessage();
         header('Location: settings.php?tab=database');
@@ -245,29 +246,30 @@ if (isset($_SESSION['backup_error'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $ip = isset($_POST['ip_address']) ? trim($_POST['ip_address']) : '';
     $theme = isset($_POST['app_theme']) ? trim($_POST['app_theme']) : 'light';
+    $mov = isset($_POST['mov_theme']) ? trim($_POST['mov_theme']) : 'color';
     $envMode = isset($_POST['environment_mode']) ? trim($_POST['environment_mode']) : 'production';
     $activeTab = isset($_POST['active_tab']) ? $_POST['active_tab'] : 'general'; // Mantieni tab attivo
-    
+
     // Parametri QR Code
     $qrPerRiga = isset($_POST['qr_per_riga']) ? intval($_POST['qr_per_riga']) : 10;
     $qrSize = isset($_POST['qr_size']) ? trim($_POST['qr_size']) : '100';
-    
+
     // Parametri Barcode
     $barcodePerRiga = isset($_POST['barcode_per_riga']) ? intval($_POST['barcode_per_riga']) : 6;
     $barcodeWidth = isset($_POST['barcode_width']) ? trim($_POST['barcode_width']) : '50';
     $barcodeHeight = isset($_POST['barcode_height']) ? trim($_POST['barcode_height']) : '10';
-    
+
     // Parametri Etichette
     $etichettePerRiga = isset($_POST['etichette_per_riga']) ? intval($_POST['etichette_per_riga']) : 6;
     $etichetteFontSize = isset($_POST['etichette_font_size']) ? trim($_POST['etichette_font_size']) : '10';
-    
+
     // Parametri database
     $dbHost = isset($_POST['db_host']) ? trim($_POST['db_host']) : '';
     $dbName = isset($_POST['db_name']) ? trim($_POST['db_name']) : '';
     $dbUser = isset($_POST['db_user']) ? trim($_POST['db_user']) : '';
     $dbPass = isset($_POST['db_pass']) ? $_POST['db_pass'] : ''; // non trim sulla password
     $dbPort = isset($_POST['db_port']) ? trim($_POST['db_port']) : '';
-    
+
     if ($ip === '') {
         $error = 'Indirizzo IP/URL non può essere vuoto.';
     } elseif (!filter_var($ip, FILTER_VALIDATE_IP) && !filter_var($ip, FILTER_VALIDATE_URL)) {
@@ -297,9 +299,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $newAppSettings = [
                 'ip_address' => $ip,
                 'app_theme' => $theme,
+                'mov_theme' => $mov,
                 'environment_mode' => $envMode
             ];
-            
+
             $settingsContent = "<?php\n";
             $settingsContent .= "/*\n";
             $settingsContent .= " * @Author: gabriele.riva \n";
@@ -313,15 +316,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $settingsContent .= "return [\n";
             $settingsContent .= "    'ip_address' => " . var_export($newAppSettings['ip_address'], true) . ",\n";
             $settingsContent .= "    'app_theme' => " . var_export($newAppSettings['app_theme'], true) . ",\n";
+            $settingsContent .= "    'mov_theme' => " . var_export($newAppSettings['mov_theme'], true) . ",\n";
             $settingsContent .= "    'environment_mode' => " . var_export($newAppSettings['environment_mode'], true) . "\n";
             $settingsContent .= "];\n";
-            
+
             if (file_put_contents($settingsConfigFile, $settingsContent) === false) {
                 $error = 'Errore scrittura file configurazione impostazioni.';
             } else {
                 $appSettings = $newAppSettings;
             }
-            
+
             // Tenta anche di salvare nel database (se connessione funziona)
             try {
                 $dsn = "mysql:host={$dbConfig['host']};port={$dbConfig['port']};dbname={$dbConfig['db']};charset={$dbConfig['charset']}";
@@ -329,7 +333,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
                 ]);
-                
+
                 // Salva IP
                 $stmt = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
                 $stmt->execute(['IP_Computer']);
@@ -341,7 +345,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $ins = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
                     $ins->execute(['IP_Computer', $ip]);
                 }
-                
+
                 // Salva Tema
                 $stmtT = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
                 $stmtT->execute(['app_theme']);
@@ -353,7 +357,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insT = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
                     $insT->execute(['app_theme', $theme]);
                 }
-                
+
+                // Salva Tema movimenti di magazzino
+                $stmtT = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
+                $stmtT->execute(['mov_theme']);
+                $existsT = $stmtT->fetch(PDO::FETCH_ASSOC);
+                if ($existsT) {
+                    $updT = $pdo->prepare("UPDATE setting SET setting_value = ? WHERE setting_name = ?");
+                    $updT->execute([$mov, 'mov_theme']);
+                } else {
+                    $insT = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
+                    $insT->execute(['mov_theme', $mov]);
+                }
+
+
                 // Salva modalità ambiente
                 $stmtE = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
                 $stmtE->execute(['environment_mode']);
@@ -365,7 +382,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insE = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
                     $insE->execute(['environment_mode', $envMode]);
                 }
-                
+
                 // Salva QR per riga
                 $stmtQR1 = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
                 $stmtQR1->execute(['qr_per_riga']);
@@ -377,7 +394,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insQR1 = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
                     $insQR1->execute(['qr_per_riga', $qrPerRiga]);
                 }
-                
+
                 // Salva dimensione QR
                 $stmtQR2 = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
                 $stmtQR2->execute(['qr_size']);
@@ -389,7 +406,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insQR2 = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
                     $insQR2->execute(['qr_size', $qrSize]);
                 }
-                
+
                 // Salva barcode per riga
                 $stmtBC1 = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
                 $stmtBC1->execute(['barcode_per_riga']);
@@ -401,7 +418,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insBC1 = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
                     $insBC1->execute(['barcode_per_riga', $barcodePerRiga]);
                 }
-                
+
                 // Salva larghezza barcode
                 $stmtBC2 = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
                 $stmtBC2->execute(['barcode_width']);
@@ -413,7 +430,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insBC2 = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
                     $insBC2->execute(['barcode_width', $barcodeWidth]);
                 }
-                
+
                 // Salva altezza barcode
                 $stmtBC3 = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
                 $stmtBC3->execute(['barcode_height']);
@@ -425,7 +442,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insBC3 = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
                     $insBC3->execute(['barcode_height', $barcodeHeight]);
                 }
-                
+
                 // Salva etichette per riga
                 $stmtET1 = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
                 $stmtET1->execute(['etichette_per_riga']);
@@ -437,7 +454,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insET1 = $pdo->prepare("INSERT INTO setting (setting_name, setting_value) VALUES (?, ?)");
                     $insET1->execute(['etichette_per_riga', $_POST['etichette_per_riga'] ?? $etichettePerRiga]);
                 }
-                
+
                 // Salva dimensione font etichette
                 $stmtET2 = $pdo->prepare("SELECT id_setting FROM setting WHERE setting_name = ? LIMIT 1");
                 $stmtET2->execute(['etichette_font_size']);
@@ -452,9 +469,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (Exception $dbErr) {
                 // Ignora errori DB, i dati sono già salvati su file
             }
-            
+
             $message = 'Impostazioni salvate.';
-            
+
             // Salva configurazione database SOLO se sei nel tab database
             if ($activeTab === 'database') {
                 $newDbConfig = [
@@ -465,31 +482,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'charset' => 'utf8mb4',
                     'port'    => (int)$dbPort
                 ];
-                
+
                 $configContent = "<?php\n";
-            $configContent .= "/*\n";
-            $configContent .= " * @Author: gabriele.riva \n";
-            $configContent .= " * @Date: 2026-01-13\n";
-            $configContent .= " * @Last Modified by: gabriele.riva\n";
-            $configContent .= " * @Last Modified time: " . date('Y-m-d H:i:s') . "\n";
-            $configContent .= " * \n";
-            $configContent .= " * Configurazione Database\n";
-            $configContent .= " * Questo file contiene le credenziali e parametri per la connessione al database MySQL\n";
-            $configContent .= " */\n\n";
-            $configContent .= "return [\n";
-            $configContent .= "    'host'    => " . var_export($newDbConfig['host'], true) . ",\n";
-            $configContent .= "    'db'      => " . var_export($newDbConfig['db'], true) . ",\n";
-            $configContent .= "    'user'    => " . var_export($newDbConfig['user'], true) . ",\n";
-            $configContent .= "    'pass'    => " . var_export($newDbConfig['pass'], true) . ",\n";
-            $configContent .= "    'charset' => " . var_export($newDbConfig['charset'], true) . ",\n";
-            $configContent .= "    'port'    => " . var_export($newDbConfig['port'], true) . "\n";
-            $configContent .= "];\n";
-            
-            if (file_put_contents($dbConfigFile, $configContent) === false) {
-                $error = 'Errore scrittura file configurazione database.';
-            } else {
-                $dbConfig = $newDbConfig; // aggiorna in memoria per visualizzazione
-            }
+                $configContent .= "/*\n";
+                $configContent .= " * @Author: gabriele.riva \n";
+                $configContent .= " * @Date: 2026-01-13\n";
+                $configContent .= " * @Last Modified by: gabriele.riva\n";
+                $configContent .= " * @Last Modified time: " . date('Y-m-d H:i:s') . "\n";
+                $configContent .= " * \n";
+                $configContent .= " * Configurazione Database\n";
+                $configContent .= " * Questo file contiene le credenziali e parametri per la connessione al database MySQL\n";
+                $configContent .= " */\n\n";
+                $configContent .= "return [\n";
+                $configContent .= "    'host'    => " . var_export($newDbConfig['host'], true) . ",\n";
+                $configContent .= "    'db'      => " . var_export($newDbConfig['db'], true) . ",\n";
+                $configContent .= "    'user'    => " . var_export($newDbConfig['user'], true) . ",\n";
+                $configContent .= "    'pass'    => " . var_export($newDbConfig['pass'], true) . ",\n";
+                $configContent .= "    'charset' => " . var_export($newDbConfig['charset'], true) . ",\n";
+                $configContent .= "    'port'    => " . var_export($newDbConfig['port'], true) . "\n";
+                $configContent .= "];\n";
+
+                if (file_put_contents($dbConfigFile, $configContent) === false) {
+                    $error = 'Errore scrittura file configurazione database.';
+                } else {
+                    $dbConfig = $newDbConfig; // aggiorna in memoria per visualizzazione
+                }
             } // Chiudi if ($activeTab === 'database')
         } catch (Exception $e) {
             $error = 'Errore salvataggio: ' . $e->getMessage();
@@ -506,7 +523,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <i class="fas fa-arrow-left me-1"></i> Torna alla Home
         </a>
     </div>
-    
+
     <?php if ($message): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fas fa-check-circle me-2"></i><?= htmlspecialchars($message) ?>
@@ -554,7 +571,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <form method="post">
                 <!-- Tab Content -->
                 <div class="tab-content" id="settingsTabsContent">
-                    
+
                     <!-- TAB GENERALI -->
                     <div class="tab-pane fade show active" id="general" role="tabpanel">
                         <h5 class="mb-3"><i class="fas fa-qrcode me-2 text-primary"></i>Configurazione QR Code</h5>
@@ -583,7 +600,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="number" id="qr_per_riga" name="qr_per_riga" class="form-control form-control-lg" value="<?= intval($qrPerRiga) ?>" min="1" max="20" required>
                                 <div class="form-text">Numero di QR code per riga nella stampa (1-20, default: 10)</div>
                             </div>
-                            
+
                             <div class="col-md-6 mb-4">
                                 <label for="qr_size" class="form-label fw-bold">Dimensione QR</label>
                                 <input type="number" id="qr_size" name="qr_size" class="form-control form-control-lg" value="<?= intval($qrSize) ?>" min="10" max="500" required>
@@ -600,13 +617,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="number" id="barcode_per_riga" name="barcode_per_riga" class="form-control form-control-lg" value="<?= intval($barcodePerRiga) ?>" min="1" max="20" required>
                                 <div class="form-text">Numero di barcode per riga nella stampa (1-20, default: 6)</div>
                             </div>
-                            
+
                             <div class="col-md-4 mb-4">
                                 <label for="barcode_width" class="form-label fw-bold">Larghezza Barcode</label>
                                 <input type="number" id="barcode_width" name="barcode_width" class="form-control form-control-lg" value="<?= intval($barcodeWidth) ?>" min="5" max="100" required>
                                 <div class="form-text">Larghezza del barcode (5-100, default: 50)</div>
                             </div>
-                            
+
                             <div class="col-md-4 mb-4">
                                 <label for="barcode_height" class="form-label fw-bold">Spaziatura Barcode</label>
                                 <input type="number" id="barcode_height" name="barcode_height" class="form-control form-control-lg" value="<?= intval($barcodeHeight) ?>" min="5" max="50" required>
@@ -623,7 +640,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="number" id="etichette_per_riga" name="etichette_per_riga" class="form-control form-control-lg" value="<?= intval($etichettePerRiga) ?>" min="1" max="20" required>
                                 <div class="form-text">Numero di etichette per riga nella stampa (1-20, default: 6)</div>
                             </div>
-                            
+
                             <div class="col-md-6 mb-4">
                                 <label for="etichette_font_size" class="form-label fw-bold">Dimensione Font Etichette</label>
                                 <input type="number" id="etichette_font_size" name="etichette_font_size" class="form-control form-control-lg" value="<?= intval($etichetteFontSize) ?>" min="6" max="24" required>
@@ -643,7 +660,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </select>
                             <div class="form-text">Scegli il tema preferito per l'interfaccia dell'applicazione</div>
                         </div>
+                        <div class="mb-4">
+                            <label for="mov_theme" class="form-label fw-bold">Colori lista movimenti magazzino</label>
+                            <select id="mov_theme" name="mov_theme" class="form-select form-select-lg">
+                                <option value="color" <?= $appSettings['mov_theme'] === 'color' ? 'selected' : '' ?>>Colori</option>
+                                <option value="gray" <?= $appSettings['mov_theme'] === 'gray' ? 'selected' : '' ?>>Grigi</option>
+                            </select>
+                            <div class="form-text">Scegli il colore delle righe della lista movimenti di magazzino</div>
+                        </div>
                     </div>
+
 
                     <!-- TAB SISTEMA -->
                     <div class="tab-pane fade" id="system" role="tabpanel">
@@ -664,7 +690,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <!-- TAB DATABASE -->
                     <div class="tab-pane fade" id="database" role="tabpanel">
                         <h5 class="mb-3"><i class="fas fa-server me-2 text-primary"></i>Connessione Database MySQL</h5>
-                        
+
                         <div class="alert alert-warning mb-4">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             <strong>Attenzione:</strong> Modificare questi parametri può causare errori di connessione. Assicurati che i valori siano corretti prima di salvare.
@@ -676,7 +702,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="text" id="db_host" name="db_host" class="form-control" value="<?= htmlspecialchars($dbConfig['host']) ?>" required>
                                 <div class="form-text">Indirizzo del server MySQL (es. localhost, 127.0.0.1)</div>
                             </div>
-                            
+
                             <div class="col-md-4 mb-3">
                                 <label for="db_port" class="form-label fw-bold">Porta</label>
                                 <input type="number" id="db_port" name="db_port" class="form-control" value="<?= htmlspecialchars($dbConfig['port']) ?>" min="1" max="65535" required>
@@ -691,69 +717,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <?php if ($activeTab === 'database'): ?>
-                        <div class="row" id="db-credentials-row">
-                            <div class="col-md-6 mb-3">
-                                <label for="db_user" class="form-label fw-bold">Username</label>
-                                <input type="text" id="db_user" name="db_user" class="form-control" value="<?= htmlspecialchars($dbConfig['user']) ?>" required>
-                                <div class="form-text">Nome utente per la connessione</div>
+                            <div class="row" id="db-credentials-row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="db_user" class="form-label fw-bold">Username</label>
+                                    <input type="text" id="db_user" name="db_user" class="form-control" value="<?= htmlspecialchars($dbConfig['user']) ?>" required>
+                                    <div class="form-text">Nome utente per la connessione</div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="db_pass" class="form-label fw-bold">Password</label>
+                                    <input type="text" id="db_pass" name="db_pass" class="form-control" value="<?= htmlspecialchars($dbConfig['pass']) ?>" placeholder="Lascia vuoto se non c'è password">
+                                    <div class="form-text">Password del database (opzionale)</div>
+                                </div>
                             </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="db_pass" class="form-label fw-bold">Password</label>
-                                <input type="text" id="db_pass" name="db_pass" class="form-control" value="<?= htmlspecialchars($dbConfig['pass']) ?>" placeholder="Lascia vuoto se non c'è password">
-                                <div class="form-text">Password del database (opzionale)</div>
-                            </div>
-                        </div>
                         <?php endif; ?>
 
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
                             Le credenziali sono salvate nel file <code>config/database.php</code>
                         </div>
-                        
+
                         <hr class="my-4">
-                        
+
                         <!-- Sezione Backup Database -->
                         <h5 class="mb-3"><i class="fas fa-download me-2 text-success"></i>Backup Database</h5>
                         <div class="alert alert-secondary">
                             <i class="fas fa-database me-2"></i>
                             Scarica un backup completo del database in formato SQL. Include struttura tabelle e tutti i dati.
                         </div>
-                        
+
                         <a href="settings.php?action=backup_db" class="btn btn-success mb-3" onclick="return confirm('Vuoi scaricare il backup completo del database?')">
                             <i class="fas fa-download me-2"></i>Scarica Backup Completo
                         </a>
-                        
+
                         <div class="alert alert-info mt-3">
                             <i class="fas fa-info-circle me-2"></i>
                             <strong>Ripristino backup:</strong> Il backup può essere ripristinato importandolo in phpMyAdmin o tramite command line con <code>mysql -u root -p magazzino_db < backup.sql</code>
-                            <br><br>
-                            <a href="<?= BASE_PATH ?>database_import_guide.php" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-book me-1"></i> Istruzioni Dettagliate
-                            </a>
-                            <span class="text-muted ms-2 small">Guida completa per phpMyAdmin e Command Line</span>
+                                    <br><br>
+                                    <a href="<?= BASE_PATH ?>database_import_guide.php" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-book me-1"></i> Istruzioni Dettagliate
+                                    </a>
+                                    <span class="text-muted ms-2 small">Guida completa per phpMyAdmin e Command Line</span>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- TAB SITO PERSONALE -->
                 <div class="tab-pane fade" id="personal-site" role="tabpanel">
                     <h5 class="mb-3"><i class="fas fa-globe me-2 text-primary"></i>Homepage Personale</h5>
-                    
+
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
-                        <strong>Informazione:</strong> Gestisci il tuo sito personale/landing page completamente configurabile. 
+                        <strong>Informazione:</strong> Gestisci il tuo sito personale/landing page completamente configurabile.
                         Quando attivato, diventerà la homepage del sistema.
                     </div>
-                    
+
                     <div class="text-center py-4">
                         <a href="<?= BASE_PATH ?>personal_home_settings.php" class="btn btn-primary btn-lg">
                             <i class="fas fa-cog me-2"></i>Configura Sito Personale
                         </a>
                     </div>
-                    
+
                     <hr class="my-4">
-                    
+
                     <div class="row text-center">
                         <div class="col-md-4 mb-3">
                             <div class="card h-100">
@@ -795,7 +821,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="fas fa-save me-2"></i>Salva Impostazioni
                     </button>
                 </div>
-                
+
                 <!-- Campo hidden per mantenere tab attivo -->
                 <input type="hidden" id="active_tab" name="active_tab" value="<?= htmlspecialchars($activeTab) ?>">
             </form>
@@ -804,74 +830,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script>
-// Mantieni tab attivo dopo salvataggio
-document.addEventListener('DOMContentLoaded', function() {
-    // Imposta il tab attivo all'inizio
-    var initialTab = document.getElementById('active_tab').value;
-    
-    // Se arriviamo con ?tab=database nel GET, attiva il tab database
-    var urlParams = new URLSearchParams(window.location.search);
-    var tabFromUrl = urlParams.get('tab');
-    if (tabFromUrl) {
-        var tabButton = document.getElementById(tabFromUrl + '-tab');
-        if (tabButton) {
-            var tab = new bootstrap.Tab(tabButton);
-            tab.show();
-            document.getElementById('active_tab').value = tabFromUrl;
-        }
-    }
-    
-    // Se c'è un tab attivo da POST, ripristinalo
-    <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($activeTab)): ?>
-        var tabToActivate = '<?= $activeTab ?>';
-        var tabButton = document.getElementById(tabToActivate + '-tab');
-        if (tabButton) {
-            var tab = new bootstrap.Tab(tabButton);
-            tab.show();
-            // Aggiorna il campo hidden
-            document.getElementById('active_tab').value = tabToActivate;
-        }
-    <?php endif; ?>
-    
-    // Aggiorna campo hidden quando si cambia tab
-    var tabButtons = document.querySelectorAll('#settingsTabs button[data-bs-toggle="tab"]');
-    tabButtons.forEach(function(button) {
-        button.addEventListener('shown.bs.tab', function(event) {
-            var tabId = event.target.getAttribute('data-bs-target').substring(1); // rimuovi #
-            document.getElementById('active_tab').value = tabId;
-            
-            // Se entri nel tab database, ricarica la pagina per mostrare i campi
-            if (tabId === 'database' && !document.getElementById('db_user')) {
-                location.href = 'settings.php?tab=database';
-            } else {
-                // Se esci da database, rimuovi il parametro ?tab dall'URL
-                var url = window.location.pathname;
-                window.history.replaceState({}, document.title, url);
+    // Mantieni tab attivo dopo salvataggio
+    document.addEventListener('DOMContentLoaded', function() {
+        // Imposta il tab attivo all'inizio
+        var initialTab = document.getElementById('active_tab').value;
+
+        // Se arriviamo con ?tab=database nel GET, attiva il tab database
+        var urlParams = new URLSearchParams(window.location.search);
+        var tabFromUrl = urlParams.get('tab');
+        if (tabFromUrl) {
+            var tabButton = document.getElementById(tabFromUrl + '-tab');
+            if (tabButton) {
+                var tab = new bootstrap.Tab(tabButton);
+                tab.show();
+                document.getElementById('active_tab').value = tabFromUrl;
             }
+        }
+
+        // Se c'è un tab attivo da POST, ripristinalo
+        <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($activeTab)): ?>
+            var tabToActivate = '<?= $activeTab ?>';
+            var tabButton = document.getElementById(tabToActivate + '-tab');
+            if (tabButton) {
+                var tab = new bootstrap.Tab(tabButton);
+                tab.show();
+                // Aggiorna il campo hidden
+                document.getElementById('active_tab').value = tabToActivate;
+            }
+        <?php endif; ?>
+
+        // Aggiorna campo hidden quando si cambia tab
+        var tabButtons = document.querySelectorAll('#settingsTabs button[data-bs-toggle="tab"]');
+        tabButtons.forEach(function(button) {
+            button.addEventListener('shown.bs.tab', function(event) {
+                var tabId = event.target.getAttribute('data-bs-target').substring(1); // rimuovi #
+                document.getElementById('active_tab').value = tabId;
+
+                // Se entri nel tab database, ricarica la pagina per mostrare i campi
+                if (tabId === 'database' && !document.getElementById('db_user')) {
+                    location.href = 'settings.php?tab=database';
+                } else {
+                    // Se esci da database, rimuovi il parametro ?tab dall'URL
+                    var url = window.location.pathname;
+                    window.history.replaceState({}, document.title, url);
+                }
+            });
+        });
+
+        // IMPORTANTE: Aggiorna il campo hidden con il tab attualmente attivo PRIMA di inviare il form
+        var form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function() {
+                var activeTabButton = document.querySelector('#settingsTabs .nav-link.active');
+                if (activeTabButton) {
+                    var activeTabId = activeTabButton.getAttribute('data-bs-target').substring(1);
+                    document.getElementById('active_tab').value = activeTabId;
+                }
+            });
+        }
+
+        // Auto-nascondi alert dopo 3 secondi
+        var alerts = document.querySelectorAll('.alert-success, .alert-danger');
+        alerts.forEach(function(alert) {
+            setTimeout(function() {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 3000);
         });
     });
-    
-    // IMPORTANTE: Aggiorna il campo hidden con il tab attualmente attivo PRIMA di inviare il form
-    var form = document.querySelector('form');
-    if (form) {
-        form.addEventListener('submit', function() {
-            var activeTabButton = document.querySelector('#settingsTabs .nav-link.active');
-            if (activeTabButton) {
-                var activeTabId = activeTabButton.getAttribute('data-bs-target').substring(1);
-                document.getElementById('active_tab').value = activeTabId;
-            }
-        });
-    }
-    
-    // Auto-nascondi alert dopo 3 secondi
-    var alerts = document.querySelectorAll('.alert-success, .alert-danger');
-    alerts.forEach(function(alert) {
-        setTimeout(function() {
-            var bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        }, 3000);
-    });
-});
 </script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

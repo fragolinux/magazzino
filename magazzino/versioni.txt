@@ -340,7 +340,7 @@
                     - [Modificato] warehouse/locali.php
                     - [Modificato] warehouse/view_component.php
 1.14  08/03/2026  - aggiunta gestione carico/scarico magazzino (autore Andrea Gonzo)
-                  - aggiunti 2 bottoni su pop-up avviso sottoscora per nascondere tutto
+                  - aggiunti 2 bottoni su pop-up avviso sottoscorta per nascondere tutto
                   - tolta apertura in nuova finestra in gerarchia e ultimi componenti inseriti
                     - [Aggiunto] update/migrations/1.14.sql
                     - [Aggiunto] warehouse/ajax_movimento_componente.php
@@ -357,3 +357,17 @@
                     - [Modificato] warehouse/progetti/ajax_conferma.php
                     - [Modificato] warehouse/recent_components.php
                     - [Modificato] warehouse/update_component_quantity.php
+1.15  30/03/2026  - aggiunto in Settaggi > Aspetto > Colori lista movimenti magazzino (autore Andrea Gonzo)
+                  - corretto bug in pagina Comparti che non permetteva di aprire il popup quando venivano selezionati tutti i comparti
+                  - corretto bug in pagina Comparti su ordinamento che non era alfanumerico
+                  - modificata gestione carico/scarico magazzino, aggiunti bottoni edit, cancella e esportazione pdf (autore Andrea Gonzo)
+                    - [Aggiunto] update/migrations/1.15.sql
+                    - [Aggiunto] warehouse/delete_movimento.php
+                    - [Aggiunto] warehouse/export_movimenti.php
+                    - [Aggiunto] warehouse/update_movimenti.php
+                    - [Modificato] settings.php
+                    - [Modificato] update/index.php
+                    - [Modificato] warehouse/ajax_movimento_componente.php
+                    - [Modificato] warehouse/compartments.php
+                    - [Modificato] warehouse/components.php
+                    - [Modificato] warehouse/get_compartments_table.php

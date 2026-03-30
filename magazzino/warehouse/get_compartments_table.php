@@ -3,10 +3,11 @@
  * @Author: gabriele.riva 
  * @Date: 2025-10-21 09:36:53 
  * @Last Modified by:   gabriele.riva
- * @Last Modified time: 2026-03-02
+ * @Last Modified time: 2026-03-28 17:11:36
 */
 
 // 2026-03-02: corretto bug bottone "Mostra tutte" che non resettava il filtro posizione
+// 2026-03-28: corretto bug ordinamento che non era alfanumerico
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -30,10 +31,17 @@ $stmt = $pdo->prepare("
     FROM compartments cmp
     LEFT JOIN locations loc ON cmp.location_id = loc.id
     $where_sql
-    ORDER BY $order_sql
+    " . ($order === 'id' ? "ORDER BY $order_sql" : "") . "
 ");
 $stmt->execute($params);
 $compartments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Ordinamento naturale per codice se richiesto
+if ($order === 'code') {
+    usort($compartments, function ($a, $b) {
+        return strnatcasecmp($a['code'], $b['code']);
+    });
+}
 
 if (!$compartments) {
     echo '<div class="alert alert-secondary">Nessun compartimento trovato.</div>';

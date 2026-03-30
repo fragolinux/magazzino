@@ -2,13 +2,14 @@
 /*
  * @Author: gabriele.riva 
  * @Date: 2025-10-20 17:28:47 
- * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-03-02
+ * @Last Modified by:   gabriele.riva
+ * @Last Modified time: 2026-03-28 17:11:42
 */
 
 // 2026-02-01: aggliunto locale nella select delle posizioni
 // 2026-03-02: corretto bug bottone "Mostra tutte" che non resettava il filtro posizione
-
+// 2026-03-28: corretto bug che non permetteva di aprire il popup quando venivano selezionati tutti i comparti
+// 2026-03-28: corretto bug ordinamento che non era alfanumerico
 
 require_once '../includes/db_connect.php';
 require_once '../includes/auth_check.php';
@@ -39,10 +40,17 @@ if ($location_id || $show_all) {
       FROM compartments cmp
       LEFT JOIN locations loc ON cmp.location_id = loc.id
       $where_sql
-      ORDER BY $order_sql
+      " . ($order === 'id' ? "ORDER BY $order_sql" : "") . "
   ");
   $stmt->execute($params);
   $compartments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+  // Ordinamento naturale per codice se richiesto
+  if ($order === 'code') {
+    usort($compartments, function ($a, $b) {
+      return strnatcasecmp($a['code'], $b['code']);
+    });
+  }
 }
 
 include '../includes/header.php';
@@ -180,8 +188,7 @@ include '../includes/header.php';
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('quickAddForm');
-    if (!form) return;
-
+    if (form) {
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
       const code = document.getElementById('newCode').value.trim();
@@ -208,6 +215,7 @@ include '../includes/header.php';
         alert(data.error || 'Errore durante l’aggiunta.');
       }
     });
+    }
 
     async function refreshTable() {
       const loc = document.getElementById('locationSelect').value;
