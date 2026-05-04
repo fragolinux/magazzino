@@ -371,3 +371,12 @@
                     - [Modificato] warehouse/compartments.php
                     - [Modificato] warehouse/components.php
                     - [Modificato] warehouse/get_compartments_table.php
+1.16  04/05/2026  - in Aggiungi posizione corretto bug che non permetteva di salvare il tipo di posizione
+                  - in Carico/Scarico via Barcode aggiunto campo "Note"
+                  - in Genera Barcode Aggiunta selezione delle categorie per comparto
+                    - [Aggiunto] update/migrations/1.16.sql
+                    - [Aggiunto] warehouse/get_compartments_with_categories.php
+                    - [Modificato] warehouse/add_location.php
+                    - [Modificato] warehouse/barcode_scan.php
+                    - [Modificato] warehouse/barcodes.php
+                    - [Modificato] warehouse/generate_barcodes.php

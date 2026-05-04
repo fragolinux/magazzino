@@ -2,11 +2,12 @@
 /*
  * @Author: gabriele.riva
  * @Date: 2026-01-15
- * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-02 18:11:06
+ * @Last Modified by:   gabriele.riva
+ * @Last Modified time: 2026-05-03 22:38:18
 */
 // 2026-02-01: Aggiunti parametri Barcode nei setting
 // 2026-02-02: Aggiunta possibilità di selezionare componenti senza comparto
+// 2026-05-03: Aggiunta selezione delle categorie per comparto
 
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/db_connect.php';
@@ -83,28 +84,53 @@ if (count($ids) === 0 && !$includeUnassigned) {
 }
 
 $include_code = isset($_POST['include_code_under_barcode']) ? true : false;
+$comp_categories = $_POST['comp_category'] ?? [];
 
 // Costruisci la query in base a cosa è stato selezionato
 $whereConditions = [];
 $params = [];
 
 if (count($ids) > 0) {
-    // Aggiungi condizione per i compartimenti
-    $placeholders = implode(',', array_fill(0, count($ids), '?'));
-    $whereConditions[] = "compartment_id IN ($placeholders)";
-    $params = array_merge($params, $ids);
+    foreach ($ids as $cid) {
+        $cat_id = isset($comp_categories[$cid]) ? intval($comp_categories[$cid]) : 0;
+        if ($cat_id > 0) {
+            $whereConditions[] = "(compartment_id = ? AND category_id = ?)";
+            $params[] = $cid;
+            $params[] = $cat_id;
+        } else {
+            $whereConditions[] = "compartment_id = ?";
+            $params[] = $cid;
+        }
+    }
 }
 
 if ($includeUnassigned) {
+    $unassigned_cat_id = isset($comp_categories['unassigned']) ? intval($comp_categories['unassigned']) : 0;
+    
     // Aggiungi condizione per componenti senza comparto
     $unassignedCondition = "(compartment_id IS NULL OR compartment_id = 0)";
-    // Se è stata selezionata una location specifica, filtriamo anche per location_id
-    if ($location_id) {
-        $unassignedCondition .= " AND location_id = ?";
-        $whereConditions[] = $unassignedCondition;
-        $params[] = $location_id;
+    
+    if ($unassigned_cat_id > 0) {
+        $unassignedCondition .= " AND category_id = ?";
+        // Se è stata selezionata una location specifica, filtriamo anche per location_id
+        if ($location_id) {
+            $unassignedCondition .= " AND location_id = ?";
+            $whereConditions[] = "(" . $unassignedCondition . ")";
+            $params[] = $unassigned_cat_id;
+            $params[] = $location_id;
+        } else {
+            $whereConditions[] = "(" . $unassignedCondition . ")";
+            $params[] = $unassigned_cat_id;
+        }
     } else {
-        $whereConditions[] = $unassignedCondition;
+        // Se è stata selezionata una location specifica, filtriamo anche per location_id
+        if ($location_id) {
+            $unassignedCondition .= " AND location_id = ?";
+            $whereConditions[] = "(" . $unassignedCondition . ")";
+            $params[] = $location_id;
+        } else {
+            $whereConditions[] = $unassignedCondition;
+        }
     }
 }
 

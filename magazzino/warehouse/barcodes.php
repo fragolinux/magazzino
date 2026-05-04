@@ -2,12 +2,13 @@
 /*
  * @Author: gabriele.riva
  * @Date: 2026-01-15
- * @Last Modified by: gabriele.riva
- * @Last Modified time: 2026-02-02 18:11:00
+ * @Last Modified by:   gabriele.riva
+ * @Last Modified time: 2026-05-03 22:39:11
 */
 // 2026-02-01: aggiunto locale nella select delle posizioni
 // 2026-02-01: Aggiunti parametri Barcode nei setting
 // 2026-02-02: Aggiunta possibilità di selezionare componenti senza comparto
+// 2026-05-03: Aggiunta selezione delle categorie per comparto
 
 require_once __DIR__ . '/../config/base_path.php';
 require_once __DIR__ . '/../includes/auth_check.php';
@@ -97,30 +98,49 @@ $(function(){
 	function loadCompartments(locationId){
 		const container = $('#compartments_container');
 		container.html('<div class="form-text">Caricamento...</div>');
-		$.get('<?= BASE_PATH ?>warehouse/get_compartments.php', { location_id: locationId }, function(html){
-			// get_compartments.php restituisce JSON con compartments e unassigned_count
-			try {
-				const data = JSON.parse(html);
-				if (data.compartments !== undefined){
+		$.getJSON('<?= BASE_PATH ?>warehouse/get_compartments_with_categories.php', { location_id: locationId }, function(data){
+			if (data.success){
 					let out = '';
 					// Aggiungi checkbox per componenti senza comparto se presenti
 					if (parseInt(data.unassigned_count || 0, 10) > 0){
 						var unassignedCount = parseInt(data.unassigned_count, 10);
-						out += '<div class="form-check">'
-							+ '<input class="form-check-input unassigned-checkbox" type="checkbox" name="compartments[]" value="unassigned" id="cmp_unassigned" data-count="'+unassignedCount+'">'
-							+ '<label class="form-check-label" for="cmp_unassigned"><strong>Componenti senza comparto</strong> <span class="text-muted">('+unassignedCount+' componenti)</span></label></div>';
+						out += '<div class="d-flex align-items-center mb-2 justify-content-between">';
+						out += '  <div class="form-check flex-grow-1">'
+							+ '    <input class="form-check-input unassigned-checkbox" type="checkbox" name="compartments[]" value="unassigned" id="cmp_unassigned" data-count="'+unassignedCount+'">'
+							+ '    <label class="form-check-label" for="cmp_unassigned"><strong>Senza comparto</strong> <span class="text-muted small">('+unassignedCount+')</span></label>'
+							+ '  </div>';
+						
+						if(data.unassigned_categories && data.unassigned_categories.length > 0){
+							out += '  <select name="comp_category[unassigned]" class="form-select form-select-sm ms-2 category-filter" style="width:150px;">';
+							out += '    <option value="" data-count="'+unassignedCount+'">Tutte cat.</option>';
+							data.unassigned_categories.forEach(function(cat){
+								out += '    <option value="'+cat.id+'" data-count="'+cat.count+'">'+cat.name+' ('+cat.count+')</option>';
+							});
+							out += '  </select>';
+						}
+						out += '</div>';
 						out += '<hr class="my-2">';
 					}
 					// Aggiungi checkbox per i comparti
 					data.compartments.forEach(function(c){
-						// get_compartments.php returns {id, code, description, components_count}
 						var code = c.code || ('Compartimento ' + c.id);
-						var desc = c.description ? (' - ' + c.description) : '';
 						var count = parseInt(c.components_count || 0, 10);
-						var cnt = (count > 0) ? (' <span class="text-muted">('+count+' componenti)</span>') : '';
-						out += '<div class="form-check">'
-							+ '<input class="form-check-input compartment-checkbox" type="checkbox" name="compartments[]" value="'+c.id+'" id="cmp_'+c.id+'" data-count="'+count+'">'
-							+ '<label class="form-check-label" for="cmp_'+c.id+'"> '+code+desc+cnt+'</label></div>';
+						
+						out += '<div class="d-flex align-items-center mb-2 justify-content-between">';
+						out += '  <div class="form-check flex-grow-1">'
+							+ '    <input class="form-check-input compartment-checkbox" type="checkbox" name="compartments[]" value="'+c.id+'" id="cmp_'+c.id+'" data-count="'+count+'">'
+							+ '    <label class="form-check-label" for="cmp_'+c.id+'">'+code+' <span class="text-muted small">('+count+')</span></label>'
+							+ '  </div>';
+
+						if(c.categories && c.categories.length > 0){
+							out += '  <select name="comp_category['+c.id+']" class="form-select form-select-sm ms-2 category-filter" style="width:150px;">';
+							out += '    <option value="" data-count="'+count+'">Tutte cat.</option>';
+							c.categories.forEach(function(cat){
+								out += '    <option value="'+cat.id+'" data-count="'+cat.count+'">'+cat.name+' ('+cat.count+')</option>';
+							});
+							out += '  </select>';
+						}
+						out += '</div>';
 					});
 					container.html(out);
 					// mostra controlli select-all e totale
@@ -128,14 +148,9 @@ $(function(){
 					$('#total_container').show();
 					// resetta il conteggio a 0 (nessuna checkbox è selezionata)
 					updateTotal();
-					return;
+				} else {
+					container.html('<div class="form-text">Nessun comparto trovato.</div>');
 				}
-			} catch(e){
-				// non JSON: assumiamo HTML pronto
-				container.html(html);
-				return;
-			}
-			container.html('<div class="form-text">Nessun comparto trovato.</div>');
 		}).fail(function(){
 			container.html('<div class="form-text text-danger">Errore nel caricamento comparti.</div>');
 		});
@@ -158,7 +173,7 @@ $(function(){
 	});
 
 	// Gestione select all e conteggio
-	$(document).on('change', '.compartment-checkbox, .unassigned-checkbox', function(){
+	$(document).on('change', '.compartment-checkbox, .unassigned-checkbox, .category-filter', function(){
 		updateTotal();
 		// sincronizza select all
 		var total = $('.compartment-checkbox, .unassigned-checkbox').length;
@@ -175,7 +190,15 @@ $(function(){
 	function updateTotal(){
 		var total = 0;
 		$('.compartment-checkbox:checked, .unassigned-checkbox:checked').each(function(){
-			total += parseInt($(this).data('count') || 0, 10);
+			const parent = $(this).closest('.d-flex');
+			const categorySelect = parent.find('.category-filter');
+			if(categorySelect.length > 0 && categorySelect.val() !== ""){
+				// Prendi il conteggio dall'opzione selezionata
+				total += parseInt(categorySelect.find('option:selected').data('count') || 0, 10);
+			} else {
+				// Prendi il conteggio totale del comparto
+				total += parseInt($(this).data('count') || 0, 10);
+			}
 		});
 		$('#total_components_selected').text(total);
 		updateGenerateButton();
